@@ -1,10 +1,9 @@
-package com.wardk.meeteam_backend.exception.handler;
+package com.wardk.meeteam_backend.global.apiPayload.exception.handler;
 
-import com.wardk.meeteam_backend.exception.CustomException;
-import com.wardk.meeteam_backend.exception.ErrorCode;
-import com.wardk.meeteam_backend.exception.ErrorResponse;
+import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
+import com.wardk.meeteam_backend.global.apiPayload.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

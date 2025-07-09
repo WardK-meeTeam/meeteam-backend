@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.exception;
+package com.wardk.meeteam_backend.global.apiPayload.code;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
