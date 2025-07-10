@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.exception;
+package com.wardk.meeteam_backend.global.apiPayload.code;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -13,8 +13,12 @@ public enum ErrorCode {
 
     INVALID_REQUEST(HttpStatus.BAD_REQUEST,"COMMON400", "잘못된 요청입니다."),
 
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "COMMON403","접근이 거부되었습니다")
-    ;
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "COMMON403","접근이 거부되었습니다"),
+
+
+    // LOGIN
+    DUPLICATE_MEMBER(HttpStatus.BAD_REQUEST,"MEMBER400", "이미 존재하는 회원입니다."),
+    DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST,"MEMBER400" , "다시 로그인하세요");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;

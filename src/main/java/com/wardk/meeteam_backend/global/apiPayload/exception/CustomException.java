@@ -1,5 +1,6 @@
-package com.wardk.meeteam_backend.exception;
+package com.wardk.meeteam_backend.global.apiPayload.exception;
 
+import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import lombok.Getter;
 
 @Getter
