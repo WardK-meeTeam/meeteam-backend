@@ -1,7 +1,10 @@
 package com.wardk.meeteam_backend.global.util;
 
-
-
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomUserDetails;
+import com.wardk.meeteam_backend.global.loginRegister.service.CustomUserDetailsService;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -36,42 +40,42 @@ public class JwtUtil {
   // 토큰에서 username 파싱
   public String getUsername(String token) {
     return Jwts.parser()
-        .verifyWith(getSignKey())
-        .build()
-        .parseSignedClaims(token)
-        .getPayload()
-        .get("username", String.class);
+            .verifyWith(getSignKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .get("username", String.class);
   }
 
   // 토큰에서 role 파싱
   public String getRole(String token) {
     return Jwts.parser()
-        .verifyWith(getSignKey())
-        .build()
-        .parseSignedClaims(token)
-        .getPayload()
-        .get("role", String.class);
+            .verifyWith(getSignKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .get("role", String.class);
   }
 
   // 토큰 만료 여부 확인
   public Boolean isExpired(String token) {
     return Jwts.parser()
-        .verifyWith(getSignKey())
-        .build()
-        .parseSignedClaims(token)
-        .getPayload()
-        .getExpiration()
-        .before(new Date());
+            .verifyWith(getSignKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .getExpiration()
+            .before(new Date());
   }
 
   // Access/Refresh 토큰 여부
   public String getCategory(String token) {
     return Jwts.parser()
-        .verifyWith(getSignKey())
-        .build()
-        .parseSignedClaims(token)
-        .getPayload()
-        .get("category", String.class);
+            .verifyWith(getSignKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .get("category", String.class);
   }
 
   /**
@@ -106,13 +110,13 @@ public class JwtUtil {
   private String createToken(String category, CustomUserDetails customUserDetails, Long expiredAt) {
 
     return Jwts.builder()
-        .subject(customUserDetails.getUsername())
-        .claim("category", category)
-        .claim("username", customUserDetails.getUsername())
-        .issuedAt(new Date(System.currentTimeMillis()))
-        .expiration(new Date(System.currentTimeMillis() + expiredAt))
-        .signWith(getSignKey())
-        .compact();
+            .subject(customUserDetails.getUsername())
+            .claim("category", category)
+            .claim("username", customUserDetails.getUsername())
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + expiredAt))
+            .signWith(getSignKey())
+            .compact();
   }
 
   /**
@@ -124,9 +128,9 @@ public class JwtUtil {
   public boolean validateToken(String token) throws ExpiredJwtException {
     try {
       Jwts.parser()
-          .verifyWith(getSignKey())
-          .build()
-          .parseSignedClaims(token);
+              .verifyWith(getSignKey())
+              .build()
+              .parseSignedClaims(token);
       log.info("JWT 토큰이 유효합니다.");
       return true;
     } catch (ExpiredJwtException e) {
@@ -168,10 +172,10 @@ public class JwtUtil {
    */
   public Claims getClaims(String token) {
     return Jwts.parser()
-        .verifyWith(getSignKey())
-        .build()
-        .parseSignedClaims(token)
-        .getPayload();
+            .verifyWith(getSignKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
   }
 
   /**

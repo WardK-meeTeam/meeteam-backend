@@ -2,6 +2,8 @@ package com.wardk.meeteam_backend.global.filter;
 
 
 
+import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomUserDetails;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,7 +16,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 
 @RequiredArgsConstructor
@@ -27,12 +28,12 @@ public class JwtFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
 
-    log.info("Swagger 요청 URI={}",request.getRequestURI());
     // 인증 생략 경로
     if (request.getRequestURI().equals("/api/login") ||
     request.getRequestURI().startsWith("/actuator") ||
     request.getRequestURI().startsWith("/docs") ||
-    request.getRequestURI().startsWith("/v3")) {
+    request.getRequestURI().startsWith("/v3")||
+    request.getRequestURI().equals("/api/register")) {
 
       filterChain.doFilter(request, response);
 
@@ -67,15 +68,15 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     //토큰에서 username과 role 획득
-    String username = jwtUtil.getUsername(token);
+    String email = jwtUtil.getUsername(token);
 
     //user를 생성하여 값 set
-    User user = User.builder()
-            .username(username)
+    Member member = Member.builder()
+            .email(email)
             .build();
 
     //UserDetails에 회원 정보 객체 담기
-    CustomUserDetails customUserDetails = new CustomUserDetails(user);
+    CustomUserDetails customUserDetails = new CustomUserDetails(member);
 
     //스프링 시큐리티 인증 토큰 생성
     Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());

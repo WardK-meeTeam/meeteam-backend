@@ -1,16 +1,16 @@
 package com.wardk.meeteam_backend.global.filter;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.project.modac.apiPayload.ApiResponse;
-import com.project.modac.apiPayload.GeneralException;
-import com.project.modac.apiPayload.code.status.ErrorStatus;
-import com.project.modac.apiPayload.code.status.SuccessStatus;
-import com.project.modac.global.login.dto.CustomUserDetails;
-import com.project.modac.global.login.dto.LoginRequest;
-import com.project.modac.global.login.dto.LoginResponse;
-import com.project.modac.global.util.JwtUtil;
+import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
+import com.wardk.meeteam_backend.global.apiPayload.code.SuccessCode;
+import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+import com.wardk.meeteam_backend.global.apiPayload.response.ErrorResponse;
+import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomUserDetails;
+import com.wardk.meeteam_backend.global.loginRegister.dto.login.LoginRequest;
+import com.wardk.meeteam_backend.global.loginRegister.dto.login.LoginResponse;
+import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,7 +53,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
       return authenticationManager.authenticate(authToken);
     } catch (IOException e) {
       log.error("JSON 파싱 중 오류 발생");
-      throw new GeneralException(ErrorStatus.INVALID_REQUEST);
+      throw new CustomException(ErrorCode.INVALID_REQUEST);
     }
   }
 
@@ -91,10 +91,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     // 반환할 유저 정보
     LoginResponse loginResponse = LoginResponse.builder()
-        .username(customUserDetails.getUsername())
-        .build();
+            .username(customUserDetails.getUsername())
+            .build();
 
-    ApiResponse<LoginResponse> apiResponse = ApiResponse.of(SuccessStatus._LOGIN_SUCCESS, null);
+    SuccessResponse<LoginResponse> apiResponse = SuccessResponse.of(SuccessCode._LOGIN_SUCCESS, null);
     response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
     response.setStatus(HttpServletResponse.SC_OK);
   }
@@ -109,7 +109,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     response.setContentType("application/json");
     response.setCharacterEncoding("UTF-8");
 
-    ApiResponse<LoginResponse> apiResponse = ApiResponse.onFailure(ErrorStatus.DUPLICATE_USERNAME.getCode(),ErrorStatus.DUPLICATE_USERNAME.getMessage(), null);
+    ErrorResponse apiResponse = ErrorResponse.getResponse(ErrorCode.DUPLICATE_USERNAME.getCode(),ErrorCode.DUPLICATE_USERNAME.getMessage());
     response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
   }

@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.login.dto.login;
+package com.wardk.meeteam_backend.global.loginRegister.dto.login;
 
 import lombok.Builder;
 import lombok.Getter;

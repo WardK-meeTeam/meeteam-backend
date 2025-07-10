@@ -1,7 +1,8 @@
-package com.wardk.meeteam_backend.global.login.dto.login;
+package com.wardk.meeteam_backend.global.loginRegister.dto;
 
 
-import com.project.modac.domain.User;
+
+import com.wardk.meeteam_backend.domain.member.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-  private final User user;
+  private final Member member;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -21,12 +22,12 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public String getPassword() {
-    return user.getPassword();
+    return member.getPassword();
   }
 
   @Override
   public String getUsername() {
-    return user.getUsername();
+    return member.getEmail();
   }
 
 

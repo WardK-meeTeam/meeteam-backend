@@ -1,8 +1,8 @@
-package com.wardk.meeteam_backend.global.login.service;
+package com.wardk.meeteam_backend.global.loginRegister.service;
 
-import com.project.modac.domain.User;
-import com.project.modac.global.login.dto.CustomUserDetails;
-import com.project.modac.repository.UserRepository;
+import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomUserDetails;
+import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,18 +13,18 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-  private final UserRepository userRepository;
+  private final MemberRepository userRepository;
 
   @Override
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
     // DB에서 조회
-    User user = userRepository.findByUsername(username);
+    Member member = userRepository.findByEmail(email);
 
-    if (user != null) {
+    if (member != null) {
 
       // UserDetails에 담아서 return 하면 AuthenticationManager가 검증함
-      return new CustomUserDetails(user);
+      return new CustomUserDetails(member);
     }
 
     return null;
