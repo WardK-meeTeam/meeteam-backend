@@ -30,6 +30,7 @@ public class RegisterRequestDto {
     private JobType jobType;
 
     @Schema(description = "프로필사진 업로드")
+
     private MultipartFile file;
 }
 

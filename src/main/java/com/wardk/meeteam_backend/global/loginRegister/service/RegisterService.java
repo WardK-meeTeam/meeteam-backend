@@ -35,12 +35,18 @@ public class RegisterService {
                     throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
                 });
 
+        String storeFileName = null;
+        MultipartFile file = registerRequestDto.getFile();
+        if (file != null && !file.isEmpty()) {
+            storeFileName = fileStore.storeFile(file).getStoreFileName();
+        }
+
         Member member = Member.createMember(
                 registerRequestDto.getEmail(),
                 bCryptPasswordEncoder.encode(registerRequestDto.getPassword()),
                 registerRequestDto.getName(),
                 registerRequestDto.getJobType(),
-                fileStore.storeFile(registerRequestDto.getFile()).getStoreFileName()
+                storeFileName
         );
 
         memberRepository.save(member);

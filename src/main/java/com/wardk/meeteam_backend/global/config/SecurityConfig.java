@@ -56,7 +56,8 @@ public class SecurityConfig {
             .requestMatchers("/actuator/**",
                     "/docs/**", "/api/register", "/v3/**",
                     "/api/login", "/api/community/**", "/api/**",
-                    "/api/auth/**","/","/uploads/**", "/api/register").permitAll() // TODO: 인증 생략 경로 설정  회원가입: "/api/user/register", 로그인: "/api/auth/login"//
+                    "/api/auth/**","/","/uploads/**", "/api/register", "api/project/register").permitAll() // TODO: 인증 생략 경로 설정  회원가입: "/api/user/register", 로그인: "/api/auth/login"//
+
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().authenticated() //나머지는 인증이 된 사용자만 가능
         )
