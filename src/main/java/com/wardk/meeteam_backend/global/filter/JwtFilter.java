@@ -33,7 +33,8 @@ public class JwtFilter extends OncePerRequestFilter {
     request.getRequestURI().startsWith("/actuator") ||
     request.getRequestURI().startsWith("/docs") ||
     request.getRequestURI().startsWith("/v3")||
-    request.getRequestURI().equals("/api/register")) {
+    request.getRequestURI().equals("/api/register")
+    ) {
 
       filterChain.doFilter(request, response);
 

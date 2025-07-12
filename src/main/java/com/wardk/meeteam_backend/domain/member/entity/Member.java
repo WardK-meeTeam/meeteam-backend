@@ -45,15 +45,7 @@ public class Member extends BaseEntity {
         project.setProjectCreator(this);
     }
 
-    //팀원으로 참여할 때
-    @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<ProjectMember> joinedProject;
 
-    //연관관계 편의 메서드
-    public void joinProject(ProjectMember projectMember) {
-        joinedProject.add(projectMember);
-        projectMember.assignMember(this);
-    }
 
     public Member() {
     }
