@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.global.filter;
 
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomUserDetails;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
@@ -28,16 +27,19 @@ public class JwtFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
 
-    // 인증 생략 경로
+// 인증 생략 경로
     if (request.getRequestURI().equals("/api/login") ||
-    request.getRequestURI().startsWith("/actuator") ||
-    request.getRequestURI().startsWith("/docs") ||
-    request.getRequestURI().startsWith("/v3")||
-    request.getRequestURI().equals("/api/register")
+            request.getRequestURI().startsWith("/actuator") ||
+            request.getRequestURI().startsWith("/docs") ||
+            request.getRequestURI().startsWith("/v3") ||
+            request.getRequestURI().startsWith("/oauth2/") ||
+            request.getRequestURI().startsWith("/login/oauth2/") ||  // 추가
+            request.getRequestURI().equals("/api/register") ||
+            request.getRequestURI().equals("/api/auth/oauth2/success") ||  // 추가
+            request.getRequestURI().equals("/api/auth/oauth2/failure")     // 추가
     ) {
 
       filterChain.doFilter(request, response);
-
       return;
     }
 
@@ -77,10 +79,10 @@ public class JwtFilter extends OncePerRequestFilter {
             .build();
 
     //UserDetails에 회원 정보 객체 담기
-    CustomUserDetails customUserDetails = new CustomUserDetails(member);
+    CustomSecurityUserDetails customSecurityUserDetails = new CustomSecurityUserDetails(member);
 
     //스프링 시큐리티 인증 토큰 생성
-    Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+    Authentication authToken = new UsernamePasswordAuthenticationToken(customSecurityUserDetails, null, customSecurityUserDetails.getAuthorities());
     //세션에 사용자 등록
     SecurityContextHolder.getContext().setAuthentication(authToken);
 

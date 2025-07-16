@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.global.loginRegister.service;
 
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import com.wardk.meeteam_backend.global.loginRegister.FileStore;
@@ -46,7 +47,8 @@ public class RegisterService {
                 bCryptPasswordEncoder.encode(registerRequestDto.getPassword()),
                 registerRequestDto.getName(),
                 registerRequestDto.getJobType(),
-                storeFileName
+                storeFileName,
+                UserRole.USER
         );
 
         memberRepository.save(member);

@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.global.util;
 
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomUserDetails;
+import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.loginRegister.service.CustomUserDetailsService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -81,38 +82,38 @@ public class JwtUtil {
   /**
    * AccessToken 생성
    *
-   * @param customUserDetails
+   * @param customSecurityUserDetails
    * @return
    */
-  public String createAccessToken(CustomUserDetails customUserDetails) {
-    log.info("엑세스 토큰 생성 중: 회원: {}", customUserDetails.getUsername());
-    return createToken(ACCESS_CATEGORY, customUserDetails, accessTokenExpTime);
+  public String createAccessToken(CustomSecurityUserDetails customSecurityUserDetails) {
+    log.info("엑세스 토큰 생성 중: 회원: {}", customSecurityUserDetails.getUsername());
+    return createToken(ACCESS_CATEGORY, customSecurityUserDetails, accessTokenExpTime);
   }
 
   /**
    * RefreshToken 생성
    *
-   * @param customUserDetails
+   * @param customSecurityUserDetails
    * @return
    */
-  public String createRefreshToken(CustomUserDetails customUserDetails) {
-    log.info("리프래시 토큰 생성 중: 회원: {}", customUserDetails.getUsername());
-    return createToken(REFRESH_CATEGORY, customUserDetails, refreshTokenExpTime);
+  public String createRefreshToken(CustomSecurityUserDetails customSecurityUserDetails) {
+    log.info("리프래시 토큰 생성 중: 회원: {}", customSecurityUserDetails.getUsername());
+    return createToken(REFRESH_CATEGORY, customSecurityUserDetails, refreshTokenExpTime);
   }
 
   /**
    * JWT 토큰 생성 메서드
    *
-   * @param customUserDetails 회원 상세 정보
+   * @param customSecurityUserDetails 회원 상세 정보
    * @param expiredAt         만료 시간
    * @return 생성된 JWT 토큰
    */
-  private String createToken(String category, CustomUserDetails customUserDetails, Long expiredAt) {
+  private String createToken(String category, CustomSecurityUserDetails customSecurityUserDetails, Long expiredAt) {
 
     return Jwts.builder()
-            .subject(customUserDetails.getUsername())
+            .subject(customSecurityUserDetails.getUsername())
             .claim("category", category)
-            .claim("username", customUserDetails.getUsername())
+            .claim("username", customSecurityUserDetails.getUsername())
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + expiredAt))
             .signWith(getSignKey())
@@ -221,5 +222,30 @@ public class JwtUtil {
     log.info("JWT에서 인증정보 파싱: username={}", username);
     UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
     return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+  }
+
+  /**
+   * OAuth2 사용자를 위한 AccessToken 생성 (이메일 기반)
+   *
+   * @param email 사용자 이메일
+   * @param name 사용자 이름
+   * @return JWT AccessToken
+   */
+  public String createAccessTokenForOAuth2Email(String email, String name) {
+    if (email == null || email.isEmpty()) {
+      throw new IllegalArgumentException("Email cannot be null or empty");
+    }
+
+    log.info("OAuth2 엑세스 토큰 생성 중: 이메일: {}", email);
+
+    return Jwts.builder()
+            .subject(email)
+            .claim("category", ACCESS_CATEGORY)
+            .claim("username", email)
+            .claim("role", "USER") // 기본 역할 설정
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + accessTokenExpTime))
+            .signWith(getSignKey())
+            .compact();
   }
 }
