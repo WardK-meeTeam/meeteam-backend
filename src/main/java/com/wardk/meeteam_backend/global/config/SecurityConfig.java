@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.global.config;
 
 import com.wardk.meeteam_backend.global.filter.JwtFilter;
 import com.wardk.meeteam_backend.global.filter.LoginFilter;
+import com.wardk.meeteam_backend.global.loginRegister.handler.OAuth2AuthenticationSuccessHandler;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +15,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -31,6 +35,8 @@ public class SecurityConfig {
 
   private final JwtUtil jwtUtil;
   private final AuthenticationConfiguration authenticationConfiguration;
+  private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService;
+  private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
 
   /**
    * Security Filter Chain 설정
@@ -56,18 +62,26 @@ public class SecurityConfig {
             .requestMatchers("/actuator/**",
                     "/docs/**", "/api/register", "/v3/**",
                     "/api/login", "/api/community/**", "/api/**",
-                    "/api/auth/**","/","/uploads/**", "/api/register", "api/project/register").permitAll() // TODO: 인증 생략 경로 설정  회원가입: "/api/user/register", 로그인: "/api/auth/login"//
-
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    "/api/auth/**","/","/uploads/**", "/api/register", "api/project/register", "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**",
+                    "/api/auth/oauth2/success", "/api/auth/oauth2/failure").permitAll() // TODO: 인증 생략 경로 설정  회원가입: "/api/user/register", 로그인: "/api/auth/login"//
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().authenticated() //나머지는 인증이 된 사용자만 가능
         )
-            //.authorizeHttpRequests(auth -> auth
-            //            .requestMatchers("/api/auth/login", "/api/auth/join").permitAll() // 로그인, 회원가입은 누구나 접근 가능
-            //            .requestMatchers("/api/admin/**").hasRole("ADMIN") // /api/admin/** 경로는 ROLE_ADMIN만 접근 가능
-            //            .anyRequest().authenticated()
-        // 세션 설정 STATELESS
+        // OAuth 2.0 로그인 설정
+        .oauth2Login(oauth2 -> oauth2
+                .successHandler(oauth2SuccessHandler) // OAuth 성공 후 핸들러 설정
+                .failureUrl("/api/auth/oauth2/failure") // OAuth 실패 후 리다이렉트 URL
+                .userInfoEndpoint(userInfo -> userInfo
+                        .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
+                )
+        )
+//            .authorizeHttpRequests(auth -> auth
+//                        .requestMatchers("/api/auth/login", "/api/auth/join").permitAll() // 로그인, 회원가입은 누구나 접근 가능
+//                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // /api/admin/** 경로는 ROLE_ADMIN만 접근 가능
+//                        .anyRequest().authenticated()
+        // 세션 설정 STATELESS 에서 세션 설정 수정 - OAuth2 사용시 IF_REQUIRED 필요
         .sessionManagement(session ->
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
         )
         .addFilterBefore(
             new JwtFilter(jwtUtil),
