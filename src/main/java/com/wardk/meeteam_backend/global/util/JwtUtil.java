@@ -231,6 +231,31 @@ public class JwtUtil {
    * @param name 사용자 이름
    * @return JWT AccessToken
    */
+
+  public String createAccessTokenForOAuth2(Member member) {
+    if (member == null) {
+      throw new IllegalArgumentException("Member cannot be null");
+    }
+    if (member.getEmail() == null || member.getEmail().isEmpty()) {
+      throw new IllegalArgumentException("Member email cannot be null or empty");
+    }
+    if (member.getRole() == null) {
+      throw new IllegalArgumentException("Member role cannot be null");
+    }
+
+    log.info("OAuth2 엑세스 토큰 생성 중: 회원: {}", member.getEmail());
+
+    return Jwts.builder()
+            .subject(member.getEmail())
+            .claim("category", ACCESS_CATEGORY)
+            .claim("username", member.getEmail())
+            .claim("role", member.getRole().name())
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + accessTokenExpTime))
+            .signWith(getSignKey())
+            .compact();
+  }
+
   public String createAccessTokenForOAuth2Email(String email, String name) {
     if (email == null || email.isEmpty()) {
       throw new IllegalArgumentException("Email cannot be null or empty");
@@ -248,4 +273,5 @@ public class JwtUtil {
             .signWith(getSignKey())
             .compact();
   }
+
 }
