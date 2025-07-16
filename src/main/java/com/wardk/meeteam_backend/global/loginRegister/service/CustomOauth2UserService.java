@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.global.loginRegister.service;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.global.loginRegister.dto.CustomOauth2UserDetails;
+import com.wardk.meeteam_backend.global.loginRegister.dto.oauth.GitHubUserDetails;
 import com.wardk.meeteam_backend.global.loginRegister.dto.oauth.GoogleUserDetails;
 import com.wardk.meeteam_backend.global.loginRegister.dto.oauth.OAuth2UserInfo;
 import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
@@ -36,10 +37,13 @@ public class CustomOauth2UserService extends DefaultOAuth2UserService {
             String provider = userRequest.getClientRegistration().getRegistrationId();
             OAuth2UserInfo oAuth2UserInfo = null;
 
-            if(provider.equals("google")){
+            if(provider.equals("google")) {
                 log.info("구글 로그인 - 사용자 정보 파싱 시작");
                 oAuth2UserInfo = new GoogleUserDetails(oAuth2User.getAttributes());
-            } else {
+            }else if(provider.equals("github")){
+                log.info("깃허브 로그인 - 사용자 정보 파싱 시작");
+                oAuth2UserInfo = new GitHubUserDetails(oAuth2User.getAttributes());
+            }else {
                 throw new OAuth2AuthenticationException("지원하지 않는 OAuth2 Provider: " + provider);
             }
 
