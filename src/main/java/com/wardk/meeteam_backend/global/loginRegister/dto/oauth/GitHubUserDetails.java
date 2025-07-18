@@ -29,16 +29,22 @@ public class GitHubUserDetails implements OAuth2UserInfo {
     public String getProviderId() {
         try {
             Object id = attributes.get("id");
-            if (id != null) {
-                String stringValue = String.valueOf(id).trim();
-                if (!stringValue.isEmpty() && !stringValue.equals("null")) {
-                    log.info("GitHub ProviderId found: {}", stringValue);
-                    return stringValue;
-                }
+            if (id == null) {
+                log.error("GitHub ProviderId not found in attributes: {}", attributes);
+                throw new CustomException(ErrorCode.OAUTH2_PROVIDER_ID_NOT_FOUND);
             }
 
-            log.error("GitHub ProviderId not found in attributes: {}", attributes);
-            throw new CustomException(ErrorCode.OAUTH2_PROVIDER_ID_NOT_FOUND);
+            String stringValue = String.valueOf(id).trim();
+
+            // 빈 문자열이거나 "null" 문자열인 경우 조기 반환
+            if (stringValue.isEmpty() || stringValue.equals("null")) {
+                log.error("GitHub ProviderId is empty or null string in attributes: {}", attributes);
+                throw new CustomException(ErrorCode.OAUTH2_PROVIDER_ID_NOT_FOUND);
+            }
+
+            log.info("GitHub ProviderId found: {}", stringValue);
+            return stringValue;
+
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -53,20 +59,21 @@ public class GitHubUserDetails implements OAuth2UserInfo {
             String email = (String) attributes.get("email");
             log.info("GitHub Email (primary): {}", email);
 
-            // GitHub에서 이메일이 null이거나 비어있는 경우 처리
-            if (email == null || email.trim().isEmpty()) {
-                // login을 이메일 대신 사용 (임시 해결책)
-                String login = (String) attributes.get("login");
-                if (login != null && !login.trim().isEmpty()) {
-                    email = login + "@github.local"; // 임시 이메일 생성
-                    log.warn("GitHub 이메일이 없어 임시 이메일 생성: {}", email);
-                    return email;
-                }
+            // 이메일이 존재하고 비어있지 않으면 바로 반환
+            if (email != null && !email.trim().isEmpty()) {
+                return email;
+            }
 
+            // 이메일이 없는 경우 login으로 대체
+            String login = (String) attributes.get("login");
+            if (login == null || login.trim().isEmpty()) {
                 throw new CustomException(ErrorCode.OAUTH2_EMAIL_NOT_FOUND);
             }
 
+            email = login + "@github.local";
+            log.warn("GitHub 이메일이 없어 임시 이메일 생성: {}", email);
             return email;
+
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
