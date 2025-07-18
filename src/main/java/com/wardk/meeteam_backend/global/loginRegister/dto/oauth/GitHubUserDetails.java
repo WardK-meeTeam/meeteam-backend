@@ -1,5 +1,7 @@
 package com.wardk.meeteam_backend.global.loginRegister.dto.oauth;
 
+import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
+import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -14,7 +16,7 @@ public class GitHubUserDetails implements OAuth2UserInfo {
         log.info("GitHubUserDetails 생성 - attributes: {}", attributes);
 
         if (attributes == null || attributes.isEmpty()) {
-            throw new IllegalArgumentException("GitHub OAuth2 attributes가 비어있습니다.");
+            throw new CustomException(ErrorCode.OAUTH2_ATTRIBUTES_EMPTY);
         }
     }
 
@@ -36,10 +38,12 @@ public class GitHubUserDetails implements OAuth2UserInfo {
             }
 
             log.error("GitHub ProviderId not found in attributes: {}", attributes);
-            throw new IllegalArgumentException("GitHub OAuth2 response does not contain valid provider ID");
+            throw new CustomException(ErrorCode.OAUTH2_PROVIDER_ID_NOT_FOUND);
+        } catch (CustomException e) {
+            throw e;
         } catch (Exception e) {
             log.error("GitHub ProviderId 추출 중 오류 발생", e);
-            throw new IllegalArgumentException("GitHub ProviderId 추출 실패: " + e.getMessage());
+            throw new CustomException(ErrorCode.OAUTH2_PROVIDER_ID_NOT_FOUND);
         }
     }
 
@@ -59,13 +63,15 @@ public class GitHubUserDetails implements OAuth2UserInfo {
                     return email;
                 }
 
-                throw new IllegalArgumentException("GitHub OAuth2 response does not contain email and login");
+                throw new CustomException(ErrorCode.OAUTH2_EMAIL_NOT_FOUND);
             }
 
             return email;
+        } catch (CustomException e) {
+            throw e;
         } catch (Exception e) {
             log.error("GitHub Email 추출 중 오류 발생", e);
-            throw new IllegalArgumentException("GitHub Email 추출 실패: " + e.getMessage());
+            throw new CustomException(ErrorCode.OAUTH2_EMAIL_NOT_FOUND);
         }
     }
 
