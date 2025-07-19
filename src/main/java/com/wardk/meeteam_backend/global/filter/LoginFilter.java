@@ -7,7 +7,7 @@ import com.wardk.meeteam_backend.global.apiPayload.code.SuccessCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import com.wardk.meeteam_backend.global.apiPayload.response.ErrorResponse;
 import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomUserDetails;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.loginRegister.dto.login.LoginRequest;
 import com.wardk.meeteam_backend.global.loginRegister.dto.login.LoginResponse;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
@@ -61,13 +61,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
   @Override
   protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException {
     // UserDetails
-    CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+    CustomSecurityUserDetails customSecurityUserDetails = (CustomSecurityUserDetails) authentication.getPrincipal();
 
     // AccessToken 발급
-    String accessToken = jwtUtil.createAccessToken(customUserDetails);
+    String accessToken = jwtUtil.createAccessToken(customSecurityUserDetails);
 
     // RefreshToken 발급
-    String refreshToken = jwtUtil.createRefreshToken(customUserDetails);
+    String refreshToken = jwtUtil.createRefreshToken(customSecurityUserDetails);
 
     // 헤더에 AccessToken 추가
     response.addHeader("Authorization", "Bearer " + accessToken);
@@ -91,7 +91,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     // 반환할 유저 정보
     LoginResponse loginResponse = LoginResponse.builder()
-            .username(customUserDetails.getUsername())
+            .username(customSecurityUserDetails.getUsername())
             .build();
 
     SuccessResponse<LoginResponse> apiResponse = SuccessResponse.of(SuccessCode._LOGIN_SUCCESS, null);

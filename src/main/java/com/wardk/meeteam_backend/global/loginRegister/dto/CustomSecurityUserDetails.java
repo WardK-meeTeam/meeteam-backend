@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.List;
 
 @RequiredArgsConstructor
-public class CustomUserDetails implements UserDetails {
+public class CustomSecurityUserDetails implements UserDetails {
 
   private final Member member;
 
@@ -29,7 +29,5 @@ public class CustomUserDetails implements UserDetails {
   public String getUsername() {
     return member.getEmail();
   }
-
-
 
 }
