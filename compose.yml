@@ -1,0 +1,26 @@
+services:
+  meeteam-server:
+    build: ${{ steps.login-ecr.outputs.registry }}/meeteam-server:latest
+    ports:
+      - 8080:8080
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    depends_on:
+      my-db:
+        condition: service_healthy
+    volumes:
+      - ./files:/app/files
+
+  my-db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: meeteam
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping" ]
+      interval: 5s
+      retries: 10
