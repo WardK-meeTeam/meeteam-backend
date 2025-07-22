@@ -1,6 +1,6 @@
 services:
   meeteam-server:
-    image: 079892728769.dkr.ecr.ap-northeast-2.amazonaws.com/meeteam-server/meeteam-server:latest
+    image: 079892728769.dkr.ecr.ap-northeast-2.amazonaws.com/meeteam-server
     ports:
       - 8080:8080
     environment:
