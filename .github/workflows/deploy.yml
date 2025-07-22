@@ -55,7 +55,8 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script_stop: true
           script: |
-  
+            set -e
+            cd /home/ubuntu/meeteam
             docker stop meeteam-server || true
             docker rm meeteam-server || true
             docker compose pull meeteam-server
