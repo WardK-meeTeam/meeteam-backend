@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum SuccessCode {
 
+
+
     //가장 일반적인 응답
 
     _OK(HttpStatus.OK,"COMMON200", "요청에 성공했습니다."),
