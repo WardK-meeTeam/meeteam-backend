@@ -1,0 +1,51 @@
+package com.wardk.meeteam_backend.domain.project.service;
+
+import com.wardk.meeteam_backend.domain.project.entity.Category;
+import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.project.repository.CategoryRepository;
+import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.global.loginRegister.FileStore;
+import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequsetDto;
+import com.wardk.meeteam_backend.web.project.dto.ProjectPostResponseDto;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+@RequiredArgsConstructor
+public class ProjectServiceV1 implements ProjectService{
+
+    private final FileStore fileStore;
+    private final ProjectRepository projectRepository;
+    private final CategoryRepository categoryRepository;
+
+    @Transactional
+    @Override
+    public ProjectPostResponseDto postProject(ProjectPostRequsetDto projectPostRequsetDto, MultipartFile file) {
+
+        String storeFileName = null;
+        if (file != null && !file.isEmpty()){
+        storeFileName = fileStore.storeFile(file).getStoreFileName();
+        }
+
+        Category category = new Category(projectPostRequsetDto.getProjectCategory());
+
+        categoryRepository.save(category);
+
+        Project project = Project.builder()
+                .name(projectPostRequsetDto.getProjectName())
+                .platformCategory(projectPostRequsetDto.getPlatformCategory())
+                .imageUrl(storeFileName)
+                .offlineRequired(projectPostRequsetDto.getOfflineRequired())
+                .description(projectPostRequsetDto.getDescription())
+                .build();
+
+        project.addCategory(category);
+
+        Project projectSaved = projectRepository.save(project);
+        ProjectPostResponseDto projectPostResponseDto = ProjectPostResponseDto.from(projectSaved);
+
+        return projectPostResponseDto;
+    }
+}

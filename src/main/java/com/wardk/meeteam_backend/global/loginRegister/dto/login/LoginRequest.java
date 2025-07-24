@@ -8,5 +8,6 @@ public class LoginRequest {
 
   @JsonProperty("email")
   private String username;
+
   private String password;
 }

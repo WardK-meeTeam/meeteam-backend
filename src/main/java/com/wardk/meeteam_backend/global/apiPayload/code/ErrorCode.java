@@ -21,7 +21,10 @@ public enum ErrorCode {
     OAUTH2_ATTRIBUTES_EMPTY(HttpStatus.BAD_REQUEST, "OAUTH400", "OAuth2 사용자 정보가 비어있습니다."),
     OAUTH2_PROVIDER_ID_NOT_FOUND(HttpStatus.BAD_REQUEST, "OAUTH401", "OAuth2 제공자 ID를 찾을 수 없습니다."),
     OAUTH2_EMAIL_NOT_FOUND(HttpStatus.BAD_REQUEST, "OAUTH402", "OAuth2 이메일 정보를 찾을 수 없습니다."),
-    OAUTH2_NAME_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH403", "OAuth2 사용자 이름 추출에 실패했습니다.");
+    OAUTH2_NAME_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH403", "OAuth2 사용자 이름 추출에 실패했습니다."),
+
+    //이미지 첨부
+    FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST,"FILE401", "파일 저장에 실패했습니다.");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
