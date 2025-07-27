@@ -3,14 +3,17 @@ package com.wardk.meeteam_backend.global.loginRegister.dto.register;
 
 import com.wardk.meeteam_backend.domain.member.entity.JobType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @NoArgsConstructor
+@ParameterObject
 public class RegisterRequestDto {
 
     @Schema(description = "이름", example = "홍길동")
@@ -29,9 +32,7 @@ public class RegisterRequestDto {
     @NotNull
     private JobType jobType;
 
-    @Schema(description = "프로필사진 업로드")
 
-    private MultipartFile file;
 }
 
 /*
