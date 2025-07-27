@@ -59,7 +59,7 @@ public class SecurityConfig {
         .formLogin(AbstractHttpConfigurer::disable)
         // 경로별 인가 작업
         .authorizeHttpRequests((authorize) -> authorize
-            .requestMatchers("/actuator/**",
+            .requestMatchers( "/webjars/**","/swagger-resources/**", "/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/actuator/**",
                     "/docs/**", "/api/register", "/v3/**",
                     "/api/login", "/api/community/**", "/api/**",
                     "/api/auth/**","/","/uploads/**", "/api/register", "api/project/register", "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**",
@@ -73,7 +73,7 @@ public class SecurityConfig {
                 .failureUrl("/api/auth/oauth2/failure") // OAuth 실패 후 리다이렉트 URL
                 .userInfoEndpoint(userInfo -> userInfo
                         .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
-                )
+                ).disable()
         )
 //            .authorizeHttpRequests(auth -> auth
 //                        .requestMatchers("/api/auth/login", "/api/auth/join").permitAll() // 로그인, 회원가입은 누구나 접근 가능

@@ -1,5 +1,7 @@
 package com.wardk.meeteam_backend.global.loginRegister;
 
+import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
+import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,7 +37,7 @@ public class FileStore {
         return storeFileResult;
     }
 
-    public UploadFile storeFile(MultipartFile multipartFile) throws IOException {
+    public UploadFile storeFile(MultipartFile multipartFile)  {
 
         if (multipartFile == null || multipartFile.isEmpty()) {
             return null;
@@ -44,7 +46,11 @@ public class FileStore {
         String originalFilename = multipartFile.getOriginalFilename();
         String storeFileName = createStoreFileName(originalFilename);
 
-        multipartFile.transferTo(new File(getFullPath(storeFileName)));
+        try {
+            multipartFile.transferTo(new File(getFullPath(storeFileName)));
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
 
         return new UploadFile(originalFilename, storeFileName);
     }

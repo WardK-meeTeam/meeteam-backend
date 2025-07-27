@@ -29,7 +29,7 @@ public class RegisterService {
 
 
     @Transactional
-    public String register(RegisterRequestDto registerRequestDto) throws IOException {
+    public String register(RegisterRequestDto registerRequestDto, MultipartFile filed) {
 
         memberRepository.findOptionByEmail(registerRequestDto.getEmail())
                 .ifPresent(email -> {
@@ -37,7 +37,7 @@ public class RegisterService {
                 });
 
         String storeFileName = null;
-        MultipartFile file = registerRequestDto.getFile();
+        MultipartFile file = filed;
         if (file != null && !file.isEmpty()) {
             storeFileName = fileStore.storeFile(file).getStoreFileName();
         }
