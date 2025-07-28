@@ -2,14 +2,12 @@ package com.wardk.meeteam_backend.domain.member.entity;
 
 
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.domain.project.entity.ProjectMember;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.net.SocketOption;
 import java.util.List;
 
 @Entity

@@ -1,0 +1,9 @@
+package com.wardk.meeteam_backend.domain.projectMember.service;
+
+import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationRequest;
+import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationResponse;
+
+public interface ProjectApplicationService {
+
+    public ApplicationResponse apply(ApplicationRequest request, String applicantEmail);
+}
