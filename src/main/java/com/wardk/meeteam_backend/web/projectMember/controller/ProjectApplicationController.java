@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/prject-application")
+@RequestMapping("/api/project-application")
 public class ProjectApplicationController {
 
     private final ProjectApplicationService applicationService;
