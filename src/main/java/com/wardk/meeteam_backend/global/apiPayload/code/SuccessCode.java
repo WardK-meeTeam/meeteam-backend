@@ -18,7 +18,8 @@ public enum SuccessCode {
     _PROJECT_MEMBER_WITHDREW(HttpStatus.OK, "PROJECT_MEMBER200", "프로젝트 멤버가 탈퇴되었습니다."),
 
     // PROJECT APPLICATION
-    _PROJECT_APPLICATION_CREATED(HttpStatus.CREATED, "PROJECT_APPLICATION201", "프로젝트 신청이 완료되었습니다.");
+    _PROJECT_APPLICATION_CREATED(HttpStatus.CREATED, "PROJECT_APPLICATION201", "프로젝트 신청이 완료되었습니다."),
+    _PROJECT_APPLICATION_DECIDED(HttpStatus.OK, "PROJECT_APPLICATION200", "프로젝트 신청이 처리되었습니다.");
 
 
     private final HttpStatus httpStatus;

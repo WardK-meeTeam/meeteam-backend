@@ -4,15 +4,14 @@ import com.wardk.meeteam_backend.domain.projectMember.service.ProjectApplication
 import com.wardk.meeteam_backend.global.apiPayload.code.SuccessCode;
 import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
 import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationDecisionRequest;
+import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationDecisionResponse;
 import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationRequest;
 import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,5 +27,14 @@ public class ProjectApplicationController {
         ApplicationResponse response = applicationService.apply(request, userDetails.getUsername());
 
         return SuccessResponse.of(SuccessCode._PROJECT_APPLICATION_CREATED, response);
+    }
+
+    @PostMapping("/decide")
+    public SuccessResponse<ApplicationDecisionResponse> decide(@RequestBody @Validated ApplicationDecisionRequest request,
+                                                               @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        ApplicationDecisionResponse response = applicationService.decide(request, userDetails.getUsername());
+
+        return SuccessResponse.of(SuccessCode._PROJECT_APPLICATION_DECIDED, response);
     }
 }

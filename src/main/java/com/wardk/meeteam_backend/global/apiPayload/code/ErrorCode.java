@@ -40,7 +40,9 @@ public enum ErrorCode {
     CREATOR_WITHDRAW_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT_MEMBER403", "프로젝트 생성자는 탈퇴할 수 없습니다."), // 프로젝트 생성자가 탈퇴하려는 경우
 
     // PROJECT APPLICATION
+    APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_APPLICATION404", "프로젝트 지원이 존재하지 않습니다."),
     ALREADY_PROJECT_MEMBER(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 프로젝트에 참여 중입니다."),
+    APPLICATION_ALREADY_DECIDED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 처리된 지원입니다."),
     PROJECT_APPLICATION_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 신청한 프로젝트입니다.");
 
     ErrorCode(HttpStatus status, String code, String message) {

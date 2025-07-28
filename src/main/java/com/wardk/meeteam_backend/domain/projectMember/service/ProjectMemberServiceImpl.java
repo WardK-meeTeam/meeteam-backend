@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.domain.projectMember.service;
 
+import com.wardk.meeteam_backend.domain.member.entity.JobType;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
@@ -22,6 +23,32 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+
+    @Override
+    public void addMember(Long projectId, Long memberId, JobType jobType) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        boolean alreadyExists = project.getMembers().stream()
+                .anyMatch(pm -> pm.getMember().getId().equals(member.getId()));
+
+        if (alreadyExists) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
+        }
+
+        ProjectMember projectMember = ProjectMember.builder()
+                .jobType(jobType)
+                .build();
+
+        projectMember.assignMember(member);
+        project.joinMember(projectMember);
+
+        projectMemberRepository.save(projectMember);
+    }
 
     @Override
     public List<ProjectMemberListResponse> getProjectMembers(Long projectId) {

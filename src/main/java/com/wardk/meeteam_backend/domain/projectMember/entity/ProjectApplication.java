@@ -4,6 +4,7 @@ import com.wardk.meeteam_backend.domain.member.entity.JobType;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,4 +41,12 @@ public class ProjectApplication {
     private String availableDays;
 
     private boolean offlineAvailable;
+
+    @Enumerated(value = EnumType.STRING)
+    @Builder.Default
+    private ApplicationStatus status = ApplicationStatus.PENDING;
+
+    public void updateStatus(ApplicationStatus status) {
+        this.status = status;
+    }
 }
