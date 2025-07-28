@@ -2,11 +2,13 @@ package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequsetDto;
 import com.wardk.meeteam_backend.web.project.dto.ProjectPostResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,10 +26,11 @@ public class ProjectController {
     @PostMapping(value = "/api/project/post", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<ProjectPostResponseDto> projectPost(
             @ModelAttribute @Validated ProjectPostRequsetDto projectPostRequsetDto,
-            @RequestPart(name = "file", required = false) MultipartFile file
-    ) {
+            @RequestPart(name = "file", required = false) MultipartFile file,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+            ) {
 
-        ProjectPostResponseDto projectPostResponseDto = projectService.postProject(projectPostRequsetDto, file);
+        ProjectPostResponseDto projectPostResponseDto = projectService.postProject(projectPostRequsetDto, file, userDetails.getUsername());
 
         return SuccessResponse.onSuccess(projectPostResponseDto);
 

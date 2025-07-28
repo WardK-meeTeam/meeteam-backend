@@ -31,7 +31,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
 
 // 인증 생략 경로
-    if (pathMatcher.match("/**", request.getRequestURI()) ||request.getRequestURI().equals("/api/login") ||
+    if (
+            request.getRequestURI().equals("/api/login") ||
             request.getRequestURI().startsWith("/actuator") ||
             request.getRequestURI().startsWith("/docs") ||
             request.getRequestURI().startsWith("/v3") ||

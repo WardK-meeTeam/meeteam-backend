@@ -1,11 +1,11 @@
 package com.wardk.meeteam_backend.domain.project.entity;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
@@ -59,12 +59,13 @@ public class Project extends BaseEntity {
 
 
     @Builder
-    public Project(String name, String description, PlatformCategory platformCategory, String imageUrl, boolean offlineRequired) {
+    public Project(String name, String description, PlatformCategory platformCategory, String imageUrl, boolean offlineRequired, Member creator) {
         this.name = name;
         this.description = description;
         this.platformCategory = platformCategory;
         this.imageUrl = imageUrl;
         this.offlineRequired = offlineRequired;
+        this.creator = creator;
     }
 
     public void joinMember(ProjectMember projectMember) {
