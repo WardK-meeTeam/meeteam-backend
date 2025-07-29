@@ -6,6 +6,7 @@ import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ApplicationStatus;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectApplication;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectApplicationRepository;
+import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
@@ -23,6 +24,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
+    private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
 
@@ -39,12 +41,12 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_APPLICATION_ALREADY_EXISTS);
         }
 
-        project.getMembers().stream()
-                .filter(pm -> pm.getMember().getId().equals(member.getId()))
-                .findFirst()
-                .ifPresent(pm -> {
-                    throw new CustomException(ErrorCode.ALREADY_PROJECT_MEMBER);
-                });
+        boolean alreadyMember = projectMemberRepository.findAllByProjectIdWithMember(project.getId()).stream()
+                .anyMatch(pm -> pm.getMember().getId().equals(member.getId()));
+
+        if(alreadyMember) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
+        }
 
         String availableDays = String.join(",", request.getAvailableDays());
 
