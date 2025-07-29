@@ -8,6 +8,7 @@ import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        boolean alreadyExists = project.getMembers().stream()
+        boolean alreadyExists = projectMemberRepository.findAllByProjectIdWithMember(project.getId()).stream()
                 .anyMatch(pm -> pm.getMember().getId().equals(member.getId()));
 
         if (alreadyExists) {
@@ -56,7 +57,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        List<ProjectMember> members = project.getMembers();
+        List<ProjectMember> members = projectMemberRepository.findAllByProjectIdWithMember(projectId);
 
         return members.stream()
                 .map(pm -> {
@@ -82,7 +83,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMember projectMember = project.getMembers().stream()
+        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(request.getProjectId()).stream()
                 .filter(pm -> pm.getMember().getId().equals(request.getMemberId()))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
@@ -110,7 +111,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMember projectMember = project.getMembers().stream()
+        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(request.getProjectId()).stream()
                 .filter(pm -> pm.getMember().getId().equals(request.getMemberId()))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
@@ -135,7 +136,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMember projectMember = project.getMembers().stream()
+        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(request.getProjectId()).stream()
                 .filter(pm -> pm.getMember().getId().equals(request.getNewOwnerId()))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
@@ -170,7 +171,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.CREATOR_WITHDRAW_FORBIDDEN);
         }
 
-        ProjectMember projectMember = project.getMembers().stream()
+        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(project.getId()).stream()
                 .filter(pm -> pm.getMember().equals(member))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
