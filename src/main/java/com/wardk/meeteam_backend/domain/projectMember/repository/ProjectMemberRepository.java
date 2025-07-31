@@ -6,9 +6,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Long> {
 
     @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.member WHERE pm.project.id = :projectId")
     List<ProjectMember> findAllByProjectIdWithMember(@Param("projectId") Long projectId);
+
+    Optional<ProjectMember> findByProjectIdAndMemberId(Long projectId, Long memberId);
+    boolean existsByProjectIdAndMemberId(Long projectId, Long memberId);
 }

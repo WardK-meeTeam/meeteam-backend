@@ -34,10 +34,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        boolean alreadyExists = projectMemberRepository.findAllByProjectIdWithMember(project.getId()).stream()
-                .anyMatch(pm -> pm.getMember().getId().equals(member.getId()));
-
-        if (alreadyExists) {
+        if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
@@ -83,9 +80,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(request.getProjectId()).stream()
-                .filter(pm -> pm.getMember().getId().equals(request.getMemberId()))
-                .findFirst()
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
 
         String email = projectMember.getMember().getEmail();
@@ -111,9 +106,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(request.getProjectId()).stream()
-                .filter(pm -> pm.getMember().getId().equals(request.getMemberId()))
-                .findFirst()
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
 
         projectMember.updateJobType(request.getJobType());
@@ -136,9 +129,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(request.getProjectId()).stream()
-                .filter(pm -> pm.getMember().getId().equals(request.getNewOwnerId()))
-                .findFirst()
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(request.getProjectId(), request.getNewOwnerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
 
         Member oldOwner = project.getCreator();
@@ -171,9 +162,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.CREATOR_WITHDRAW_FORBIDDEN);
         }
 
-        ProjectMember projectMember = projectMemberRepository.findAllByProjectIdWithMember(project.getId()).stream()
-                .filter(pm -> pm.getMember().equals(member))
-                .findFirst()
+        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(project.getId(), member.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
 
         projectMemberRepository.delete(projectMember);
