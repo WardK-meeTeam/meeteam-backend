@@ -20,6 +20,8 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -60,10 +62,10 @@ public class SecurityConfig {
         // 경로별 인가 작업
         .authorizeHttpRequests((authorize) -> authorize
             .requestMatchers( "/webjars/**","/swagger-resources/**", "/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/actuator/**",
-                    "/docs/**", "/api/register", "/v3/**",
+                    "/docs/**", "/v3/**", "/default-ui.css", "/favicon.ico",
                     "/api/login", "/api/community/**", "/api/**",
-                    "/api/auth/**","/","/uploads/**", "/api/register", "api/project/register", "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**",
-                    "/api/auth/oauth2/success", "/api/auth/oauth2/failure").permitAll() // TODO: 인증 생략 경로 설정  회원가입: "/api/user/register", 로그인: "/api/auth/login"//
+                    "/api/auth/**","/","/uploads/**", "/api/register", "/api/project/register", "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**",
+                    "/api/auth/oauth2/success", "/api/auth/oauth2/failure").permitAll()
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .anyRequest().authenticated() //나머지는 인증이 된 사용자만 가능
         )
@@ -73,7 +75,7 @@ public class SecurityConfig {
                 .failureUrl("/api/auth/oauth2/failure") // OAuth 실패 후 리다이렉트 URL
                 .userInfoEndpoint(userInfo -> userInfo
                         .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
-                ).disable()
+                )
         )
 //            .authorizeHttpRequests(auth -> auth
 //                        .requestMatchers("/api/auth/login", "/api/auth/join").permitAll() // 로그인, 회원가입은 누구나 접근 가능
@@ -132,4 +134,12 @@ public class SecurityConfig {
   public BCryptPasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
+
+  @Bean
+  public HttpFirewall httpFirewall() {
+    StrictHttpFirewall firewall = new StrictHttpFirewall();
+    firewall.setAllowSemicolon(true);
+    return firewall;
+  }
+
 }
