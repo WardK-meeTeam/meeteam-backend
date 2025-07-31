@@ -41,10 +41,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_APPLICATION_ALREADY_EXISTS);
         }
 
-        boolean alreadyMember = projectMemberRepository.findAllByProjectIdWithMember(project.getId()).stream()
-                .anyMatch(pm -> pm.getMember().getId().equals(member.getId()));
-
-        if(alreadyMember) {
+        if(projectMemberRepository.existsByProjectIdAndMemberId(project.getId(), member.getId())){
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
