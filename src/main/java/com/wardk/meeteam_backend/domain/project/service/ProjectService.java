@@ -6,6 +6,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface ProjectService {
 
-    ProjectPostResponseDto postProject(ProjectPostRequsetDto projectPostRequsetDto, MultipartFile file);
+    ProjectPostResponseDto postProject(ProjectPostRequsetDto projectPostRequsetDto, MultipartFile file, String requesterEmail);
 
 }
