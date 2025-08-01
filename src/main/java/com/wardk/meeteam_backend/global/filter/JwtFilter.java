@@ -29,23 +29,37 @@ public class JwtFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-
-// 인증 생략 경로
+    // 인증 생략 경로
+    String uri = request.getRequestURI();
+    
     if (
-            request.getRequestURI().equals("/api/login") ||
-            request.getRequestURI().startsWith("/actuator") ||
-            request.getRequestURI().startsWith("/docs") ||
-            request.getRequestURI().startsWith("/v3") ||
-            request.getRequestURI().startsWith("/oauth2/") ||
-            request.getRequestURI().startsWith("/login/oauth2/") ||  // 추가
-            request.getRequestURI().equals("/api/register") ||
-            request.getRequestURI().equals("/api/auth/oauth2/success") ||  // 추가
-            request.getRequestURI().equals("/api/auth/oauth2/failure")     // 추가
-    ) {
+            uri.equals("/api/login") ||
+            uri.equals("/api/register") ||
+            uri.equals("/api/auth/oauth2/success") ||
+            uri.equals("/api/auth/oauth2/failure") ||
 
+            uri.startsWith("/swagger-ui/**") ||
+            uri.equals("/swagger-ui.html") ||
+            uri.startsWith("/swagger-resources/**") ||
+            uri.startsWith("/webjars/**") ||
+            uri.startsWith("/v3/api-docs") ||
+            uri.startsWith("/docs/**") ||
+
+            uri.startsWith("/actuator") ||
+            uri.startsWith("/v3") ||
+
+            uri.startsWith("/oauth2/") ||
+            uri.startsWith("/login/oauth2/") ||
+
+            uri.equals("/favicon.ico") ||
+            uri.equals("/default-ui.css") ||
+
+            uri.equals("/")
+    ) {
       filterChain.doFilter(request, response);
       return;
     }
+
 
 
     // request에서 Authorization 헤더를 찾음
