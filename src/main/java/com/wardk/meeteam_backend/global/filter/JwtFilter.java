@@ -31,7 +31,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     // 인증 생략 경로
     String uri = request.getRequestURI();
-
+    
     if (
             uri.equals("/api/login") ||
             uri.equals("/api/register") ||
