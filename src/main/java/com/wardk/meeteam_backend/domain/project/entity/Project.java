@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.parameters.P;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +67,17 @@ public class Project extends BaseEntity {
         this.imageUrl = imageUrl;
         this.offlineRequired = offlineRequired;
         this.creator = creator;
+    }
+
+    public static Project createProject(String name, String description, PlatformCategory platformCategory, String imageUrl, boolean offlineRequired, Member creator) {
+        return Project.builder()
+                .name(name)
+                .description(description)
+                .platformCategory(platformCategory)
+                .imageUrl(imageUrl)
+                .offlineRequired(offlineRequired)
+                .creator(creator)
+                .build();
     }
 
     public void joinMember(ProjectMember projectMember) {

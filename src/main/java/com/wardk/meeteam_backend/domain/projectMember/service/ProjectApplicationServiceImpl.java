@@ -9,7 +9,7 @@ import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectApplicat
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
-import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationDecisionRequest;
 import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationDecisionResponse;
 import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationRequest;
