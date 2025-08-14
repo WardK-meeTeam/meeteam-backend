@@ -20,4 +20,9 @@ public class Category extends BaseEntity {
         this.projectCategory = projectCategory;
     }
 
+
+    public static Category createCategory (ProjectCategory projectCategory) {
+        return new Category(projectCategory);
+    }
+
 }

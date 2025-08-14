@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.loginRegister.repository;
+package com.wardk.meeteam_backend.domain.member.repository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 

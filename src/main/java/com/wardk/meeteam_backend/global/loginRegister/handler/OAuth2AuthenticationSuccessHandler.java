@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.global.loginRegister.handler;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.global.loginRegister.dto.CustomOauth2UserDetails;
-import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
