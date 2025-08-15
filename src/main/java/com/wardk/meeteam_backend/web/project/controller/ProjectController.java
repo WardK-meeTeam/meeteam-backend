@@ -1,4 +1,3 @@
-/*
 package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
@@ -37,4 +36,3 @@ public class ProjectController {
 
     }
 }
-*/

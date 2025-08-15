@@ -1,4 +1,4 @@
-/*
+
 package com.wardk.meeteam_backend.domain.project.service;
 
 import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequestDto;
@@ -7,7 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface ProjectService {
 
-    ProjectPostResponseDto postProject(ProjectPostRequestDto projectPostRequsetDto, MultipartFile file, String requesterEmail);
+    ProjectPostResponseDto postProject(ProjectPostRequestDto projectPostRequestDto, MultipartFile file, String requesterEmail);
 
 }
-*/
+

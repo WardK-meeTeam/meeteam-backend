@@ -51,7 +51,6 @@ public class Member extends BaseEntity {
         subCategories.add(new MemberSubCategory(this, signupSubCategory));
     }
 
-
     //사용자 기술 스택
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
