@@ -72,7 +72,7 @@ public class RegisterService {
         registerRequestDto.getSkills().stream()
                 .forEach(e -> {
                     Skill skill = skillRepository.findBySkillName(e.getSkillName())
-                            .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUNT));
+                            .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
                     member.addMemberSkill(skill);
                 });
 
