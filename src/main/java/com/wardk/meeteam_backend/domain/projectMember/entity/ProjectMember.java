@@ -1,12 +1,10 @@
 package com.wardk.meeteam_backend.domain.projectMember.entity;
 
-import com.wardk.meeteam_backend.domain.member.entity.JobType;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.category.entity.BigCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -28,24 +26,14 @@ public class ProjectMember extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @Enumerated(value = EnumType.STRING)
-    private JobType jobType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "big_category_id")
+    private BigCategory bigCategory;
 
-
-    public void assignMember(Member member) {
-        this.member = member;
-    }
 
     public void assignProject(Project project) {
         this.project = project;
     }
 
-    public void updateJobType(JobType jobType) {
-        this.jobType = jobType;
-    }
 
-    @Builder
-    public ProjectMember(JobType jobType) {
-        this.jobType = jobType;
-    }
 }

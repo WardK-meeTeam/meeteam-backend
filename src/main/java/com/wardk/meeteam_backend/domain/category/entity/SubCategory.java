@@ -1,10 +1,11 @@
-package com.wardk.meeteam_backend.domain.member.entity;
+package com.wardk.meeteam_backend.domain.category.entity;
 
 
+import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 
 @Entity
-public class SignupSubCategory {
+public class SubCategory  {
 
 
     @Id
@@ -15,13 +16,13 @@ public class SignupSubCategory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "big_category_id")
-    private SignupBigCategory bigCategory;
+    private BigCategory bigCategory;
 
 
     @Column(name = "sub_category")
     private String subCategory;
 
 
-    public SignupSubCategory() {
+    public SubCategory() {
     }
 }

@@ -1,10 +1,11 @@
+/*
 package com.wardk.meeteam_backend.domain.projectMember.service;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ApplicationStatus;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectApplication;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectApplicationRepository;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
@@ -47,7 +48,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
         String availableDays = String.join(",", request.getAvailableDays());
 
-        ProjectApplication application = ProjectApplication.builder()
+        ProjectMemberApplication application = ProjectMemberApplication.builder()
                 .project(project)
                 .applicant(member)
                 .jobType(request.getJobType())
@@ -57,7 +58,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 .offlineAvailable(request.getOfflineAvailable())
                 .build();
 
-        ProjectApplication saved = applicationRepository.save(application);
+        ProjectMemberApplication saved = applicationRepository.save(application);
 
         return ApplicationResponse.responseDto(
                 saved.getId(),
@@ -70,7 +71,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Transactional
     public ApplicationDecisionResponse decide(ApplicationDecisionRequest request, String requesterEmail) {
 
-        ProjectApplication application = applicationRepository.findById(request.getApplicationId())
+        ProjectMemberApplication application = applicationRepository.findById(request.getApplicationId())
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
         if(!application.getProject().getCreator().getEmail().equals(requesterEmail)){
@@ -105,3 +106,4 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         );
     }
 }
+*/

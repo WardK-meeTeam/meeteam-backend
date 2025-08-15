@@ -1,3 +1,4 @@
+/*
 package com.wardk.meeteam_backend.domain.projectMember.service;
 
 import com.wardk.meeteam_backend.domain.member.entity.JobType;
@@ -172,3 +173,4 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         );
     }
 }
+*/

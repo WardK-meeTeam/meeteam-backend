@@ -52,7 +52,7 @@ VALUES ('Java'),
 
 
 -- 대분류
-INSERT INTO signup_big_category (big_category_id, big_category)
+INSERT INTO big_category (big_category_id, big_category)
 VALUES (1, '기획'),
        (2, '디자인'),
        (3, '프론트엔드'),
@@ -61,7 +61,7 @@ VALUES (1, '기획'),
 
 
 -- 소분류 (중복은 무시)
-INSERT IGNORE INTO signup_sub_category (big_category_id, sub_category) VALUES
+INSERT IGNORE INTO sub_category (big_category_id, sub_category) VALUES
 -- 1. 기획
 (1,'프로덕트 매니저/오너'),
 -- 2. 디자인
@@ -72,3 +72,5 @@ INSERT IGNORE INTO signup_sub_category (big_category_id, sub_category) VALUES
 (4,'웹서버'),(4,'AI'),(4,'DBA/빅데이터/DS'),
 -- 5. 기타
 (5,'기타');
+
+

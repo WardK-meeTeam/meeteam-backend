@@ -1,3 +1,4 @@
+/*
 package com.wardk.meeteam_backend.web.projectMember.controller;
 
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectApplicationService;
@@ -38,3 +39,4 @@ public class ProjectApplicationController {
         return SuccessResponse.of(SuccessCode._PROJECT_APPLICATION_DECIDED, response);
     }
 }
+*/
