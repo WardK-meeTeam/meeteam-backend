@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.member.entity;
 
 
+import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
@@ -46,7 +47,7 @@ public class Member extends BaseEntity {
     List<MemberSubCategory> subCategories = new ArrayList<>();
 
     //연관관계 편의메서드
-    public void addSubCategory(SignupSubCategory signupSubCategory) {
+    public void addSubCategory(SubCategory signupSubCategory) {
         subCategories.add(new MemberSubCategory(this, signupSubCategory));
     }
 
@@ -75,7 +76,7 @@ public class Member extends BaseEntity {
 
     }
 
-    @Builder
+
     public Member(String email, Integer age, String password, String realName, String storeFileName, Gender gender, LocalDate birth) {
         this.email = email;
         this.age = age;
