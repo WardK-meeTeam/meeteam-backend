@@ -1,19 +1,23 @@
 package com.wardk.meeteam_backend.domain.member.entity;
 
 
-import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
+import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
+import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @AllArgsConstructor
-@Builder
 @Getter
+@Builder
 public class Member extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,16 +27,41 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private String email;
 
-    private String password;
+    private Integer age;
 
-    private String nickName;
+    private String password;
 
     private String realName;
 
+    //image_URL
     private String storeFileName;
 
-    @Enumerated(EnumType.STRING)
-    private JobType jobType;
+    @Enumerated(value = EnumType.STRING)
+    private Gender gender;
+
+    private LocalDate birth;
+
+    //사용자가 회원가입 할때 넣은 소분류 항목들..
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    List<MemberSubCategory> subCategories = new ArrayList<>();
+
+    //연관관계 편의메서드
+    public void addSubCategory(SubCategory signupSubCategory) {
+        subCategories.add(new MemberSubCategory(this, signupSubCategory));
+    }
+
+
+    //사용자 기술 스택
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    List<MemberSkill> memberSkills = new ArrayList<>();
+
+    //연관관계 편의메서드
+    public void addMemberSkill(Skill skill) {
+        memberSkills.add(new MemberSkill(this, skill));
+    }
+
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -43,45 +72,18 @@ public class Member extends BaseEntity {
     private String providerId; // 소셜 로그인 한 유저의 고유 ID가 들어감
 
 
-    //이 프로젝트는 Member 가 팀장인 경우임(즉 직접 만든 프로젝트) 참여한 프로젝트는 ProjectMember 를 통해서
-    @OneToMany(mappedBy = "creator")
-    private List<Project> createdProject;
-
-    //연관관계 편의 메서드
-    public void createProject(Project project) {
-        createdProject.add(project);
-        project.setProjectCreator(this);
-    }
-
-
     public Member() {
+
     }
 
-    @Builder
-    public Member(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
 
-    @Builder
-    public Member(String email, String password, String nickName, JobType jobType , String storeFileName, UserRole role) {
+    public Member(String email, Integer age, String password, String realName, String storeFileName, Gender gender, LocalDate birth) {
         this.email = email;
+        this.age = age;
         this.password = password;
-        this.nickName = nickName;
-        this.jobType = jobType;
+        this.realName = realName;
         this.storeFileName = storeFileName;
-        this.role = role;
+        this.gender = gender;
+        this.birth = birth;
     }
-
-    public static Member createMember(String email, String password, String nickName, JobType jobType, String storeFileName, UserRole role) {
-        return Member.builder()
-                .email(email)
-                .password(password)
-                .nickName(nickName)
-                .jobType(jobType)
-                .storeFileName(storeFileName)
-                .role(role)
-                .build();
-    }
-
 }

@@ -1,9 +1,10 @@
+/*
 package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
 import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequsetDto;
+import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequestDto;
 import com.wardk.meeteam_backend.web.project.dto.ProjectPostResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +26,15 @@ public class ProjectController {
 
     @PostMapping(value = "/api/project/post", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<ProjectPostResponseDto> projectPost(
-            @ModelAttribute @Validated ProjectPostRequsetDto projectPostRequsetDto,
+            @RequestPart @Validated ProjectPostRequestDto projectPostRequestDto,
             @RequestPart(name = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
             ) {
 
-        ProjectPostResponseDto projectPostResponseDto = projectService.postProject(projectPostRequsetDto, file, userDetails.getUsername());
+        ProjectPostResponseDto projectPostResponseDto = projectService.postProject(projectPostRequestDto, file, userDetails.getUsername());
 
         return SuccessResponse.onSuccess(projectPostResponseDto);
 
     }
 }
+*/

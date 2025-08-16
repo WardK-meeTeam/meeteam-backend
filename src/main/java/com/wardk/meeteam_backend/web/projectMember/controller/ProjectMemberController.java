@@ -1,3 +1,4 @@
+/*
 package com.wardk.meeteam_backend.web.projectMember.controller;
 
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
@@ -63,3 +64,4 @@ public class ProjectMemberController {
         return SuccessResponse.of(SuccessCode._PROJECT_MEMBER_WITHDREW, response);
     }
 }
+*/
