@@ -4,13 +4,14 @@ import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplicat
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.member.repository.SignupSubCategoryRepository;
+import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 //import com.wardk.meeteam_backend.domain.project.entity.Category;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 //import com.wardk.meeteam_backend.domain.project.repository.CategoryRepository;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
@@ -29,11 +30,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final FileStore fileStore;
     private final ProjectRepository projectRepository;
-//    private final CategoryRepository categoryRepository;
+    //    private final CategoryRepository categoryRepository;
     private final MemberRepository memberRepository;
     private final ProjectMemberRepository projectMemberRepository;
-    private final SignupSubCategoryRepository subCategoryRepository;
+    private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
+    private final ProjectMemberService projectMemberService;
 
     @Override
     @Transactional
@@ -73,12 +75,17 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.save(project);
 
+        SubCategory subCategory = subCategoryRepository.findBySubCategory(projectPostRequestDto.getSubCategory())
+                .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
+
+        projectMemberService.addCreator(project.getId(), creator.getId(), subCategory);
+
         return ProjectPostResponseDto.from(project);
     }
 
     private String getStoreFileName(MultipartFile file) {
         String storeFileName = null;
-        if(file != null && !file.isEmpty()){
+        if (file != null && !file.isEmpty()) {
             storeFileName = fileStore.storeFile(file).getStoreFileName();
         }
 
