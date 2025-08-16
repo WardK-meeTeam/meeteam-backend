@@ -26,7 +26,7 @@ public class ProjectApplicationController {
 
         ApplicationResponse response = applicationService.apply(request, userDetails.getUsername());
 
-        return SuccessResponse.of(SuccessCode._PROJECT_APPLICATION_CREATED, response);
+        return SuccessResponse.onSuccess(response);
     }
 
     @PostMapping("/decide")
@@ -35,6 +35,6 @@ public class ProjectApplicationController {
 
         ApplicationDecisionResponse response = applicationService.decide(request, userDetails.getUsername());
 
-        return SuccessResponse.of(SuccessCode._PROJECT_APPLICATION_DECIDED, response);
+        return SuccessResponse.onSuccess(response);
     }
 }
