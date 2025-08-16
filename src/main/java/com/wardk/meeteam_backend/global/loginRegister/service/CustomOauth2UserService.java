@@ -6,7 +6,7 @@ import com.wardk.meeteam_backend.global.loginRegister.dto.CustomOauth2UserDetail
 import com.wardk.meeteam_backend.global.loginRegister.dto.oauth.GitHubUserDetails;
 import com.wardk.meeteam_backend.global.loginRegister.dto.oauth.GoogleUserDetails;
 import com.wardk.meeteam_backend.global.loginRegister.dto.oauth.OAuth2UserInfo;
-import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;

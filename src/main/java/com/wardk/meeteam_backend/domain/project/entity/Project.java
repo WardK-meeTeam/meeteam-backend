@@ -2,12 +2,15 @@ package com.wardk.meeteam_backend.domain.project.entity;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.review.Review;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.parameters.P;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,18 +26,24 @@ public class Project extends BaseEntity {
     private Long id;
 
 
+    @Column(name = "project_name")
     private String name;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Enumerated(value = EnumType.STRING)
-    private ProjectStatus projectStatus;
+    private ProjectStatus status;
 
     @Enumerated(value = EnumType.STRING)
     private PlatformCategory platformCategory;
 
-    private String imageUrl;
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectSkill> projectSkills = new ArrayList<>();
+
 
     @Column(name = "offline_required", nullable = false)
     private boolean offlineRequired;
@@ -44,18 +53,21 @@ public class Project extends BaseEntity {
     @JoinColumn(name = "creator_id")
     private Member creator;
 
+    @Enumerated(EnumType.STRING)
+    private ProjectCategory category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    private LocalDate startDate;
 
-    public void addCategory(Category category) {
-        this.category = category;
-    }
+    private LocalDate endDate;
+
+    private Boolean isDeleted;
 
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ProjectMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project")
+    List<Review> reviews = new ArrayList<>();
 
 
     @Builder
@@ -68,15 +80,20 @@ public class Project extends BaseEntity {
         this.creator = creator;
     }
 
+    public static Project createProject(String name, String description, PlatformCategory platformCategory, String imageUrl, boolean offlineRequired, Member creator) {
+        return Project.builder()
+                .name(name)
+                .description(description)
+                .platformCategory(platformCategory)
+                .imageUrl(imageUrl)
+                .offlineRequired(offlineRequired)
+                .creator(creator)
+                .build();
+    }
+
     public void joinMember(ProjectMember projectMember) {
         members.add(projectMember);
         projectMember.assignProject(this);
-    }
-
-
-
-    public void setProjectCreator(Member creator) {
-        this.creator = creator;
     }
 
 }

@@ -1,3 +1,4 @@
+/*
 package com.wardk.meeteam_backend.domain.projectMember.service;
 
 import com.wardk.meeteam_backend.domain.member.entity.JobType;
@@ -8,8 +9,7 @@ import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.global.loginRegister.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -61,7 +61,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                     Member member = pm.getMember();
                     return ProjectMemberListResponse.responseDto(
                             pm.getId(),
-                            member.getNickName(),
+                            member.getRealName(),
                             member.getEmail(),
                             pm.getJobType()
                     );
@@ -173,3 +173,4 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         );
     }
 }
+*/

@@ -59,6 +59,12 @@ public class SecurityConfig {
         .httpBasic(AbstractHttpConfigurer::disable)
         // form 로그인 방식 disable
         .formLogin(AbstractHttpConfigurer::disable)
+            // ★ 2) 인증 실패 시 401 반환 (기본 /login 리다이렉트 막기)
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint(
+                            new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    )
+            )
         // 경로별 인가 작업
         .authorizeHttpRequests((authorize) -> authorize
             .requestMatchers( "/webjars/**","/swagger-resources/**", "/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html","/actuator/**",
