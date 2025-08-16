@@ -25,7 +25,7 @@ public class ProjectMemberController {
 
         DeleteResponse response = projectMemberService.deleteProjectMember(request, userDetails.getUsername());
 
-        return SuccessResponse.of(SuccessCode._PROJECT_MEMBER_DELETED, response);
+        return SuccessResponse.onSuccess(response);
     }
 
     @DeleteMapping("/withdraw")
@@ -34,6 +34,6 @@ public class ProjectMemberController {
 
         WithdrawResponse response = projectMemberService.withdraw(request, userDetails.getUsername());
 
-        return SuccessResponse.of(SuccessCode._PROJECT_MEMBER_WITHDREW, response);
+        return SuccessResponse.onSuccess(response);
     }
 }
