@@ -11,7 +11,6 @@ import org.springdoc.core.annotations.ParameterObject;
 
 @Getter
 @Setter
-@ParameterObject
 public class ApplicationRequest {
 
     @NotNull
@@ -19,8 +18,8 @@ public class ApplicationRequest {
     private Long projectId;
 
     @NotNull
-    @Schema(description = "지원 분야", example = "BACKEND")
-    private JobType jobType;
+    @Schema(description = "지원 소분류", example = "웹서버")
+    private String subCategory;
 
     @NotBlank
     @Schema(description = "지원 동기", example = "이 프로젝트에 참여하고 싶습니다.")
@@ -31,8 +30,8 @@ public class ApplicationRequest {
     private Integer availableHoursPerWeek;
 
     @NotEmpty
-    @Schema(description = "가능한 요일", example = "[\"월\", \"수\"]")
-    private String[] availableDays;
+    @Schema(description = "가능한 요일", example = "MONDAY")
+    private String availableDay;
 
     @NotNull
     @Schema(description = "오프라인 참여 가능 여부", example = "true")

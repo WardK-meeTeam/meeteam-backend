@@ -3,10 +3,16 @@ package com.wardk.meeteam_backend.domain.applicant.entity;
 
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
+import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
+@Getter
+@NoArgsConstructor
 public class ProjectCategoryApplication {//project_대분류_모집
 
     @Id
@@ -27,6 +33,13 @@ public class ProjectCategoryApplication {//project_대분류_모집
 
     public void assignProject(Project project) {
         this.project = project;
+    }
+
+    public void decreaseRecruitmentCount() {
+        if (this.recruitmentCount <= 0) {
+            throw new CustomException(ErrorCode.RECRUITMENT_FULL);
+        }
+        this.recruitmentCount--;
     }
 
     @Builder

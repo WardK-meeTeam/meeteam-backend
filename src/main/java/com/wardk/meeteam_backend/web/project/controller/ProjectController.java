@@ -10,26 +10,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @Slf4j
 @RequiredArgsConstructor
+@RequestMapping("/api/project")
 public class ProjectController {
 
     private final ProjectService projectService;
 
-    @PostMapping(value = "/api/project/post", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<ProjectPostResponseDto> projectPost(
             @RequestPart @Validated ProjectPostRequestDto projectPostRequestDto,
             @RequestPart(name = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
             ) {
-
+        log.info("Project Post Request: {}", projectPostRequestDto);
         ProjectPostResponseDto projectPostResponseDto = projectService.postProject(projectPostRequestDto, file, userDetails.getUsername());
 
         return SuccessResponse.onSuccess(projectPostResponseDto);
