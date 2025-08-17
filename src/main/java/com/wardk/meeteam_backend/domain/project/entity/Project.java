@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.domain.project.entity;
 
+import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.review.Review;
@@ -8,7 +9,6 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -19,12 +19,13 @@ import java.util.List;
 @NoArgsConstructor
 public class Project extends BaseEntity {
 
-
-
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "project_id")
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_id")
+    private Member creator;
 
     @Column(name = "project_name")
     private String name;
@@ -32,29 +33,20 @@ public class Project extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "image_url")
-    private String imageUrl;
-
-    @Enumerated(value = EnumType.STRING)
-    private ProjectStatus status;
+    @Enumerated(EnumType.STRING)
+    private ProjectCategory projectCategory;
 
     @Enumerated(value = EnumType.STRING)
     private PlatformCategory platformCategory;
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectSkill> projectSkills = new ArrayList<>();
-
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(name = "offline_required", nullable = false)
     private boolean offlineRequired;
 
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id")
-    private Member creator;
-
-    @Enumerated(EnumType.STRING)
-    private ProjectCategory category;
+    @Enumerated(value = EnumType.STRING)
+    private ProjectStatus status;
 
     private LocalDate startDate;
 
@@ -62,32 +54,48 @@ public class Project extends BaseEntity {
 
     private Boolean isDeleted;
 
-
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ProjectMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectSkill> projectSkills = new ArrayList<>();
 
     @OneToMany(mappedBy = "project")
     List<Review> reviews = new ArrayList<>();
 
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectCategoryApplication> recruitments = new ArrayList<>();
 
     @Builder
-    public Project(String name, String description, PlatformCategory platformCategory, String imageUrl, boolean offlineRequired, Member creator) {
+    public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
+                   String imageUrl, boolean offlineRequired, ProjectStatus status, LocalDate startDate, LocalDate endDate, Boolean isDeleted) {
+        this.creator = creator;
         this.name = name;
         this.description = description;
+        this.projectCategory = projectCategory;
         this.platformCategory = platformCategory;
         this.imageUrl = imageUrl;
         this.offlineRequired = offlineRequired;
-        this.creator = creator;
+        this.status = status;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.isDeleted = isDeleted;
     }
 
-    public static Project createProject(String name, String description, PlatformCategory platformCategory, String imageUrl, boolean offlineRequired, Member creator) {
+    public static Project createProject(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
+                                        String imageUrl, boolean offlineRequired, LocalDate endDate) {
         return Project.builder()
+                .creator(creator)
                 .name(name)
                 .description(description)
+                .projectCategory(projectCategory)
                 .platformCategory(platformCategory)
                 .imageUrl(imageUrl)
                 .offlineRequired(offlineRequired)
-                .creator(creator)
+                .status(ProjectStatus.PLANNING)
+                .startDate(LocalDate.now())
+                .endDate(endDate)
+                .isDeleted(false)
                 .build();
     }
 
@@ -96,4 +104,13 @@ public class Project extends BaseEntity {
         projectMember.assignProject(this);
     }
 
+    public void addRecruitment(ProjectCategoryApplication recruitment) {
+        this.recruitments.add(recruitment);
+        recruitment.assignProject(this);
+    }
+
+    public void addProjectSkill(ProjectSkill projectSkill) {
+        this.projectSkills.add(projectSkill);
+        projectSkill.assignProject(this);
+    }
 }

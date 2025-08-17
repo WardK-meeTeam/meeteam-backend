@@ -1,15 +1,16 @@
-/*
 package com.wardk.meeteam_backend.domain.projectMember.service;
 
-import com.wardk.meeteam_backend.domain.member.entity.JobType;
+import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
+import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
-import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     private final MemberRepository memberRepository;
@@ -26,7 +28,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     private final ProjectMemberRepository projectMemberRepository;
 
     @Override
-    public void addMember(Long projectId, Long memberId, JobType jobType) {
+    public void addCreator(Long projectId, Long memberId, SubCategory subCategory) {
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
@@ -38,39 +40,39 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        ProjectMember projectMember = ProjectMember.builder()
-                .jobType(jobType)
-                .build();
-
-        projectMember.assignMember(member);
+        ProjectMember projectMember = ProjectMember.createProjectMember(member, subCategory);
         project.joinMember(projectMember);
 
         projectMemberRepository.save(projectMember);
     }
 
     @Override
-    public List<ProjectMemberListResponse> getProjectMembers(Long projectId) {
+    public void addMember(Long projectId, Long memberId, SubCategory subCategory) {
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdWithRecruitment(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        List<ProjectMember> members = projectMemberRepository.findAllByProjectIdWithMember(projectId);
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        return members.stream()
-                .map(pm -> {
-                    Member member = pm.getMember();
-                    return ProjectMemberListResponse.responseDto(
-                            pm.getId(),
-                            member.getRealName(),
-                            member.getEmail(),
-                            pm.getJobType()
-                    );
-                })
-                .toList();
+        if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
+        }
+
+        ProjectMember projectMember = ProjectMember.createProjectMember(member, subCategory);
+        project.joinMember(projectMember);
+
+        ProjectCategoryApplication projectCategoryApplication = project.getRecruitments().stream()
+                .filter(r -> r.getSubCategory().getId().equals(subCategory.getId()))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
+
+        projectCategoryApplication.decreaseRecruitmentCount();
+
+        projectMemberRepository.save(projectMember);
     }
 
     @Override
-    @Transactional
     public DeleteResponse deleteProjectMember(DeleteRequest request, String requesterEmail) {
 
         Project project = projectRepository.findById(request.getProjectId())
@@ -80,76 +82,19 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
+        if(!projectMemberRepository.existsByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND);
+        }
 
-        String email = projectMember.getMember().getEmail();
-        Long memberId = projectMember.getMember().getId();
-
-        projectMemberRepository.delete(projectMember);
+        projectMemberRepository.deleteByProjectIdAndMemberId(request.getProjectId(), request.getMemberId());
 
         return DeleteResponse.responseDto(
                 project.getId(),
-                memberId,
-                email
+                request.getMemberId()
         );
     }
 
     @Override
-    @Transactional
-    public RoleUpdateResponse updateRole(RoleUpdateRequest request, String requesterEmail) {
-
-        Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-
-        if(!project.getCreator().getEmail().equals(requesterEmail)){
-            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
-        }
-
-        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
-
-        projectMember.updateJobType(request.getJobType());
-
-        return RoleUpdateResponse.responseDto(
-                project.getId(),
-                request.getMemberId(),
-                request.getJobType()
-        );
-    }
-
-    @Override
-    @Transactional
-    public UpdateOwnerResponse updateOwner(UpdateOwnerRequest request, String requesterEmail) {
-
-        Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-
-        if(!project.getCreator().getEmail().equals(requesterEmail)){
-            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
-        }
-
-        ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(request.getProjectId(), request.getNewOwnerId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
-
-        Member oldOwner = project.getCreator();
-        Member newOwner = projectMember.getMember();
-
-        if(oldOwner.equals(newOwner)){
-            throw new CustomException(ErrorCode.CREATOR_TRANSFER_SELF_DENIED);
-        }
-
-        project.setCreator(newOwner);
-
-        return UpdateOwnerResponse.responseDto(
-                project.getId(),
-                oldOwner.getId(),
-                newOwner.getId()
-        );
-    }
-
-    @Override
-    @Transactional
     public WithdrawResponse withdraw(WithdrawRequest request, String requesterEmail) {
 
         Project project = projectRepository.findById(request.getProjectId())
@@ -158,7 +103,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Member member = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        if (project.getCreator().equals(member)) {
+        if (project.getCreator().getId().equals(member.getId())) {
             throw new CustomException(ErrorCode.CREATOR_WITHDRAW_FORBIDDEN);
         }
 
@@ -173,4 +118,3 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         );
     }
 }
-*/

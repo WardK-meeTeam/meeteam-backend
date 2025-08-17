@@ -9,13 +9,11 @@ public class DeleteResponse {
 
     private Long projectId;
     private Long memberId;
-    private String removedMemberEmail;
 
-    public static DeleteResponse responseDto(Long projectId, Long memberId, String removedMemberEmail) {
+    public static DeleteResponse responseDto(Long projectId, Long memberId) {
         return DeleteResponse.builder()
                 .projectId(projectId)
                 .memberId(memberId)
-                .removedMemberEmail(removedMemberEmail)
                 .build();
     }
 }
