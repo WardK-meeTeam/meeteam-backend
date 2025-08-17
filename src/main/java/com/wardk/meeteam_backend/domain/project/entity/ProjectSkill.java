@@ -25,6 +25,10 @@ public class ProjectSkill {//프로젝트_기술_스택_테이블(중간테이�
         this.skill = skill;
     }
 
+    public ProjectSkill() {
+
+    }
+
     public static ProjectSkill createProjectSkill(Skill skill) {
         return ProjectSkill.builder()
                 .skill(skill)
