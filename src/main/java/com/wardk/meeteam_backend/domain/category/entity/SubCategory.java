@@ -20,7 +20,7 @@ public class SubCategory  {
     private BigCategory bigCategory;
 
     @Column(name = "sub_category")
-    private String subCategory;
+    private String name;
 
     public SubCategory() {
     }
