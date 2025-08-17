@@ -2,8 +2,10 @@ package com.wardk.meeteam_backend.domain.skill.entity;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 @Entity // member_기술스택
+@Getter
 public class MemberSkill {
 
     @Id
@@ -24,5 +26,8 @@ public class MemberSkill {
     public MemberSkill(Member member, Skill skill) {
         this.member = member;
         this.skill = skill;
+    }
+
+    public MemberSkill() {
     }
 }

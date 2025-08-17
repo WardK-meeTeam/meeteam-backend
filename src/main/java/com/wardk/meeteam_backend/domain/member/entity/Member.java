@@ -2,6 +2,8 @@ package com.wardk.meeteam_backend.domain.member.entity;
 
 
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
+import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
@@ -41,6 +43,8 @@ public class Member extends BaseEntity {
 
     private LocalDate birth;
 
+    private Boolean isParticipating;
+
     //사용자가 회원가입 할때 넣은 소분류 항목들..
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -60,6 +64,14 @@ public class Member extends BaseEntity {
     public void addMemberSkill(Skill skill) {
         memberSkills.add(new MemberSkill(this, skill));
     }
+
+
+    @OneToMany(mappedBy = "member")
+    @Builder.Default
+    List<ProjectMember> projectMembers = new ArrayList<>();
+
+    @Column(length = 1000)
+    private String introduction;
 
 
     @Enumerated(EnumType.STRING)
