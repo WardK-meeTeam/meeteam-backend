@@ -13,7 +13,7 @@ import com.wardk.meeteam_backend.global.loginRegister.FileStore;
 import com.wardk.meeteam_backend.global.loginRegister.dto.register.RegisterRequestDto;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.MemberSubCategoryRepository;
-import com.wardk.meeteam_backend.domain.member.repository.SignupSubCategoryRepository;
+import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ public class RegisterService {
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final FileStore fileStore;
-    private final SignupSubCategoryRepository signupSubCategoryRepository;
+    private final SubCategoryRepository subCategoryRepository;
     private final MemberSubCategoryRepository memberSubCategoryRepository;
     private final MemberSkillRepository memberSkillRepository;
     private final SkillRepository skillRepository;
@@ -63,7 +63,7 @@ public class RegisterService {
 
         registerRequestDto.getSubCategories().stream().
                 forEach(e -> {
-                    SubCategory subCategory = signupSubCategoryRepository.findBySubCategory(e.getSubcategory())
+                    SubCategory subCategory = subCategoryRepository.findBySubCategory(e.getSubcategory())
                             .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
                     member.addSubCategory(subCategory);
                 });
@@ -72,7 +72,7 @@ public class RegisterService {
         registerRequestDto.getSkills().stream()
                 .forEach(e -> {
                     Skill skill = skillRepository.findBySkillName(e.getSkillName())
-                            .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUNT));
+                            .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
                     member.addMemberSkill(skill);
                 });
 

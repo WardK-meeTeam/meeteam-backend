@@ -11,7 +11,6 @@ public class BigCategory {
     @Column(name = "big_category_id")
     Long id;
 
-
     @Column(name = "big_category")
     private String bigCategory;
 

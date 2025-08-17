@@ -1,11 +1,13 @@
-/*
 package com.wardk.meeteam_backend.domain.projectMember.service;
 
+import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ApplicationStatus;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
+import com.wardk.meeteam_backend.domain.projectMember.entity.WeekDay;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectApplicationRepository;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProjectApplicationServiceImpl implements ProjectApplicationService {
 
     private final ProjectRepository projectRepository;
@@ -28,6 +31,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
+    private final SubCategoryRepository subCategoryRepository;
 
     @Override
     public ApplicationResponse apply(ApplicationRequest request, String applicantEmail) {
@@ -42,21 +46,23 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_APPLICATION_ALREADY_EXISTS);
         }
 
-        if(projectMemberRepository.existsByProjectIdAndMemberId(project.getId(), member.getId())){
+        if (projectMemberRepository.existsByProjectIdAndMemberId(project.getId(), member.getId())) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        String availableDays = String.join(",", request.getAvailableDays());
+        SubCategory subCategory = subCategoryRepository.findBySubCategory(request.getSubCategory())
+                .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
-        ProjectMemberApplication application = ProjectMemberApplication.builder()
-                .project(project)
-                .applicant(member)
-                .jobType(request.getJobType())
-                .availableDays(availableDays)
-                .availableHoursPerWeek(request.getAvailableHoursPerWeek())
-                .motivation(request.getMotivation())
-                .offlineAvailable(request.getOfflineAvailable())
-                .build();
+        WeekDay weekDay = WeekDay.valueOf(request.getAvailableDay().toUpperCase());
+
+        ProjectMemberApplication application = ProjectMemberApplication.createApplication
+                        (project,
+                        member,
+                        subCategory,
+                        request.getMotivation(),
+                        request.getAvailableHoursPerWeek(),
+                        weekDay,
+                        request.getOfflineAvailable());
 
         ProjectMemberApplication saved = applicationRepository.save(application);
 
@@ -68,7 +74,6 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     }
 
     @Override
-    @Transactional
     public ApplicationDecisionResponse decide(ApplicationDecisionRequest request, String requesterEmail) {
 
         ProjectMemberApplication application = applicationRepository.findById(request.getApplicationId())
@@ -89,7 +94,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             projectMemberService.addMember(
                     application.getProject().getId(),
                     application.getApplicant().getId(),
-                    application.getJobType()
+                    application.getSubCategory()
             );
 
             return ApplicationDecisionResponse.acceptResponseDto(
@@ -106,4 +111,3 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         );
     }
 }
-*/

@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     // GLOBAL
 
+    BAD_CREDENTIALS(HttpStatus.UNAUTHORIZED, "BAD_CREDENTIALS", "아이디 또는 비밀번호가 올바르지 않습니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "로그인이 필요합니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),
+
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON500", "서버에 문제가 발생했습니다."),
 
     INVALID_REQUEST(HttpStatus.BAD_REQUEST,"COMMON400", "잘못된 요청입니다."),
@@ -37,6 +41,8 @@ public enum ErrorCode {
     PROJECT_MEMBER_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT_MEMBER403", "해당 프로젝트 멤버 관리 권한이 없습니다."),
     CREATOR_TRANSFER_SELF_DENIED(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "프로젝트 생성자와 변경 대상이 동일합니다."), // 프로젝트 생성자와 동일한 멤버로 변경하려는 경우
     CREATOR_WITHDRAW_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT_MEMBER403", "프로젝트 생성자는 탈퇴할 수 없습니다."), // 프로젝트 생성자가 탈퇴하려는 경우
+    RECRUITMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "RECRUITMENT404", "프로젝트 모집 정보를 찾을 수 없습니다."),
+    RECRUITMENT_FULL(HttpStatus.BAD_REQUEST, "RECRUITMENT400", "해당 모집은 마감되었습니다."),
 
     // PROJECT APPLICATION
     APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_APPLICATION404", "프로젝트 지원이 존재하지 않습니다."),
@@ -44,7 +50,7 @@ public enum ErrorCode {
     PROJECT_APPLICATION_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 신청한 프로젝트입니다."),
 
     // MEMBER SKILL
-    SKILL_NOT_FOUNT(HttpStatus.NOT_FOUND,"SKILL404", "해당 기술스택이 존재하지 않습니다."),
+    SKILL_NOT_FOUND(HttpStatus.NOT_FOUND,"SKILL404", "해당 기술스택이 존재하지 않습니다."),
     SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." );
 
     ErrorCode(HttpStatus status, String code, String message) {
