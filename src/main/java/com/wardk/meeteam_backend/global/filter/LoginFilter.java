@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -53,7 +55,9 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
       return authenticationManager.authenticate(authToken);
     } catch (IOException e) {
       log.error("JSON 파싱 중 오류 발생");
-      throw new CustomException(ErrorCode.INVALID_REQUEST);
+      // ★ 여기서 CustomException 던지면 전역 핸들러가 못 잡음(필터 단계라서)
+      //    AuthenticationException 계열로 던져서 아래 unsuccessfulAuthentication로 가게 한다.
+      throw new AuthenticationServiceException("INVALID_REQUEST", e);
     }
   }
 
@@ -105,12 +109,21 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     log.error("로그인 실패: {}", failed.getMessage());
 
-    // 응답 설정
-    response.setContentType("application/json");
-    response.setCharacterEncoding("UTF-8");
-
-    ErrorResponse apiResponse = ErrorResponse.getResponse(ErrorCode.DUPLICATE_USERNAME.getCode(),ErrorCode.DUPLICATE_USERNAME.getMessage());
-    response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+    response.setContentType("application/json;charset=UTF-8");
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+    // 실패 원인에 따라 코드 분기 (원하면 세분화)
+    ErrorCode ec;
+    if (failed instanceof AuthenticationServiceException && "INVALID_REQUEST".equals(failed.getMessage())) {
+      ec = ErrorCode.INVALID_REQUEST;          // 바디 파싱 등 요청 자체가 잘못된 경우
+    } else if (failed instanceof BadCredentialsException) {
+      ec = ErrorCode.BAD_CREDENTIALS;             // 아이디/비번 불일치 (원하면 BAD_CREDENTIALS 등 별도 코드)
+    } else {
+      ec = ErrorCode.BAD_CREDENTIALS;
+    }
+
+    ErrorResponse body = ErrorResponse.getResponse(ec.getCode(), ec.getMessage());
+    response.getWriter().write(objectMapper.writeValueAsString(body));
+
   }
 }
