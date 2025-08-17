@@ -55,7 +55,7 @@ public class ProjectServiceImpl implements ProjectService {
         );
 
 
-        projectPostRequestDto.getRecruitments().forEach(recruitment -> {
+        projectPostRequest.getRecruitments().forEach(recruitment -> {
             SubCategory subCategory = subCategoryRepository.findByName(recruitment.getSubCategory())
                     .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
@@ -73,7 +73,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.save(project);
 
-        SubCategory subCategory = subCategoryRepository.findByName(projectPostRequestDto.getSubCategory())
+        SubCategory subCategory = subCategoryRepository.findByName(projectPostRequest.getSubCategory())
                 .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
         projectMemberService.addCreator(project.getId(), creator.getId(), subCategory);
@@ -112,7 +112,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         List<RecruitmentDto> recruitments = project.getRecruitments().stream()
                 .map(r -> RecruitmentDto.responseDto(
-                        r.getSubCategory().getSubCategory(),
+                        r.getSubCategory().getName(),
                         r.getRecruitmentCount(),
                         r.getCurrentCount()
                 )).toList();
