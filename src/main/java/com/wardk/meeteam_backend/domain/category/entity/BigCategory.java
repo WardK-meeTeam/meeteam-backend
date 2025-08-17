@@ -1,10 +1,11 @@
 package com.wardk.meeteam_backend.domain.category.entity;
 
 
-import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class BigCategory {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,7 +13,7 @@ public class BigCategory {
     Long id;
 
     @Column(name = "big_category")
-    private String bigCategory;
+    private String name;
 
     public BigCategory() {
     }

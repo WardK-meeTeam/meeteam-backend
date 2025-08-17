@@ -54,8 +54,9 @@ public class ProjectServiceImpl implements ProjectService {
                 projectPostRequest.getEndDate()
         );
 
-        projectPostRequest.getRecruitments().forEach(recruitment -> {
-            SubCategory subCategory = subCategoryRepository.findBySubCategory(recruitment.getSubCategory())
+
+        projectPostRequestDto.getRecruitments().forEach(recruitment -> {
+            SubCategory subCategory = subCategoryRepository.findByName(recruitment.getSubCategory())
                     .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
             ProjectCategoryApplication projectCategoryApplication = ProjectCategoryApplication.createProjectCategoryApplication(subCategory, recruitment.getRecruitmentCount());
@@ -72,7 +73,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.save(project);
 
-        SubCategory subCategory = subCategoryRepository.findBySubCategory(projectPostRequest.getSubCategory())
+        SubCategory subCategory = subCategoryRepository.findByName(projectPostRequestDto.getSubCategory())
                 .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
         projectMemberService.addCreator(project.getId(), creator.getId(), subCategory);
