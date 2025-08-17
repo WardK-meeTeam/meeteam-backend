@@ -1,23 +1,20 @@
 package com.wardk.meeteam_backend.web.project.dto;
 
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import org.springdoc.core.annotations.ParameterObject;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class ProjectPostRequestDto {
+public class ProjectPostRequest {
 
 
     /** 프로젝트 제목 */

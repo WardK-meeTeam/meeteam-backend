@@ -43,7 +43,7 @@ public class Project extends BaseEntity {
     private String imageUrl;
 
     @Column(name = "offline_required", nullable = false)
-    private boolean offlineRequired;
+    private Boolean offlineRequired;
 
     @Enumerated(value = EnumType.STRING)
     private ProjectStatus status;
