@@ -3,8 +3,10 @@ package com.wardk.meeteam_backend.domain.member.entity;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class MemberSubCategory extends BaseEntity { // 중간테이블
 
 

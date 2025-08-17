@@ -55,6 +55,8 @@ public class RegisterService {
                 .email(registerRequestDto.getEmail())
                 .password(bCryptPasswordEncoder.encode(registerRequestDto.getPassword()))
                 .storeFileName(storeFileName)
+                .introduction(registerRequestDto.getIntroduce())
+                .isParticipating(true)
                 .role(UserRole.USER)
                 .build();
 
@@ -63,7 +65,7 @@ public class RegisterService {
 
         registerRequestDto.getSubCategories().stream().
                 forEach(e -> {
-                    SubCategory subCategory = subCategoryRepository.findBySubCategory(e.getSubcategory())
+                    SubCategory subCategory = subCategoryRepository.findByName(e.getSubcategory())
                             .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
                     member.addSubCategory(subCategory);
                 });

@@ -1,10 +1,12 @@
-package com.wardk.meeteam_backend.domain.review;
+package com.wardk.meeteam_backend.domain.review.entity;
 
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import jakarta.persistence.*;
+import lombok.Getter;
 import org.hibernate.annotations.Check;
 
 @Entity
+@Getter
 public class Review {
 
     @Id
@@ -17,10 +19,10 @@ public class Review {
     private Project project;
 
     //리뷰 쓴사람
-    private Integer reviewerId;
+    private Long reviewerId;
 
     //리뷰 당한사람
-    private Integer revieweeId;
+    private Long revieweeId;
 
     @Column(length = 1000)
     private String comment;
@@ -29,6 +31,8 @@ public class Review {
     //validation 을 통해서 Dto 에서 검증 필요
     @Check(constraints = "score BETWEEN 0 AND 5")
     private Integer score; // 0점에서 5점까지 가능
+
+
 
 
 
