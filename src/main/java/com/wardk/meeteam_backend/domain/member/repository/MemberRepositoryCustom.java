@@ -12,6 +12,4 @@ public interface MemberRepositoryCustom {
 
     Member getProfile(Long memberId);
 
-
-    List<String> getSkill(Long memberId);
 }

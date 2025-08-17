@@ -33,7 +33,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                 ))
                 .from(review)
                 // reviewerId ↔ member 조인
-                .join(reviewer).on(review.revieweeId.eq(reviewer.id))
+                .join(reviewer).on(review.reviewerId.eq(reviewer.id))
                 .where(review.revieweeId.eq(memberId))
                 .fetch();
 

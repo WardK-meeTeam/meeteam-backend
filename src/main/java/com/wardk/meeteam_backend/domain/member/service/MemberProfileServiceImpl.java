@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.web.member.dto.MemberProfileResponse;
 import com.wardk.meeteam_backend.web.member.dto.ReviewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,17 +22,16 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     private final ReviewRepositoryCustom reviewRepositoryCustom;
 
     @Override
+    @Transactional(readOnly = true)
     public MemberProfileResponse profile(Long memberId) {
 
         Member member = memberRepositoryCustom.getProfile(memberId);
 
-        //리뷰 카운트
-        List<Review> review = reviewRepository.findReview(memberId);
         MemberProfileResponse memberProfileResponse = new MemberProfileResponse(member);
-        memberProfileResponse.setReviewCount(review.size());
 
-        List<ReviewResponse> review1 = reviewRepositoryCustom.getReview(member.getId());
-        memberProfileResponse.setReviewList(review1);
+        List<ReviewResponse> reviewResponses = reviewRepositoryCustom.getReview(member.getId());
+        memberProfileResponse.setReviewList(reviewResponses);
+        memberProfileResponse.setReviewCount(reviewResponses.size());
 
 
         return memberProfileResponse;

@@ -38,18 +38,5 @@ public class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
         return findMember;
     }
 
-    // memberId 기술스택 가져오는 쿼리
-    @Override
-    public List<String> getSkill(Long memberId) {
 
-        QMemberSkill memberSkill = QMemberSkill.memberSkill;
-
-        return queryFactory
-                .select(skill.skillName)
-                .from(memberSkill)
-                .join(memberSkill.member, member)
-                .join(memberSkill.skill, skill)
-                .where(member.id.eq(memberId))
-                .fetch();
-    }
 }
