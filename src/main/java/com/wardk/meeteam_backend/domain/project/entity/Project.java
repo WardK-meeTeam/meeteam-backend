@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.domain.project.entity;
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.review.Review;
+import com.wardk.meeteam_backend.domain.review.entity.Review;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Builder;

@@ -50,7 +50,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        SubCategory subCategory = subCategoryRepository.findBySubCategory(request.getSubCategory())
+        SubCategory subCategory = subCategoryRepository.findByName(request.getSubCategory())
                 .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
         WeekDay weekDay = WeekDay.valueOf(request.getAvailableDay().toUpperCase());
