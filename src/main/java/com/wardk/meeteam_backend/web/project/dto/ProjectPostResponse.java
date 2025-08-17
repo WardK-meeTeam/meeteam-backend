@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProjectPostResponseDto {
+public class ProjectPostResponse {
 
     private Long id;
 
@@ -18,7 +18,7 @@ public class ProjectPostResponseDto {
 
     private LocalDateTime createdAt;
 
-    public ProjectPostResponseDto(Project project) {
+    public ProjectPostResponse(Project project) {
         this.id = project.getId();
         this.title = project.getName();
         this.createdAt = project.getCreatedAt();
@@ -26,8 +26,8 @@ public class ProjectPostResponseDto {
 
 
     // or static factory
-    public static ProjectPostResponseDto from(Project project) {
-        return new ProjectPostResponseDto(project);
+    public static ProjectPostResponse from(Project project) {
+        return new ProjectPostResponse(project);
     }
 
 }

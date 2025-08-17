@@ -2,8 +2,10 @@ package com.wardk.meeteam_backend.domain.skill.entity;
 
 
 import jakarta.persistence.*;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class Skill {
 
     @Id

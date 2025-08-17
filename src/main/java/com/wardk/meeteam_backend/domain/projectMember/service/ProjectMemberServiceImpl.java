@@ -3,7 +3,6 @@ package com.wardk.meeteam_backend.domain.projectMember.service;
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
@@ -67,9 +66,29 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
 
-        projectCategoryApplication.decreaseRecruitmentCount();
+        projectCategoryApplication.increaseCurrentCount();
 
         projectMemberRepository.save(projectMember);
+    }
+
+    @Override
+    public List<ProjectMemberListResponse> getProjectMembers(Long projectId) {
+
+        Project project = projectRepository.findByIdWithMembers(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        Long creatorId = project.getCreator().getId();
+
+        return project.getMembers().stream()
+                .map(pm -> {
+                    Member member = pm.getMember();
+                    return ProjectMemberListResponse.responseDto(
+                            member.getId(),
+                            member.getRealName(),
+                            member.getStoreFileName(),
+                            creatorId.equals(member.getId())
+                    );
+                }).toList();
     }
 
     @Override
@@ -78,11 +97,11 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if(!project.getCreator().getEmail().equals(requesterEmail)){
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        if(!projectMemberRepository.existsByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())) {
+        if (!projectMemberRepository.existsByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND);
         }
 

@@ -19,7 +19,15 @@ public class ProjectMemberController {
 
     private final ProjectMemberService projectMemberService;
 
-    @DeleteMapping
+    @GetMapping("/{projectId}")
+    public SuccessResponse<List<ProjectMemberListResponse>> getProjectMembers(@PathVariable Long projectId) {
+
+        List<ProjectMemberListResponse> projectMembers = projectMemberService.getProjectMembers(projectId);
+
+        return SuccessResponse.onSuccess(projectMembers);
+    }
+
+    @PostMapping
     public SuccessResponse<DeleteResponse> deleteMembers(@RequestBody @Validated DeleteRequest request,
                                                          @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
@@ -28,7 +36,7 @@ public class ProjectMemberController {
         return SuccessResponse.onSuccess(response);
     }
 
-    @DeleteMapping("/withdraw")
+    @PostMapping("/withdraw")
     public SuccessResponse<WithdrawResponse> withdraw(@RequestBody @Validated WithdrawRequest request,
                                                       @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 

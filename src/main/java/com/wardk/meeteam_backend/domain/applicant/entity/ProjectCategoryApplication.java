@@ -31,21 +31,26 @@ public class ProjectCategoryApplication {//project_대분류_모집
     @Column(name = "recruit_count")
     private Integer recruitmentCount;
 
+    @Column(name = "current_count")
+    private Integer currentCount;
+
     public void assignProject(Project project) {
         this.project = project;
     }
 
-    public void decreaseRecruitmentCount() {
-        if (this.recruitmentCount <= 0) {
+    public void increaseCurrentCount() {
+        if (this.currentCount >= this.recruitmentCount) {
             throw new CustomException(ErrorCode.RECRUITMENT_FULL);
         }
-        this.recruitmentCount--;
+
+        this.currentCount++;
     }
 
     @Builder
     public ProjectCategoryApplication(SubCategory subCategory, Integer recruitmentCount) {
         this.subCategory = subCategory;
         this.recruitmentCount = recruitmentCount;
+        this.currentCount = 0;
     }
 
     public static ProjectCategoryApplication createProjectCategoryApplication(SubCategory subCategory, Integer recruitmentCount) {

@@ -5,24 +5,23 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
-//import com.wardk.meeteam_backend.domain.project.entity.Category;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
-//import com.wardk.meeteam_backend.domain.project.repository.CategoryRepository;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import com.wardk.meeteam_backend.global.loginRegister.FileStore;
-import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequestDto;
-import com.wardk.meeteam_backend.web.project.dto.ProjectPostResponseDto;
+import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectMember.dto.ProjectMemberListResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,16 +29,14 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final FileStore fileStore;
     private final ProjectRepository projectRepository;
-    //    private final CategoryRepository categoryRepository;
     private final MemberRepository memberRepository;
-    private final ProjectMemberRepository projectMemberRepository;
     private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
     private final ProjectMemberService projectMemberService;
 
     @Override
     @Transactional
-    public ProjectPostResponseDto postProject(ProjectPostRequestDto projectPostRequestDto, MultipartFile file, String requesterEmail) {
+    public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
 
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -48,16 +45,16 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = Project.createProject(
                 creator,
-                projectPostRequestDto.getProjectName(),
-                projectPostRequestDto.getDescription(),
-                projectPostRequestDto.getProjectCategory(),
-                projectPostRequestDto.getPlatformCategory(),
+                projectPostRequest.getProjectName(),
+                projectPostRequest.getDescription(),
+                projectPostRequest.getProjectCategory(),
+                projectPostRequest.getPlatformCategory(),
                 storeFileName,
-                projectPostRequestDto.getOfflineRequired(),
-                projectPostRequestDto.getEndDate()
+                projectPostRequest.getOfflineRequired(),
+                projectPostRequest.getEndDate()
         );
 
-        projectPostRequestDto.getRecruitments().forEach(recruitment -> {
+        projectPostRequest.getRecruitments().forEach(recruitment -> {
             SubCategory subCategory = subCategoryRepository.findBySubCategory(recruitment.getSubCategory())
                     .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
@@ -65,7 +62,7 @@ public class ProjectServiceImpl implements ProjectService {
             project.addRecruitment(projectCategoryApplication);
         });
 
-        projectPostRequestDto.getProjectSkills().forEach(skillDto -> {
+        projectPostRequest.getProjectSkills().forEach(skillDto -> {
             Skill skill = skillRepository.findBySkillName(skillDto.getSkillName())
                     .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
 
@@ -75,12 +72,63 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.save(project);
 
-        SubCategory subCategory = subCategoryRepository.findBySubCategory(projectPostRequestDto.getSubCategory())
+        SubCategory subCategory = subCategoryRepository.findBySubCategory(projectPostRequest.getSubCategory())
                 .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
         projectMemberService.addCreator(project.getId(), creator.getId(), subCategory);
 
-        return ProjectPostResponseDto.from(project);
+        return ProjectPostResponse.from(project);
+    }
+
+    @Override
+    public List<ProjectListResponse> getProjectList() {
+
+        List<Project> projects = projectRepository.findAllWithCreatorAndSkills();
+
+        return projects.stream()
+                .map(p -> ProjectListResponse.responseDto(
+                        p.getId(),
+                        p.getName(),
+                        p.getImageUrl(),
+                        p.getCreator().getRealName(),
+                        p.getProjectSkills().stream()
+                                .map(ps -> ps.getSkill().getSkillName()).toList(),
+                        p.getStartDate()
+                )).toList();
+    }
+
+    @Override
+    public ProjectResponse getProject(Long projectId) {
+
+        Project project = projectRepository.findByIdWithSkillsAndRecruitments(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        List<ProjectMemberListResponse> projectMembers = projectMemberService.getProjectMembers(projectId);
+
+        List<String> skills = project.getProjectSkills().stream()
+                .map(ps -> ps.getSkill().getSkillName())
+                .toList();
+
+        List<RecruitmentDto> recruitments = project.getRecruitments().stream()
+                .map(r -> RecruitmentDto.responseDto(
+                        r.getSubCategory().getSubCategory(),
+                        r.getRecruitmentCount(),
+                        r.getCurrentCount()
+                )).toList();
+
+        return ProjectResponse.responseDto(
+                project.getName(),
+                project.getDescription(),
+                project.getPlatformCategory(),
+                project.getProjectCategory(),
+                project.getImageUrl(),
+                project.getOfflineRequired(),
+                project.getStartDate(),
+                project.getEndDate(),
+                projectMembers,
+                skills,
+                recruitments
+        );
     }
 
     private String getStoreFileName(MultipartFile file) {
