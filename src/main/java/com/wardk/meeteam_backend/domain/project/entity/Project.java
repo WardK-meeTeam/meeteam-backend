@@ -52,6 +52,9 @@ public class Project extends BaseEntity {
     @Enumerated(value = EnumType.STRING)
     private ProjectStatus status;
 
+    @Enumerated(value = EnumType.STRING)
+    private Recruitment recruitmentStatus;
+
     private LocalDate startDate;
 
     private LocalDate endDate;
@@ -75,7 +78,8 @@ public class Project extends BaseEntity {
 
     @Builder
     public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
-                   String imageUrl, boolean offlineRequired, ProjectStatus status, LocalDate startDate, LocalDate endDate, Boolean isDeleted) {
+                   String imageUrl, boolean offlineRequired, ProjectStatus status, Recruitment recruitmentStatus,
+                   LocalDate startDate, LocalDate endDate, Boolean isDeleted) {
         this.creator = creator;
         this.name = name;
         this.description = description;
@@ -84,6 +88,7 @@ public class Project extends BaseEntity {
         this.imageUrl = imageUrl;
         this.offlineRequired = offlineRequired;
         this.status = status;
+        this.recruitmentStatus = recruitmentStatus;
         this.startDate = startDate;
         this.endDate = endDate;
         this.isDeleted = isDeleted;
@@ -100,6 +105,7 @@ public class Project extends BaseEntity {
                 .imageUrl(imageUrl)
                 .offlineRequired(offlineRequired)
                 .status(ProjectStatus.PLANNING)
+                .recruitmentStatus(Recruitment.RECRUITING)
                 .startDate(LocalDate.now())
                 .endDate(endDate)
                 .isDeleted(false)
