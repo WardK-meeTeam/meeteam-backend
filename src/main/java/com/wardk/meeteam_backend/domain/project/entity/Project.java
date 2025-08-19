@@ -47,7 +47,7 @@ public class Project extends BaseEntity {
     private String imageUrl;
 
     @Column(name = "offline_required", nullable = false)
-    private Boolean offlineRequired;
+    private boolean offlineRequired;
 
     @Enumerated(value = EnumType.STRING)
     private ProjectStatus status;
@@ -59,7 +59,7 @@ public class Project extends BaseEntity {
 
     private LocalDate endDate;
 
-    private Boolean isDeleted;
+    private boolean isDeleted;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectMember> members = new ArrayList<>();
@@ -79,7 +79,7 @@ public class Project extends BaseEntity {
     @Builder
     public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
                    String imageUrl, boolean offlineRequired, ProjectStatus status, Recruitment recruitmentStatus,
-                   LocalDate startDate, LocalDate endDate, Boolean isDeleted) {
+                   LocalDate startDate, LocalDate endDate, boolean isDeleted) {
         this.creator = creator;
         this.name = name;
         this.description = description;
@@ -128,7 +128,7 @@ public class Project extends BaseEntity {
     }
 
     public void updateProject(String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
-                              String imageUrl, Boolean offlineRequired, ProjectStatus status, LocalDate startDate, LocalDate endDate) {
+                              String imageUrl, boolean offlineRequired, ProjectStatus status, LocalDate startDate, LocalDate endDate) {
         this.name = name;
         this.description = description;
         this.projectCategory = projectCategory;

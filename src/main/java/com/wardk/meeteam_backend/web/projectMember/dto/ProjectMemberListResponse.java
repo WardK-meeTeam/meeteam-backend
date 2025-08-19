@@ -13,9 +13,9 @@ public class ProjectMemberListResponse {
     private String imageUrl;
     private boolean isCreator;
 
-    public static ProjectMemberListResponse responseDto(Long projectId, String name, String imageUrl, boolean isCreator) {
+    public static ProjectMemberListResponse responseDto(Long memberId, String name, String imageUrl, boolean isCreator) {
         return ProjectMemberListResponse.builder()
-                .memberId(projectId)
+                .memberId(memberId)
                 .name(name)
                 .imageUrl(imageUrl)
                 .isCreator(isCreator)
