@@ -25,7 +25,8 @@ import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
                 version = "1.0v"
         ),
         servers = {
-                @Server(url = "http://localhost:8080", description = "로컬 서버")
+                @Server(url = "http://localhost:8080", description = "로컬 서버"),
+                @Server(url = "http://3.37.43.118:8080", description = "EC2 서버")
         }
 
 )
