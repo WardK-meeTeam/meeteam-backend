@@ -3,8 +3,8 @@ package com.wardk.meeteam_backend.domain.applicant.entity;
 
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
-import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.global.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;

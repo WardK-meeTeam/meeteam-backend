@@ -11,11 +11,10 @@ import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
-import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
-import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
-import com.wardk.meeteam_backend.global.loginRegister.FileStore;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.global.exception.CustomException;
+import com.wardk.meeteam_backend.global.auth.FileUtil;
 import com.wardk.meeteam_backend.web.project.dto.*;
-import com.wardk.meeteam_backend.web.projectMember.dto.ProjectMemberListResponse;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ import java.util.List;
 @Transactional
 public class ProjectServiceImpl implements ProjectService {
 
-    private final FileStore fileStore;
+    private final FileUtil fileUtil;
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
     private final SubCategoryRepository subCategoryRepository;
@@ -166,7 +165,7 @@ public class ProjectServiceImpl implements ProjectService {
     private String getStoreFileName(MultipartFile file) {
         String storeFileName = null;
         if (file != null && !file.isEmpty()) {
-            storeFileName = fileStore.storeFile(file).getStoreFileName();
+            storeFileName = fileUtil.storeFile(file).getStoreFileName();
         }
 
         return storeFileName;

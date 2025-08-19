@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.web.member.controller;
 
 
 import com.wardk.meeteam_backend.domain.member.service.MemberProfileService;
-import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
+import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.member.dto.MemberProfileResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

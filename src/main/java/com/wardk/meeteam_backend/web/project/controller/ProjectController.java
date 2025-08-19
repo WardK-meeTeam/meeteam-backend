@@ -1,8 +1,8 @@
 package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
-import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.global.response.SuccessResponse;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import lombok.RequiredArgsConstructor;
