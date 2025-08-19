@@ -9,16 +9,16 @@ import lombok.Getter;
 public class ProjectMemberListResponse {
 
     private Long memberId;
-    private String nickname;
-    private String email;
-    private JobType jobType;
+    private String name;
+    private String imageUrl;
+    private boolean isCreator;
 
-    public static ProjectMemberListResponse responseDto(Long memberId, String nickname, String email, JobType jobType) {
+    public static ProjectMemberListResponse responseDto(Long memberId, String name, String imageUrl, boolean isCreator) {
         return ProjectMemberListResponse.builder()
                 .memberId(memberId)
-                .nickname(nickname)
-                .email(email)
-                .jobType(jobType)
+                .name(name)
+                .imageUrl(imageUrl)
+                .isCreator(isCreator)
                 .build();
     }
 }

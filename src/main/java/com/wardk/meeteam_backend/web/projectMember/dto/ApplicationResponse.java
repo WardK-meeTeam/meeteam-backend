@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.web.projectMember.dto;
 
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -11,11 +12,11 @@ public class ApplicationResponse {
     private Long projectId;
     private Long applicantId;
 
-    public static ApplicationResponse responseDto(Long id, Long projectId, Long applicantId) {
+    public static ApplicationResponse responseDto(ProjectMemberApplication application) {
         return ApplicationResponse.builder()
-                .id(id)
-                .projectId(projectId)
-                .applicantId(applicantId)
+                .id(application.getId())
+                .projectId(application.getProject().getId())
+                .applicantId(application.getApplicant().getId())
                 .build();
     }
 }
