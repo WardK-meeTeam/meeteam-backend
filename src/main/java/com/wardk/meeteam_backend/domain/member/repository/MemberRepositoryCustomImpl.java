@@ -2,19 +2,12 @@ package com.wardk.meeteam_backend.domain.member.repository;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.skill.entity.QMemberSkill;
-import com.wardk.meeteam_backend.domain.skill.entity.QSkill;
-import com.wardk.meeteam_backend.domain.skill.entity.Skill;
-import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
-import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
-import static com.wardk.meeteam_backend.domain.skill.entity.QSkill.skill;
 
 
 @Component

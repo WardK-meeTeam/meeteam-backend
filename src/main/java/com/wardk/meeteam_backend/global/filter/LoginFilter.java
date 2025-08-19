@@ -2,14 +2,13 @@ package com.wardk.meeteam_backend.global.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
-import com.wardk.meeteam_backend.global.apiPayload.code.SuccessCode;
-import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
-import com.wardk.meeteam_backend.global.apiPayload.response.ErrorResponse;
-import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.global.loginRegister.dto.login.LoginRequest;
-import com.wardk.meeteam_backend.global.loginRegister.dto.login.LoginResponse;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.global.response.SuccessCode;
+import com.wardk.meeteam_backend.global.response.ErrorResponse;
+import com.wardk.meeteam_backend.global.response.SuccessResponse;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.global.auth.dto.login.LoginRequest;
+import com.wardk.meeteam_backend.global.auth.dto.login.LoginResponse;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;

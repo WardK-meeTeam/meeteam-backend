@@ -2,10 +2,13 @@ package com.wardk.meeteam_backend.domain.skill.entity;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity // member_기술스택
 @Getter
+@NoArgsConstructor
 public class MemberSkill {
 
     @Id
@@ -21,13 +24,4 @@ public class MemberSkill {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "skill_id")
     private Skill skill;
-
-
-    public MemberSkill(Member member, Skill skill) {
-        this.member = member;
-        this.skill = skill;
-    }
-
-    public MemberSkill() {
-    }
 }

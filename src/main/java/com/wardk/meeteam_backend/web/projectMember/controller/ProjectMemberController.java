@@ -1,9 +1,8 @@
 package com.wardk.meeteam_backend.web.projectMember.controller;
 
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
-import com.wardk.meeteam_backend.global.apiPayload.code.SuccessCode;
-import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.global.response.SuccessResponse;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
