@@ -1,8 +1,8 @@
 package com.wardk.meeteam_backend.global.util;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.global.loginRegister.service.CustomUserDetailsService;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
