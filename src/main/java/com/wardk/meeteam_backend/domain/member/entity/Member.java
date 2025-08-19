@@ -11,6 +11,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Builder
+@NoArgsConstructor
 public class Member extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -82,10 +84,6 @@ public class Member extends BaseEntity {
     private String provider; // 소셜 로그인 제공자 (예: "google", "github" 등)
     private String providerId; // 소셜 로그인 한 유저의 고유 ID가 들어감
 
-
-    public Member() {
-
-    }
 
 
     public Member(String email, Integer age, String password, String realName, String storeFileName, Gender gender, LocalDate birth) {
