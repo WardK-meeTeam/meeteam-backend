@@ -38,7 +38,7 @@ public class ProjectPostRequest {
     /** 오프라인 필수 여부 */
     @NotNull(message = "오프라인 필수 여부를 선택해주세요.")
     @Schema(description = "오프라인 필수 여부", example = "true")
-    private Boolean offlineRequired;
+    private boolean offlineRequired;
 
     @NotBlank(message = "프로젝트 생성자의 소분류를 입력해주세요")
     @Schema(description = "생성자의 소분류", example = "웹프론트엔드")

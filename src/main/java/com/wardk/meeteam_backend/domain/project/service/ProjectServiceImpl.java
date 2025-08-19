@@ -37,7 +37,6 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberService projectMemberService;
 
     @Override
-    @Transactional
     public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
 
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
@@ -52,7 +51,7 @@ public class ProjectServiceImpl implements ProjectService {
                 projectPostRequest.getProjectCategory(),
                 projectPostRequest.getPlatformCategory(),
                 storeFileName,
-                projectPostRequest.getOfflineRequired(),
+                projectPostRequest.isOfflineRequired(),
                 projectPostRequest.getEndDate()
         );
 
@@ -126,7 +125,7 @@ public class ProjectServiceImpl implements ProjectService {
                 project.getPlatformCategory(),
                 project.getProjectCategory(),
                 project.getImageUrl(),
-                project.getOfflineRequired(),
+                project.isOfflineRequired(),
                 project.getStartDate(),
                 project.getEndDate(),
                 projectMembers,
@@ -153,7 +152,7 @@ public class ProjectServiceImpl implements ProjectService {
                 request.getProjectCategory(),
                 request.getPlatformCategory(),
                 storeFileName,
-                request.getOfflineRequired(),
+                request.isOfflineRequired(),
                 request.getStatus(),
                 request.getStartDate(),
                 request.getEndDate()

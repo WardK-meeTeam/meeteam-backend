@@ -30,7 +30,7 @@ public class ProjectUpdateRequest {
     private String imageUrl;
 
     @Schema(description = "오프라인 필수 여부", example = "true")
-    private Boolean offlineRequired;
+    private boolean offlineRequired;
 
     @Schema(description = "프로젝트 상태", example = "PLANNING")
     private ProjectStatus status;
