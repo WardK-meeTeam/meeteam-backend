@@ -39,13 +39,13 @@ public class ProjectCategoryApplication {//project_대분류_모집
     }
 
     public void increaseCurrentCount() {
+
         if (this.currentCount >= this.recruitmentCount) {
             throw new CustomException(ErrorCode.RECRUITMENT_FULL);
         }
 
         this.currentCount++;
     }
-
     public void updateCurrentCount(Integer currentCount) {
         if (currentCount < 0 || currentCount > this.recruitmentCount) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
