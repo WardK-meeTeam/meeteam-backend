@@ -44,7 +44,7 @@ public class ProjectResponse {
                                         member.getMember().getId(),
                                         member.getMember().getRealName(),
                                         member.getMember().getStoreFileName(),
-                                        project.getCreator().getId().equals(member.getId())
+                                        project.getCreator().getId().equals(member.getMember().getId())
                                 ))
                                 .toList()
                 )
