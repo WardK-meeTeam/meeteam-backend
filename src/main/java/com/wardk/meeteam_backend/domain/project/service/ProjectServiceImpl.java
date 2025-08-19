@@ -88,15 +88,8 @@ public class ProjectServiceImpl implements ProjectService {
         List<Project> projects = projectRepository.findAllWithCreatorAndSkills();
 
         return projects.stream()
-                .map(p -> ProjectListResponse.responseDto(
-                        p.getId(),
-                        p.getName(),
-                        p.getImageUrl(),
-                        p.getCreator().getRealName(),
-                        p.getProjectSkills().stream()
-                                .map(ps -> ps.getSkill().getSkillName()).toList(),
-                        p.getStartDate()
-                )).toList();
+                .map(ProjectListResponse::responseDto)
+                .toList();
     }
 
     @Override
@@ -105,33 +98,8 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        List<ProjectMemberListResponse> projectMembers = projectMemberService.getProjectMembers(projectId);
 
-        List<String> skills = projectRepository.findSkillsByProjectId(projectId).stream()
-                .map(ps -> ps.getSkill().getSkillName())
-                .toList();
-
-        List<RecruitmentDto> recruitments = projectRepository.findRecruitmentsByProjectId(projectId).stream()
-                .map(r -> RecruitmentDto.responseDto(
-                        r.getSubCategory().getName(),
-                        r.getRecruitmentCount(),
-                        r.getCurrentCount()
-                ))
-                .toList();
-
-        return ProjectResponse.responseDto(
-                project.getName(),
-                project.getDescription(),
-                project.getPlatformCategory(),
-                project.getProjectCategory(),
-                project.getImageUrl(),
-                project.isOfflineRequired(),
-                project.getStartDate(),
-                project.getEndDate(),
-                projectMembers,
-                skills,
-                recruitments
-        );
+        return ProjectResponse.responseDto(project);
     }
 
     @Override
