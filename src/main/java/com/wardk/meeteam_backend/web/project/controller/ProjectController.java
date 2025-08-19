@@ -3,8 +3,8 @@ package com.wardk.meeteam_backend.web.project.controller;
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
 import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequestDto;
-import com.wardk.meeteam_backend.web.project.dto.ProjectPostResponseDto;
+import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -13,24 +13,63 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/project")
+@RequestMapping("/api/projects")
 public class ProjectController {
 
     private final ProjectService projectService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public SuccessResponse<ProjectPostResponseDto> projectPost(
-            @RequestPart @Validated ProjectPostRequestDto projectPostRequestDto,
+    public SuccessResponse<ProjectPostResponse> projectPost(
+            @RequestPart @Validated ProjectPostRequest projectPostRequest,
             @RequestPart(name = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
             ) {
-        log.info("Project Post Request: {}", projectPostRequestDto);
-        ProjectPostResponseDto projectPostResponseDto = projectService.postProject(projectPostRequestDto, file, userDetails.getUsername());
+        log.info("Project Post Request: {}", projectPostRequest);
+        ProjectPostResponse projectPostResponse = projectService.postProject(projectPostRequest, file, userDetails.getUsername());
 
-        return SuccessResponse.onSuccess(projectPostResponseDto);
+        return SuccessResponse.onSuccess(projectPostResponse);
 
+    }
+
+    @GetMapping
+    public SuccessResponse<List<ProjectListResponse>> getProjectList() {
+
+        List<ProjectListResponse> projectList = projectService.getProjectList();
+
+        return SuccessResponse.onSuccess(projectList);
+    }
+
+    @GetMapping("/{projectId}")
+    public SuccessResponse<ProjectResponse> getProject(@PathVariable Long projectId) {
+
+        ProjectResponse projectResponse = projectService.getProject(projectId);
+        return SuccessResponse.onSuccess(projectResponse);
+    }
+
+    @PostMapping(value = "/{projectId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SuccessResponse<ProjectUpdateResponse> updateProject(
+            @RequestPart @Validated ProjectUpdateRequest projectUpdateRequest,
+            @RequestPart(name = "file", required = false) MultipartFile file,
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+
+        ProjectUpdateResponse projectUpdateResponse = projectService.updateProject(projectId, projectUpdateRequest, file, userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(projectUpdateResponse);
+    }
+
+    @DeleteMapping("/{projectId}")
+    public SuccessResponse<ProjectDeleteResponse> deleteProject(@PathVariable Long projectId,
+                                                                @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        ProjectDeleteResponse projectDeleteResponse = projectService.deleteProject(projectId, userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(projectDeleteResponse);
     }
 }
