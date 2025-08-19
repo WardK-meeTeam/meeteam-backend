@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.web.project.dto;
 
+import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,12 +13,12 @@ public class RecruitmentDto {
     private int currentCount;
     private boolean isClosed;
 
-    public static RecruitmentDto responseDto(String subCategory, int recruitmentCount, int currentCount) {
+    public static RecruitmentDto responseDto(ProjectCategoryApplication recruitment) {
         return RecruitmentDto.builder()
-                .subCategory(subCategory)
-                .recruitmentCount(recruitmentCount)
-                .currentCount(currentCount)
-                .isClosed(currentCount >= recruitmentCount)
+                .subCategory(recruitment.getSubCategory().getName())
+                .recruitmentCount(recruitment.getRecruitmentCount())
+                .currentCount(recruitment.getCurrentCount())
+                .isClosed(recruitment.getCurrentCount() >= recruitment.getRecruitmentCount())
                 .build();
     }
 }

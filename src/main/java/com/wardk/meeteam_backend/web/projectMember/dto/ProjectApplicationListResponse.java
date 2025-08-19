@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.web.projectMember.dto;
 
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,13 +13,12 @@ public class ProjectApplicationListResponse {
     private String applicantName;
     private String subCategoryName;
 
-    public static ProjectApplicationListResponse responseDto(Long applicationId, Long applicantId,
-                                                             String applicantName, String subCategoryName) {
+    public static ProjectApplicationListResponse responseDto(ProjectMemberApplication application) {
         return ProjectApplicationListResponse.builder()
-                .applicationId(applicationId)
-                .applicantId(applicantId)
-                .applicantName(applicantName)
-                .subCategoryName(subCategoryName)
+                .applicationId(application.getId())
+                .applicantId(application.getApplicant().getId())
+                .applicantName(application.getApplicant().getRealName())
+                .subCategoryName(application.getSubCategory().getName())
                 .build();
     }
 }
