@@ -55,11 +55,7 @@ public class ProjectResponse {
                 )
                 .recruitments(
                         project.getRecruitments().stream()
-                                .map(r -> RecruitmentDto.responseDto(
-                                        r.getSubCategory().getName(),
-                                        r.getRecruitmentCount(),
-                                        r.getCurrentCount()
-                                ))
+                                .map(RecruitmentDto::responseDto)
                                 .toList()
                 )
                 .build();

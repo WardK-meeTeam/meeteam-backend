@@ -65,11 +65,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
         ProjectMemberApplication saved = applicationRepository.save(application);
 
-        return ApplicationResponse.responseDto(
-                saved.getId(),
-                project.getId(),
-                member.getId()
-        );
+        return ApplicationResponse.responseDto(saved);
     }
 
     @Override
@@ -83,12 +79,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         }
 
         return applicationRepository.findByProjectId(projectId).stream()
-                .map(application -> ProjectApplicationListResponse.responseDto(
-                        application.getId(),
-                        application.getApplicant().getId(),
-                        application.getApplicant().getRealName(),
-                        application.getSubCategory().getName()
-                ))
+                .map(ProjectApplicationListResponse::responseDto)
                 .toList();
     }
 
