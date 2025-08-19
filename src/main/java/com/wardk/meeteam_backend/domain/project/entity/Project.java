@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.domain.project.entity;
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
 import com.wardk.meeteam_backend.domain.review.entity.Review;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -13,13 +14,16 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @Entity
 @NoArgsConstructor
 public class Project extends BaseEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "project_id")
     private Long id;
 
@@ -55,13 +59,16 @@ public class Project extends BaseEntity {
     private Boolean isDeleted;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<ProjectMember> members = new ArrayList<>();
+    private List<ProjectMember> members = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectMemberApplication> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
 
     @OneToMany(mappedBy = "project")
-    List<Review> reviews = new ArrayList<>();
+    private List<Review> reviews = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectCategoryApplication> recruitments = new ArrayList<>();
@@ -112,5 +119,43 @@ public class Project extends BaseEntity {
     public void addProjectSkill(ProjectSkill projectSkill) {
         this.projectSkills.add(projectSkill);
         projectSkill.assignProject(this);
+    }
+
+    public void updateProject(String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
+                              String imageUrl, Boolean offlineRequired, ProjectStatus status, LocalDate startDate, LocalDate endDate) {
+        this.name = name;
+        this.description = description;
+        this.projectCategory = projectCategory;
+        this.platformCategory = platformCategory;
+        this.imageUrl = imageUrl;
+        this.offlineRequired = offlineRequired;
+        this.status = status;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
+    public void updateRecruitments(List<ProjectCategoryApplication> recruitments) {
+        Map<Long, ProjectCategoryApplication> current = this.recruitments.stream()
+                .collect(Collectors.toMap(r -> r.getSubCategory().getId(), r -> r));
+
+        this.recruitments.clear();
+
+        for (ProjectCategoryApplication pca : recruitments) {
+            ProjectCategoryApplication existing = current.get(pca.getSubCategory().getId());
+
+            if (existing != null) { // 기존에 존재하면
+                pca.updateCurrentCount(existing.getCurrentCount());
+                this.addRecruitment(pca);
+            } else {
+                this.addRecruitment(ProjectCategoryApplication.createProjectCategoryApplication(pca.getSubCategory(), pca.getRecruitmentCount()));
+            }
+        }
+    }
+
+    public void updateProjectSkills(List<ProjectSkill> projectSkills) {
+        this.projectSkills.clear();
+        for (ProjectSkill projectSkill : projectSkills) {
+            this.addProjectSkill(projectSkill);
+        }
     }
 }

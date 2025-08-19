@@ -3,10 +3,8 @@ package com.wardk.meeteam_backend.web.project.controller;
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.global.apiPayload.response.SuccessResponse;
 import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.web.project.dto.ProjectListResponse;
-import com.wardk.meeteam_backend.web.project.dto.ProjectPostRequest;
-import com.wardk.meeteam_backend.web.project.dto.ProjectPostResponse;
-import com.wardk.meeteam_backend.web.project.dto.ProjectResponse;
+import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -51,5 +49,27 @@ public class ProjectController {
 
         ProjectResponse projectResponse = projectService.getProject(projectId);
         return SuccessResponse.onSuccess(projectResponse);
+    }
+
+    @PostMapping(value = "/{projectId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SuccessResponse<ProjectUpdateResponse> updateProject(
+            @RequestPart @Validated ProjectUpdateRequest projectUpdateRequest,
+            @RequestPart(name = "file", required = false) MultipartFile file,
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+
+        ProjectUpdateResponse projectUpdateResponse = projectService.updateProject(projectId, projectUpdateRequest, file, userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(projectUpdateResponse);
+    }
+
+    @DeleteMapping("/{projectId}")
+    public SuccessResponse<ProjectDeleteResponse> deleteProject(@PathVariable Long projectId,
+                                                                @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        ProjectDeleteResponse projectDeleteResponse = projectService.deleteProject(projectId, userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(projectDeleteResponse);
     }
 }
