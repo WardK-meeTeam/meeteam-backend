@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.web.project.dto;
 
+import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -19,14 +20,15 @@ public class ProjectListResponse {
     private List<String> skills;
     private LocalDate startDate;
 
-    public static ProjectListResponse responseDto(Long projectId, String name, String imageUrl, String creatorName, List<String> skills, LocalDate startDate) {
+    public static ProjectListResponse responseDto(Project project) {
         return ProjectListResponse.builder()
-                .projectId(projectId)
-                .name(name)
-                .imageUrl(imageUrl)
-                .creatorName(creatorName)
-                .skills(skills)
-                .startDate(startDate)
+                .projectId(project.getId())
+                .name(project.getName())
+                .imageUrl(project.getImageUrl())
+                .creatorName(project.getCreator().getRealName())
+                .skills(project.getProjectSkills().stream()
+                        .map(ps -> ps.getSkill().getSkillName()).toList())
+                .startDate(project.getStartDate())
                 .build();
     }
 }

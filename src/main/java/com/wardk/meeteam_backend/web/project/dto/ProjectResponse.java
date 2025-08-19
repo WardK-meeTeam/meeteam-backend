@@ -27,25 +27,41 @@ public class ProjectResponse {
     private List<String> skills;
     private List<RecruitmentDto> recruitments;
 
-    public static ProjectResponse responseDto(String name, String description, PlatformCategory platformCategory,
-                                              ProjectCategory projectCategory, String imageUrl, boolean offlineRequired,
-                                              LocalDate startDate, LocalDate endDate,
-                                              List<ProjectMemberListResponse> projectMembers,
-                                              List<String> skills,
-                                              List<RecruitmentDto> recruitments) {
+    public static ProjectResponse responseDto(Project project) {
 
         return ProjectResponse.builder()
-                .name(name)
-                .description(description)
-                .platformCategory(platformCategory)
-                .projectCategory(projectCategory)
-                .imageUrl(imageUrl)
-                .offlineRequired(offlineRequired)
-                .startDate(startDate)
-                .endDate(endDate)
-                .projectMembers(projectMembers)
-                .skills(skills)
-                .recruitments(recruitments)
+                .name(project.getName())
+                .description(project.getDescription())
+                .platformCategory(project.getPlatformCategory())
+                .projectCategory(project.getProjectCategory())
+                .imageUrl(project.getImageUrl())
+                .offlineRequired(project.isOfflineRequired())
+                .startDate(project.getStartDate())
+                .endDate(project.getEndDate())
+                .projectMembers(
+                        project.getMembers().stream()
+                                .map(member -> ProjectMemberListResponse.responseDto(
+                                        member.getMember().getId(),
+                                        member.getMember().getRealName(),
+                                        member.getMember().getStoreFileName(),
+                                        project.getCreator().getId().equals(member.getId())
+                                ))
+                                .toList()
+                )
+                .skills(
+                        project.getProjectSkills().stream()
+                                .map(ps -> ps.getSkill().getSkillName())
+                                .toList()
+                )
+                .recruitments(
+                        project.getRecruitments().stream()
+                                .map(r -> RecruitmentDto.responseDto(
+                                        r.getSubCategory().getName(),
+                                        r.getRecruitmentCount(),
+                                        r.getCurrentCount()
+                                ))
+                                .toList()
+                )
                 .build();
     }
 }
