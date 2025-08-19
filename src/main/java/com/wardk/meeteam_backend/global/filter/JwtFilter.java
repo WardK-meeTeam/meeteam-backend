@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.global.filter;
 
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.global.loginRegister.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
