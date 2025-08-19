@@ -1,13 +1,11 @@
 package com.wardk.meeteam_backend.web.projectMember.dto;
 
-import com.wardk.meeteam_backend.domain.member.entity.JobType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.springdoc.core.annotations.ParameterObject;
 
 @Getter
 @Setter

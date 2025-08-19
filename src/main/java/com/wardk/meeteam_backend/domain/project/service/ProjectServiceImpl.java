@@ -51,7 +51,7 @@ public class ProjectServiceImpl implements ProjectService {
                 projectPostRequest.getProjectCategory(),
                 projectPostRequest.getPlatformCategory(),
                 storeFileName,
-                projectPostRequest.isOfflineRequired(),
+                projectPostRequest.getOfflineRequired(),
                 projectPostRequest.getEndDate()
         );
 
@@ -120,7 +120,7 @@ public class ProjectServiceImpl implements ProjectService {
                 request.getProjectCategory(),
                 request.getPlatformCategory(),
                 storeFileName,
-                request.isOfflineRequired(),
+                request.getOfflineRequired(),
                 request.getStatus(),
                 request.getStartDate(),
                 request.getEndDate()
