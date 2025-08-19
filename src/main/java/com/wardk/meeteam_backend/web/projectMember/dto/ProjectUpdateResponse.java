@@ -5,15 +5,13 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class AddResponse {
+public class ProjectUpdateResponse {
 
     private Long projectId;
-    private Long memberId;
 
-    public static AddResponse responseDto(Long projectId, Long memberId) {
-        return AddResponse.builder()
+    public static ProjectUpdateResponse responseDto(Long projectId) {
+        return ProjectUpdateResponse.builder()
                 .projectId(projectId)
-                .memberId(memberId)
                 .build();
     }
 }

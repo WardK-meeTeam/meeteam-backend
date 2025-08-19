@@ -3,8 +3,10 @@ package com.wardk.meeteam_backend.domain.project.entity;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import jakarta.persistence.*;
 import lombok.Builder;
+import lombok.Getter;
 
 @Entity
+@Getter
 public class ProjectSkill {//프로젝트_기술_스택_테이블(중간테이블)
 
     @Id
