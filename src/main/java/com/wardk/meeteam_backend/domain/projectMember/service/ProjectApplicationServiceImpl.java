@@ -13,13 +13,12 @@ import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRe
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationDecisionRequest;
-import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationDecisionResponse;
-import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationRequest;
-import com.wardk.meeteam_backend.web.projectMember.dto.ApplicationResponse;
+import com.wardk.meeteam_backend.web.projectMember.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +70,26 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 project.getId(),
                 member.getId()
         );
+    }
+
+    @Override
+    public List<ProjectApplicationListResponse> getApplicationList(Long projectId, String requesterEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        return applicationRepository.findByProjectId(projectId).stream()
+                .map(application -> ProjectApplicationListResponse.responseDto(
+                        application.getId(),
+                        application.getApplicant().getId(),
+                        application.getApplicant().getRealName(),
+                        application.getSubCategory().getName()
+                ))
+                .toList();
     }
 
     @Override
