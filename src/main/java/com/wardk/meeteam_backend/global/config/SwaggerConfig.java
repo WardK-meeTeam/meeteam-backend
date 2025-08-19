@@ -20,8 +20,8 @@ import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
         info = @Info(
                 title = "Meeteam",
                 description = """
-                        Api Docs
-                """,
+                                Api Docs
+                        """,
                 version = "1.0v"
         ),
         servers = {
@@ -51,7 +51,10 @@ public class SwaggerConfig {
                 .servers(List.of(
                                 new io.swagger.v3.oas.models.servers.Server()
                                         .url("http://localhost:8080")
-                                        .description("로컬 서버")
+                                        .description("로컬 서버"),
+                                new io.swagger.v3.oas.models.servers.Server()
+                                        .url("http://3.37.43.118:8080")
+                                        .description("EC2 서버")
 
                         )
                 );
