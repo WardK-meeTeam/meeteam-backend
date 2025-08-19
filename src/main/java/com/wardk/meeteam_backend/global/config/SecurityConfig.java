@@ -131,8 +131,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        //configuration.setAllowedOriginPatterns(List.of("http://localhost:3000")); // 허용할 오리진 TODO: CORS 경로 설정 "http://localhost:3000"
-        configuration.setAllowedOriginPatterns(List.of("*")); //
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:3000",// React 프론트
+                "http://3.37.43.118:8080" // Swagger UI
+        )); // 허용할 오리진 TODO: CORS 경로 설정 "http://localhost:3000"
+
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 HTTP 메서드
         configuration.setAllowCredentials(true); // 인증 정보 포함 여부
