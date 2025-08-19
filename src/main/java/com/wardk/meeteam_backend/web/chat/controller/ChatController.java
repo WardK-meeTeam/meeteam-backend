@@ -19,14 +19,14 @@ public class ChatController {
   //private final ChatService chatService;
 
   @GetMapping("/{threadId}/messages")
-  @PreAuthorize("@perm.canAccessThread(#threadId, authentication)")
+  //@PreAuthorize("@perm.canAccessThread(#threadId, authentication)")
   public ResponseEntity<List<ChatMessage>> list(@PathVariable UUID threadId) {
     // TODO: 페이징/DTO 변환은 후속 이슈
-    return ResponseEntity.ok(messageRepo.findByThreadIdOrderByCreatedAtAsc(threadId));
+    return ResponseEntity.ok(List.of());
   }
 
   @PostMapping("/{threadId}/messages")
-  @PreAuthorize("@perm.canAccessThread(#threadId, authentication)")
+  //@PreAuthorize("@perm.canAccessThread(#threadId, authentication)")
   public ResponseEntity<Void> send(@PathVariable UUID threadId, @RequestBody SendReq req) {
     // TODO: SecurityContext에서 추출
     //chatService.appendUserMessage(threadId, "CURRENT_USER_EMAIL", req.text());

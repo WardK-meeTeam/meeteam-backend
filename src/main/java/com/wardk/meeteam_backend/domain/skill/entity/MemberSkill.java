@@ -24,4 +24,9 @@ public class MemberSkill {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "skill_id")
     private Skill skill;
+
+    public MemberSkill(Member member, Skill skill) {
+        this.member = member;
+        this.skill = skill;
+    }
 }
