@@ -1,30 +1,29 @@
 package com.wardk.meeteam_backend.web.notification.controller;
 
-import com.wardk.meeteam_backend.domain.notification.entity.Notification;
-import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
+import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.List; import java.util.UUID;
-
-@RestController
-@RequestMapping("/notifications")
+@Controller
 @RequiredArgsConstructor
 public class NotificationController {
 
-  private final NotificationRepository notificationRepository;
 
-  @GetMapping
-  public ResponseEntity<List<Notification>> listMine() {
-    // TODO: 현재 사용자 기준으로 필터링
-    return ResponseEntity.ok(notificationRepository.findAll());
-  }
+    private final NotificationService notificationService;
 
-  @PatchMapping("/{id}")
-  public ResponseEntity<Void> markRead(@PathVariable UUID id) {
-    // TODO: isRead=true 저장
-    return ResponseEntity.noContent().build();
-  }
+    @GetMapping(value = "api/subscribe", produces = "text/event-stream")
+    @ResponseStatus(HttpStatus.OK)
+    public SseEmitter subscribe(@AuthenticationPrincipal UserDetails userDetails,
+                                @RequestHeader(value = "Last-Event-ID", required = false, defaultValue = "")
+                                String lastEventId) {
+        return notificationService.subscribe(userDetails.getUsername(), lastEventId);
+    }
 }
-
