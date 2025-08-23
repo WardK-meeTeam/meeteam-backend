@@ -1,0 +1,55 @@
+package com.wardk.meeteam_backend.domain.notification;
+
+import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.notification.service.NotificationService;
+import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
+import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class NotificationListener {
+
+    private final NotificationService notificationService;
+    private final MemberRepository memberRepository;
+    private final ProjectRepository projectRepository;
+
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(NotificationEvent e) {
+
+
+        Member receiver = memberRepository.findById(e.getReceiverId())
+                .orElseThrow(
+                        () -> {
+                            log.error("[알림]수신자를 찾을 없음");
+                            return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+                        }
+                );
+
+        Project project = projectRepository.findById(e.getProjectId())
+                .orElseThrow(
+                        () -> {
+                            log.error("[알림] 프로젝트를 찾을 수 없음");
+                            return new CustomException(ErrorCode.PROJECT_NOT_FOUND);
+                        }
+                );
+
+        // actor 엔티티를 직접 조회하지 않고, id만 넘김
+        notificationService.notifyTo(receiver, e.getType(), project, e.getActorId());
+
+    }
+}

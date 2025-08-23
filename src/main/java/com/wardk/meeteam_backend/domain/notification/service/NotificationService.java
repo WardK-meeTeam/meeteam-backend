@@ -3,7 +3,6 @@ package com.wardk.meeteam_backend.domain.notification.service;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.notification.NotificationPayload;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.notification.repository.EmitterRepository;
@@ -11,12 +10,15 @@ import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepo
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+import com.wardk.meeteam_backend.web.notification.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.springframework.util.StringUtils.*;
@@ -52,7 +54,8 @@ public class NotificationService {
 
         // 1) 연결 확인용 더미 이벤트(503 방지)
         String eventId = makeEventId(memberId);
-        sendToClient(emitter, eventId, NotificationPayload.system("EventStream Created. memberId=" + memberId));
+        sendToClient(emitter, "connect","connected");
+
 
         // 2) 클라이언트가 Last-Event-ID를 보냈다면, 미수신 캐시 재전송
         if (hasText(lastEventId)) {
@@ -69,27 +72,109 @@ public class NotificationService {
 
     // ====== 알림 생성 + 실시간 전송 ======
     @Transactional
-    public void notifyTo(Long receiverId, NotificationType type, String message, Project project) {
+    public void notifyTo(Member receiver, NotificationType type,Project project, Long actorId) {
+
+
+        // actorId 가 꼭 필요한데 null이면 예외
+        if (type.requiresActor() && actorId == null) {
+            throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+
+
+        // actor 조회 (필요할 때만)
+        Member actor = null;
+        if (actorId != null && type.requiresActor()) {
+            actor = memberRepository.findById(actorId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        }
+
+        // 메시지 생성
+        String finalMessage = switch (type) {
+            case PROJECT_MY_APPLY -> String.format("[%s] 에 지원이 완료되었습니다.", project.getName());
+            case PROJECT_APPLY -> {
+                if (actor == null) throw new CustomException(ErrorCode.ACTOR_NOT_FOUND);
+                yield String.format("%s님이 [%s]에 지원했어요.", actor.getRealName(), project.getName());
+            }
+            case PROJECT_APPROVE -> String.format("[%s] 지원이 승인되었습니다.", project.getName());
+            case PROJECT_REJECT -> String.format("[%s] 지원이 거절되었습니다.", project.getName());
+        };
+
+
+
         // 1) DB 저장 (과거 기록 조회용)
         Notification notification = notificationRepository.save(
                 Notification.builder()
-                        .receiver(Member.builder().id(receiverId).build())
+                        .receiver(receiver)
                         .type(type)
-                        .message(message)
+                        .message(finalMessage)
                         .project(project)
                         .isRead(false)
                         .build()
         );
 
-        // 2) SSE 실시간 전송 (여러 탭/기기 고려: 같은 userId prefix의 모든 emitter로)
-        NotificationPayload payload = NotificationPayload.from(notification);
+
+        // 2) 타입별 payload 조립
+        Object payload = switch (type) {
+            case PROJECT_MY_APPLY -> new ApplyNotiPayload(
+                    receiver.getId(), // 지원한 사람 == 받는 사람
+                    project.getName(),
+                    finalMessage,
+                    LocalDate.now()
+            );
+            case PROJECT_APPLY -> { // 내 프로젝트에 누군가 지원
+                if (actor == null) throw new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND);
+                yield new NewApplicantPayload(
+                        actor.getId(), // 지원자Id
+                        actor.getRealName(), // 지원자이름
+                        project.getName(), //프로젝트 이름
+                        finalMessage,
+                        LocalDate.now()
+                );
+            }
+            case PROJECT_APPROVE -> new SimpleMessagePayload(
+                    receiver.getId(),
+                    project.getId(),
+                    ApprovalResult.APPROVED,
+                    finalMessage,
+                    LocalDate.now()
+            );
+            case PROJECT_REJECT -> new SimpleMessagePayload(
+                    receiver.getId(),
+                    project.getId(),
+                    ApprovalResult.REJECTED,
+                    finalMessage,
+                    LocalDate.now()
+            );
+            default -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND);
+        };
+
+
+        SseEnvelope<Object> envelope = SseEnvelope.builder()
+                .type(type)
+                .data(payload)
+                .createdAt(LocalDate.now())
+                .build();
+
+        broadcast(receiver.getId(), type, envelope);
+
+
+    }
+
+    private void broadcast(Long receiverId, NotificationType type, Object envelope) {
         Map<String, SseEmitter> emitters =
                 emitterRepository.findAllEmitterStartWithByMemberId(String.valueOf(receiverId));
 
         emitters.forEach((emitterId, emitter) -> {
             String eventId = makeEventId(receiverId);
-            emitterRepository.saveEventCache(eventId, payload); // 유실 대비 캐시
-            sendToClient(emitter, eventId, payload);
+            emitterRepository.saveEventCache(eventId, envelope); // 유실 대비: envelope 통째로 저장
+            try {
+                emitter.send(SseEmitter.event()
+                        .id(eventId)
+                        .name(type.name())   // ★ 프론트에서 이벤트명으로도 분기 가능
+                        .data(envelope));
+            } catch (IOException e) {
+                emitter.completeWithError(e);
+            }
         });
     }
 
@@ -98,7 +183,6 @@ public class NotificationService {
         try {
             emitter.send(SseEmitter.event()
                     .id(eventId)
-                    .name("notification")
                     .data(data));
         } catch (IOException ex) {
             // 전송 실패 시 emitter 제거

@@ -53,7 +53,14 @@ public enum ErrorCode {
 
     // MEMBER SKILL
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND,"SKILL404", "해당 기술스택이 존재하지 않습니다."),
-    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." );
+    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." ),
+
+
+    //NOTIFICATION
+    NOTIFICATION_NOT_FOUND(HttpStatus.BAD_REQUEST, "NOTIFICATION400", "알림에 문제가 발생하였습니다."),
+    ACTOR_NOT_FOUND(HttpStatus.BAD_REQUEST,"ACTOR404", "수신자가 존재하지 않습니다.")
+    ;
+
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
