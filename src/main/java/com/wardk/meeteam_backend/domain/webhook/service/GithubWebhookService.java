@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 public class GithubWebhookService {
 
     private final WebhookDeliveryRepository deliveryRepository;
@@ -30,7 +32,6 @@ public class GithubWebhookService {
      * @param rawPayload 원본 요청 바디
      * @return 저장된 WebhookDelivery 엔티티
      */
-    @Transactional
     public WebhookDelivery recordWebhook(String deliveryId, String eventType, String signature, byte[] rawPayload) {
         log.info("Webhook 기록 시작: deliveryId={}, eventType={}", deliveryId, eventType);
         
@@ -65,7 +66,6 @@ public class GithubWebhookService {
      * @param eventType GitHub 이벤트 타입
      * @param payload JSON 페이로드
      */
-    @Transactional
     public void dispatch(String eventType, JsonNode payload) {
         if (eventType == null) {
             log.error("이벤트 타입이 null입니다");
@@ -91,7 +91,6 @@ public class GithubWebhookService {
      * @param id WebhookDelivery ID
      * @throws WebhookException 해당 ID의 WebhookDelivery가 존재하지 않을 경우
      */
-    @Transactional
     public void markProcessed(Long id) {
         WebhookDelivery delivery = deliveryRepository.findById(id)
             .orElseThrow(() -> {
@@ -113,7 +112,6 @@ public class GithubWebhookService {
      * @param errorMessage 오류 메시지
      * @throws WebhookException 해당 ID의 WebhookDelivery가 존재하지 않을 경우
      */
-    @Transactional
     public void markFailed(Long id, String errorMessage) {
         WebhookDelivery delivery = deliveryRepository.findById(id)
             .orElseThrow(() -> {

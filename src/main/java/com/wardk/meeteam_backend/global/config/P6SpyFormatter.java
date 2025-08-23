@@ -4,19 +4,41 @@ import com.p6spy.engine.spy.appender.MessageFormattingStrategy;
 import org.hibernate.engine.jdbc.internal.FormatStyle;
 
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 public class P6SpyFormatter implements MessageFormattingStrategy {
+
+    // 로깅 중복 방지를 위한 최근 쿼리 캐시
+    private static final Set<String> recentQueryCache = Collections.synchronizedSet(new HashSet<>());
+    private static final int CACHE_SIZE_LIMIT = 100;
 
     @Override
     public String formatMessage(int connectionId, String now, long elapsed, String category, 
                                String prepared, String sql, String url) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        
         if (sql == null || sql.trim().isEmpty()) {
             return "";
         }
+        
+        // 중복 방지를 위한 키 생성
+        String cacheKey = sql.trim() + connectionId;
+        
+        // 캐시 크기 제한
+        if (recentQueryCache.size() > CACHE_SIZE_LIMIT) {
+            recentQueryCache.clear();
+        }
+        
+        // 중복 검사
+        if (!recentQueryCache.add(cacheKey)) {
+            // 이미 최근에 로깅된 쿼리는 무시
+            return "";
+        }
+        
+        // 기존 로직 유지
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         
         // SQL 포맷팅
         String formattedSql = formatSql(category, sql);
