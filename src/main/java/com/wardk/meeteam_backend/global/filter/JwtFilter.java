@@ -37,6 +37,9 @@ public class JwtFilter extends OncePerRequestFilter {
             uri.equals("/api/register") ||
             uri.equals("/api/auth/oauth2/success") ||
             uri.equals("/api/auth/oauth2/failure") ||
+
+            uri.startsWith("/api/webhooks/github") ||
+
             uri.equals("/docs/swagger-ui/index.html") ||
             uri.startsWith("/swagger-ui/**") ||
             uri.equals("/swagger-ui.html") ||
