@@ -2,8 +2,20 @@ package com.wardk.meeteam_backend.domain.notification.entity;
 
 public enum NotificationType {
 
-    PROJECT_APPLY,     // 프로젝트 생성자에게: 누군가 지원했음
-    PROJECT_MY_APPLY,  // 지원자에게: 내가 지원을 완료했음
-    PROJECT_APPROVE,   // 지원자에게: 내가 지원한 프로젝트가 승인됨
-    PROJECT_REJECT     // 지원자에게: 내가 지원한 프로젝트가 거절됨
+    PROJECT_APPLY(true),     // actor 필요
+    PROJECT_MY_APPLY(false), // actor 불필요
+    PROJECT_APPROVE(false),
+    PROJECT_REJECT(false);
+
+    private final boolean requiresActor;
+
+    NotificationType(boolean requiresActor) {
+        this.requiresActor = requiresActor;
+    }
+
+    public boolean requiresActor() {
+        return requiresActor;
+    }
+
+
 }
