@@ -15,15 +15,5 @@ public class P6SpyConfig {
     public void setP6SpyOptions() {
         // 로그 포맷 설정
         P6SpyOptions.getActiveInstance().setLogMessageFormat(P6SpyFormatter.class.getName());
-
-        // 실행 시간 임계값 설정 (0으로 설정하여 모든 쿼리 로깅)
-        System.setProperty("p6spy.config.executionThreshold", "0");
-
-        // 카테고리 설정
-        System.setProperty("p6spy.config.excludecategories", "info,debug,batch");
-        System.setProperty("p6spy.config.includecategories", "error,warn,statement,commit,rollback,result");
-
-        // 파라미터 값 포함
-        System.setProperty("p6spy.config.includeParameterValues", "true");
     }
 }
