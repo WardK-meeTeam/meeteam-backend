@@ -53,7 +53,13 @@ public enum ErrorCode {
 
     // MEMBER SKILL
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND,"SKILL404", "해당 기술스택이 존재하지 않습니다."),
-    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." );
+    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." ),
+
+    // Webhook 관련 에러 코드
+    WEBHOOK_INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "WH001", "웹훅 서명이 유효하지 않습니다"),
+    WEBHOOK_SIGNATURE_REQUIRED(HttpStatus.BAD_REQUEST, "WH002", "웹훅 서명이 필요합니다"),
+    WEBHOOK_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "WH003", "웹훅 처리 중 오류가 발생했습니다"),
+    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
