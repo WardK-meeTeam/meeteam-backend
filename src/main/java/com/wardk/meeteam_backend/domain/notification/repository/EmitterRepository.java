@@ -20,4 +20,8 @@ public interface EmitterRepository {
     void deleteAllEmitterStartWithId(String memberIdPrefix);
 
     void deleteAllEventCacheStartWithId(String memberIdPrefix);
+
+
+    Map<String, Object> findEventCacheAfterByMemberId(String memberId, long afterTs);
 }
+
