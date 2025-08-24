@@ -12,17 +12,18 @@ import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
 import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
 import com.wardk.meeteam_backend.web.notification.dto.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
 
 import static org.springframework.util.StringUtils.*;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -43,28 +44,26 @@ public class NotificationService {
 
         Long memberId = member.getId();
 
-        String emitterId = makeEmitterId(memberId);
-        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
+        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT); // 1시간 타임아웃으로 SSE 생성
 
         // 저장 및 수명 관리
-        emitterRepository.save(emitterId, emitter);
-        emitter.onCompletion(() -> emitterRepository.deleteById(emitterId));
-        emitter.onTimeout(() -> emitterRepository.deleteById(emitterId));
-        emitter.onError(e -> emitterRepository.deleteById(emitterId));
+        String emitterId = makeEmitterId(memberId); // "{memberId}_{timestamp}"
+        emitterRepository.save(emitterId, emitter); // 메모리에 emitter 등록
+        emitter.onCompletion(() -> emitterRepository.deleteById(emitterId)); // 정상 종료 시 정리
+        emitter.onTimeout(() -> emitterRepository.deleteById(emitterId)); // 타임아웃 시 정리
+        emitter.onError(e -> emitterRepository.deleteById(emitterId)); // 에러 시 정리
 
         // 1) 연결 확인용 더미 이벤트(503 방지)
-        String eventId = makeEventId(memberId);
-        sendToClient(emitter, "connect","connected");
+        sendToClient(emitter, "connect","connected"); // 503 방지용 더미 이벤트
 
 
-        // 2) 클라이언트가 Last-Event-ID를 보냈다면, 미수신 캐시 재전송
+        // ── 재연결: Last-Event-ID 이후의 미수신 이벤트 재전송 (ZSET score 범위 조회)
         if (hasText(lastEventId)) {
+            long afterTs = extractTs(lastEventId);
             Map<String, Object> cachedEvents =
-                    emitterRepository.findAllEventCacheStartWithByMemberId(String.valueOf(memberId));
+                    emitterRepository.findEventCacheAfterByMemberId(String.valueOf(memberId), afterTs); // Redis에서 시간순 Map
 
-            cachedEvents.entrySet().stream()
-                    .filter(entry -> entry.getKey().compareTo(lastEventId) > 0) // last 이후만
-                    .forEach(entry -> sendToClient(emitter, entry.getKey(), entry.getValue()));
+            cachedEvents.forEach((eid, payload) -> sendReplay(emitter, eid, payload)); // 이벤트명(name) 포함 재전송
         }
 
         return emitter;
@@ -72,7 +71,7 @@ public class NotificationService {
 
     // ====== 알림 생성 + 실시간 전송 ======
     @Transactional
-    public void notifyTo(Member receiver, NotificationType type,Project project, Long actorId) {
+    public void notifyTo(Member receiver, NotificationType type, Project project, Long actorId) {
 
 
         // actorId 가 꼭 필요한데 null이면 예외
@@ -164,13 +163,15 @@ public class NotificationService {
         Map<String, SseEmitter> emitters =
                 emitterRepository.findAllEmitterStartWithByMemberId(String.valueOf(receiverId));
 
+        // 동일 이벤트는 한 번만 저장하고, 같은 eventId로 모든 emitter에 전송
+        String eventId = makeEventId(receiverId); // 동일 이벤트 하나의 ID
+        emitterRepository.saveEventCache(eventId, envelope); // 캐시에 1회만 저장
+
         emitters.forEach((emitterId, emitter) -> {
-            String eventId = makeEventId(receiverId);
-            emitterRepository.saveEventCache(eventId, envelope); // 유실 대비: envelope 통째로 저장
             try {
                 emitter.send(SseEmitter.event()
                         .id(eventId)
-                        .name(type.name())   // ★ 프론트에서 이벤트명으로도 분기 가능
+                        .name(type.name()) // 프론트에서 EventSource.addEventListener(type)
                         .data(envelope));
             } catch (IOException e) {
                 emitter.completeWithError(e);
@@ -183,10 +184,48 @@ public class NotificationService {
         try {
             emitter.send(SseEmitter.event()
                     .id(eventId)
-                    .data(data));
+                    .data(data)); // 공용(단순) 전송
         } catch (IOException ex) {
             // 전송 실패 시 emitter 제거
             emitter.completeWithError(ex);
+        }
+    }
+
+    private void sendReplay(SseEmitter emitter, String eventId, Object data) {
+        try {
+            if (data instanceof SseEnvelope<?> env && env.getType() != null) { // 저장해둔 타입이 있으면
+                emitter.send(SseEmitter.event()
+                        .id(eventId)
+                        .name(env.getType().name()) // 재전송에도 이벤트명 부여
+                        .data(data));
+            } else {
+                throw new CustomException(ErrorCode.NO_MATCHING_TYPE);
+            }
+        } catch (IOException ex) {
+            emitter.completeWithError(ex);
+        }
+    }
+
+    private long extractTs(String eventId) {
+        if (eventId == null) return Long.MIN_VALUE;
+        int idx = eventId.lastIndexOf('_');
+        if (idx >= 0 && idx + 1 < eventId.length()) {
+            try {
+                return Long.parseLong(eventId.substring(idx + 1));
+            } catch (NumberFormatException ignore) {
+                log.error("Invalid eventId format: \" "+ eventId);
+                throw new CustomException(ErrorCode.INVALID_EVENT_ID);
+            }
+        } else {
+            // eventId가 순수 timestamp일 수도 있는 경우
+            try {
+                return Long.parseLong(eventId);
+            } catch (NumberFormatException ignore) {
+
+                log.error("Invalid eventId format: \" "+ eventId);
+                throw new CustomException(ErrorCode.INVALID_EVENT_ID);
+
+            }
         }
     }
 

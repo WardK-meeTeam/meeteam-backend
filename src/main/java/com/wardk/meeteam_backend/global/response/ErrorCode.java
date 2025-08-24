@@ -58,8 +58,9 @@ public enum ErrorCode {
 
     //NOTIFICATION
     NOTIFICATION_NOT_FOUND(HttpStatus.BAD_REQUEST, "NOTIFICATION400", "알림에 문제가 발생하였습니다."),
-    ACTOR_NOT_FOUND(HttpStatus.BAD_REQUEST,"ACTOR404", "수신자가 존재하지 않습니다.")
-    ;
+    ACTOR_NOT_FOUND(HttpStatus.BAD_REQUEST,"ACTOR404", "수신자가 존재하지 않습니다."),
+    INVALID_EVENT_ID(HttpStatus.BAD_REQUEST,"INVALID" ,"잘못된 형식입니다."),
+    NO_MATCHING_TYPE(HttpStatus.NOT_FOUND,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." );
 
 
     ErrorCode(HttpStatus status, String code, String message) {
