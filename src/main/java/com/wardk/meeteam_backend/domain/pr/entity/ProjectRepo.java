@@ -9,6 +9,15 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
+@Table(
+        name = "project_repo",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_project_repo",
+                        columnNames = {"project_id", "repo_full_name"}
+                )
+        }
+)
 public class ProjectRepo {
 
     @Id

@@ -55,4 +55,10 @@ public class PullRequestResponse {
                         .collect(Collectors.toList()))
                 .build();
     }
+
+    public static List<PullRequestResponse> createList(List<PullRequest> pullRequests) {
+        return pullRequests.stream()
+                .map(PullRequestResponse::create)
+                .collect(Collectors.toList());
+    }
 }
