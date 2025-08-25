@@ -14,5 +14,6 @@ public interface ProjectService {
     ProjectResponse getProject(Long projectId);
     ProjectUpdateResponse updateProject(Long projectId, ProjectUpdateRequest request, MultipartFile file, String requesterEmail);
     ProjectDeleteResponse deleteProject(Long projectId, String requesterEmail);
+    List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail);
 }
 

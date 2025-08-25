@@ -1,10 +1,13 @@
 package com.wardk.meeteam_backend.domain.pr.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequestFile;
+import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.pr.repository.PullRequestFileRepository;
 import com.wardk.meeteam_backend.domain.pr.repository.PullRequestRepository;
+import com.wardk.meeteam_backend.domain.pr.service.fetcher.PullRequestFetcher;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.pr.dto.PrData;
@@ -24,6 +27,7 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
 
     private final PullRequestRepository pullRequestRepository;
     private final PullRequestFileRepository fileRepository;
+    private final ProjectRepoRepository projectRepoRepository;
     private final PullRequestFetcher fetcher;
 
     @Override
@@ -34,11 +38,18 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
 
         log.info("PR 수신: repo={}, prNumber={}", repoFullName, prNumber);
 
+        ProjectRepo projectRepo = projectRepoRepository.findByRepoFullName(repoFullName)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_REPO_NOT_FOUND));
+
         PrData prData = fetcher.getPr(repoFullName, prNumber, payload);
         List<PrFileData> files = fetcher.listFiles(repoFullName, prNumber);
 
-        PullRequest pr = pullRequestRepository.findByRepoFullNameAndPrNumber(repoFullName, prNumber)
-                .orElseGet(() -> new PullRequest(repoFullName, prNumber));
+        PullRequest pr = pullRequestRepository.findByProjectRepoIdAndPrNumber(projectRepo.getId(), prNumber)
+                .orElseGet(() -> {
+                    PullRequest newPr = new PullRequest(prNumber);
+                    newPr.setProjectRepo(projectRepo);
+                    return newPr;
+                });
 
         pr.updateFromPayload(payload.path("pull_request"));
 //        pr.updateFromPayload(prData);
@@ -60,7 +71,10 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         String repoFullName = payload.path("repository").path("full_name").asText();
         int prNumber = payload.path("pull_request").path("number").asInt();
 
-        PullRequest pr = pullRequestRepository.findByRepoFullNameAndPrNumber(repoFullName, prNumber)
+        ProjectRepo projectRepo = projectRepoRepository.findByRepoFullName(repoFullName)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_REPO_NOT_FOUND));
+
+        PullRequest pr = pullRequestRepository.findByProjectRepoIdAndPrNumber(projectRepo.getId(), prNumber)
                 .orElseThrow(() -> new CustomException(ErrorCode.PR_NOT_FOUND));
 
         pr.updateFromPayload(payload.path("pull_request"));
@@ -74,7 +88,10 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         String repoFullName = payload.path("repository").path("full_name").asText();
         int prNumber = payload.path("pull_request").path("number").asInt();
 
-        PullRequest pr = pullRequestRepository.findByRepoFullNameAndPrNumber(repoFullName, prNumber)
+        ProjectRepo projectRepo = projectRepoRepository.findByRepoFullName(repoFullName)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_REPO_NOT_FOUND));
+
+        PullRequest pr = pullRequestRepository.findByProjectRepoIdAndPrNumber(projectRepo.getId(), prNumber)
                 .orElseThrow(() -> new CustomException(ErrorCode.PR_NOT_FOUND));
 
         pr.updateFromPayload(payload.path("pull_request"));

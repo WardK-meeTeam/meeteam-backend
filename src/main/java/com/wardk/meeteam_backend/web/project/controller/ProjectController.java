@@ -72,4 +72,16 @@ public class ProjectController {
 
         return SuccessResponse.onSuccess(projectDeleteResponse);
     }
+
+    @PostMapping("/{projectId}/repos")
+    public SuccessResponse<List<ProjectRepoResponse>> addRepo(
+            @PathVariable Long projectId,
+            @RequestBody @Validated ProjectRepoRequest request,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+
+        List<ProjectRepoResponse> responses = projectService.addRepo(projectId, request, userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(responses);
+    }
 }

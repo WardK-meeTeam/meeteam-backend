@@ -34,7 +34,7 @@ public class PullRequestResponse {
     public static PullRequestResponse create(PullRequest pullRequest) {
         return PullRequestResponse.builder()
                 .id(pullRequest.getId())
-                .repoFullName(pullRequest.getRepoFullName())
+                .repoFullName(pullRequest.getProjectRepo().getRepoFullName())
                 .prNumber(pullRequest.getPrNumber())
                 .title(pullRequest.getTitle())
                 .body(pullRequest.getBody())

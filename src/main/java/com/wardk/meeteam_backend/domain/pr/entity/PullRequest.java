@@ -1,19 +1,16 @@
 package com.wardk.meeteam_backend.domain.pr.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @AllArgsConstructor
@@ -23,8 +20,8 @@ import java.util.UUID;
         name = "pull_requests",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_repo_full_name_pr_number",
-                        columnNames = {"repo_full_name", "pr_number"}
+                        name = "uk_project_repo_pr_number",
+                        columnNames = {"project_repo_id", "pr_number"}
                 )
         }
 )
@@ -39,9 +36,10 @@ public class PullRequest extends BaseEntity {
 
   /**
    * GitHub 저장소의 전체 이름 (예: "owner/repo")
+   * projectRepo.getRepoFullName()으로 대체
    */
-  @Column(name = "repo_full_name", nullable = false)
-  private String repoFullName;
+//  @Column(name = "repo_full_name", nullable = false)
+//  private String repoFullName;
 
   /**
    * PR 번호
@@ -123,11 +121,11 @@ public class PullRequest extends BaseEntity {
   private Integer reviewCommentsCount;
 
   /**
-   * FK, 프로젝트
+   * FK, 프로젝트_레포
    */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "project_id")
-  private Project project;
+  @JoinColumn(name = "project_repo_id", nullable = false)
+  private ProjectRepo projectRepo;
 
   /**
    * 연관된 pr 파일 목록
@@ -140,8 +138,7 @@ public class PullRequest extends BaseEntity {
     file.setPullRequest(this);
   }
 
-  public PullRequest(String repoFullName, Integer prNumber) {
-    this.repoFullName = repoFullName;
+  public PullRequest(Integer prNumber) {
     this.prNumber = prNumber;
   }
 
@@ -172,6 +169,10 @@ public class PullRequest extends BaseEntity {
     this.changedFiles = prNode.path("changed_files").asInt(0);
     this.commentsCount = prNode.path("comments").asInt(0);
     this.reviewCommentsCount = prNode.path("review_comments").asInt(0);
+  }
+
+  public void setProjectRepo(ProjectRepo projectRepo) {
+    this.projectRepo = projectRepo;
   }
 
   private LocalDateTime parseDate(JsonNode node, String field) {
