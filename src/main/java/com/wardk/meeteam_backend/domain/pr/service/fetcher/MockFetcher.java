@@ -9,7 +9,7 @@ import java.util.List;
 //@Component
 public class MockFetcher implements PullRequestFetcher {
     @Override
-    public PrData getPr(String repoFullName, Integer prNumber, JsonNode webhookPayload) {
+    public PrData getPr(String repoFullName, int prNumber, JsonNode webhookPayload) {
         return new PrData(
                 repoFullName,
                 prNumber,
@@ -31,7 +31,7 @@ public class MockFetcher implements PullRequestFetcher {
     }
 
     @Override
-    public List<PrFileData> listFiles(String repoFullName, Integer prNumber) {
+    public List<PrFileData> listFiles(String repoFullName, int prNumber) {
         return List.of(
                 new PrFileData("src/App.java", "modified", 10, 2, 12, "blobsha-app", null, 120,
                         "@@ -1,2 +1,10 @@\n- old\n+ new"),
