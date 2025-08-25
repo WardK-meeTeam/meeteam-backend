@@ -59,7 +59,10 @@ public enum ErrorCode {
     WEBHOOK_INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "WH001", "웹훅 서명이 유효하지 않습니다"),
     WEBHOOK_SIGNATURE_REQUIRED(HttpStatus.BAD_REQUEST, "WH002", "웹훅 서명이 필요합니다"),
     WEBHOOK_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "WH003", "웹훅 처리 중 오류가 발생했습니다"),
-    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다");
+    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다"),
+
+    // PR
+    PR_NOT_FOUND(HttpStatus.NOT_FOUND, "PR404", "해당 Pull Request를 찾을 수 없습니다.");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
