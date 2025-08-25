@@ -157,6 +157,13 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             );
         }
 
+        eventPublisher.publishEvent(new NotificationEvent(
+                applicantId,
+                projectId,
+                projectCreatorId,
+                NotificationType.PROJECT_REJECT
+        ));
+
         return ApplicationDecisionResponse.rejectResponseDto(
                 application.getId(),
                 application.getStatus()

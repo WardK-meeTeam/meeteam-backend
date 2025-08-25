@@ -1,21 +1,17 @@
 package com.wardk.meeteam_backend.domain.notification.repository;
 
 
-import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
-import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+
+import com.wardk.meeteam_backend.global.exception.CustomException;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Duration;
 import java.util.Set;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedHashMap;

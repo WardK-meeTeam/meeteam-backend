@@ -30,7 +30,7 @@ public class NotificationController {
      * @return 클라이언트에게 알림 이벤트를 스트리밍하는 SseEmitter 객체를 반환합니다.
      */
     // produces = "text/event-stream"을 사용하여 SSE 응답 콘텐츠 타입을 지정합니다.
-    @GetMapping(value = "api/subscribe", produces = "text/event-stream")
+    @GetMapping(value = "/api/subscribe", produces = "text/event-stream")
     @ResponseStatus(HttpStatus.OK)
     public SseEmitter subscribe(@AuthenticationPrincipal UserDetails userDetails,
                                 // Last-Event-ID 헤더는 마지막으로 받은 이벤트부터 이벤트 스트리밍을 재개하는 데 사용됩니다.

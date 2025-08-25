@@ -8,8 +8,9 @@ import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.notification.repository.EmitterRepository;
 import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.global.apiPayload.code.ErrorCode;
-import com.wardk.meeteam_backend.global.apiPayload.exception.CustomException;
+
+import com.wardk.meeteam_backend.global.exception.CustomException;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.notification.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,22 +55,39 @@ public class NotificationService {
         emitter.onError(e -> emitterRepository.deleteById(emitterId)); // 에러 시 정리
 
         // 1) 연결 확인용 더미 이벤트(503 방지)
-        sendToClient(emitter, "connect","connected"); // 503 방지용 더미 이벤트
+        sendPing(emitter);
 
 
         // ── 재연결: Last-Event-ID 이후의 미수신 이벤트 재전송 (ZSET score 범위 조회)
         if (hasText(lastEventId)) {
             long afterTs = extractTs(lastEventId);
-            Map<String, Object> cachedEvents =
-                    emitterRepository.findEventCacheAfterByMemberId(String.valueOf(memberId), afterTs); // Redis에서 시간순 Map
-
-            cachedEvents.forEach((eid, payload) -> sendReplay(emitter, eid, payload)); // 이벤트명(name) 포함 재전송
+            if (afterTs != Long.MIN_VALUE) {
+                Map<String, Object> cachedEvents =
+                        emitterRepository.findEventCacheAfterByMemberId(String.valueOf(memberId), afterTs); // Redis에서 시간순 Map
+                cachedEvents.forEach((eid, payload) -> sendReplay(emitter, eid, payload)); // 이벤트명(name) 포함 재전송
+            } else {
+                log.warn("Skip replay due to non-numeric Last-Event-ID: {}", lastEventId);
+            }
         }
 
         return emitter;
     }
 
     // ====== 알림 생성 + 실시간 전송 ======
+    /**
+     * 특정 사용자에게 알림을 생성하고 실시간으로 전송하는 메서드입니다.
+     *
+     * @param receiver 알림을 받을 대상 사용자
+     * @param type 알림 유형 (지원, 승인, 거절 등)
+     * @param project 알림과 연관된 프로젝트
+     * @param actorId 알림을 발생시킨 주체의 ID (일부 유형에서는 필수)
+     * @throws CustomException actorId가 필요한 알림 유형인데 null이거나,
+     *                         존재하지 않는 사용자/프로젝트일 경우 발생
+     *
+     * 1) 알림 메시지를 생성하고 DB에 저장합니다.
+     * 2) 알림 유형에 따라 payload 객체를 생성합니다.
+     * 3) SSE를 통해 구독 중인 클라이언트에게 실시간 전송합니다.
+     */
     @Transactional
     public void notifyTo(Member receiver, NotificationType type, Project project, Long actorId) {
 
@@ -206,25 +224,33 @@ public class NotificationService {
         }
     }
 
+    // 초기 연결 확인용 핑 이벤트: id를 주지 않아 브라우저의 Last-Event-ID가 갱신되지 않도록 함
+    private void sendPing(SseEmitter emitter) {
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("PING")
+                    .data("connected"));
+        } catch (IOException ex) {
+            emitter.completeWithError(ex);
+        }
+    }
+
     private long extractTs(String eventId) {
-        if (eventId == null) return Long.MIN_VALUE;
+        if (eventId == null || eventId.isBlank()) return Long.MIN_VALUE;
         int idx = eventId.lastIndexOf('_');
         if (idx >= 0 && idx + 1 < eventId.length()) {
             try {
                 return Long.parseLong(eventId.substring(idx + 1));
-            } catch (NumberFormatException ignore) {
-                log.error("Invalid eventId format: \" "+ eventId);
-                throw new CustomException(ErrorCode.INVALID_EVENT_ID);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid eventId format (suffix not numeric): {}", eventId);
+                return Long.MIN_VALUE;
             }
         } else {
-            // eventId가 순수 timestamp일 수도 있는 경우
             try {
                 return Long.parseLong(eventId);
-            } catch (NumberFormatException ignore) {
-
-                log.error("Invalid eventId format: \" "+ eventId);
-                throw new CustomException(ErrorCode.INVALID_EVENT_ID);
-
+            } catch (NumberFormatException e) {
+                log.warn("Invalid eventId format (not numeric): {}", eventId);
+                return Long.MIN_VALUE;
             }
         }
     }

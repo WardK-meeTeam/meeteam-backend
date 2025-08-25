@@ -62,7 +62,6 @@ public enum ErrorCode {
     INVALID_EVENT_ID(HttpStatus.BAD_REQUEST,"INVALID" ,"잘못된 형식입니다."),
     NO_MATCHING_TYPE(HttpStatus.NOT_FOUND,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." ),
 
-    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." ),
 
     // Webhook 관련 에러 코드
     WEBHOOK_INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "WH001", "웹훅 서명이 유효하지 않습니다"),
