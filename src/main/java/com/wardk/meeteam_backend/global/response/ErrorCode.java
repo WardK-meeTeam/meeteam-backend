@@ -55,6 +55,14 @@ public enum ErrorCode {
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND,"SKILL404", "해당 기술스택이 존재하지 않습니다."),
     SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." ),
 
+
+    //NOTIFICATION
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION404", "알림을 찾을 수 없습니다."),
+    ACTOR_NOT_FOUND(HttpStatus.NOT_FOUND,"ACTOR404", "행위자(신청자)를 찾을 수 없습니다."),
+    INVALID_EVENT_ID(HttpStatus.BAD_REQUEST,"NOTIFICATION_INVALID_EVENT_ID" ,"이벤트 ID 형식이 올바르지 않습니다."),
+    NO_MATCHING_TYPE(HttpStatus.BAD_REQUEST,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." ),
+
+
     // Webhook 관련 에러 코드
     WEBHOOK_INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "WH001", "웹훅 서명이 유효하지 않습니다"),
     WEBHOOK_SIGNATURE_REQUIRED(HttpStatus.BAD_REQUEST, "WH002", "웹훅 서명이 필요합니다"),
