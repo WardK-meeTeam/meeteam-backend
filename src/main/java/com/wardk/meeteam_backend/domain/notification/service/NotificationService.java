@@ -163,7 +163,7 @@ public class NotificationService {
                     finalMessage,
                     LocalDate.now()
             );
-            default -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND);
+            default -> throw new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND);
         };
 
 
