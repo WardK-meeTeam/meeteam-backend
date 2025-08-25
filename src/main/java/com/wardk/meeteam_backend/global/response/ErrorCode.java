@@ -60,8 +60,15 @@ public enum ErrorCode {
     NOTIFICATION_NOT_FOUND(HttpStatus.BAD_REQUEST, "NOTIFICATION400", "알림에 문제가 발생하였습니다."),
     ACTOR_NOT_FOUND(HttpStatus.BAD_REQUEST,"ACTOR404", "수신자가 존재하지 않습니다."),
     INVALID_EVENT_ID(HttpStatus.BAD_REQUEST,"INVALID" ,"잘못된 형식입니다."),
-    NO_MATCHING_TYPE(HttpStatus.NOT_FOUND,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." );
+    NO_MATCHING_TYPE(HttpStatus.NOT_FOUND,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." ),
 
+    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." ),
+
+    // Webhook 관련 에러 코드
+    WEBHOOK_INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "WH001", "웹훅 서명이 유효하지 않습니다"),
+    WEBHOOK_SIGNATURE_REQUIRED(HttpStatus.BAD_REQUEST, "WH002", "웹훅 서명이 필요합니다"),
+    WEBHOOK_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "WH003", "웹훅 처리 중 오류가 발생했습니다"),
+    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
