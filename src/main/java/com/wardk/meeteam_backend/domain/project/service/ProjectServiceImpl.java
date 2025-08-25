@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -178,7 +179,9 @@ public class ProjectServiceImpl implements ProjectService {
 
         List<ProjectRepoResponse> responses = new ArrayList<>();
 
-        for (String repoFullName :request.getRepoFullNames()){
+        for (String repoUrl :request.getRepoUrls()){
+            String repoFullName = extractRepoFullName(repoUrl);
+
             if (projectRepoRepository.existsByProjectIdAndRepoFullName(projectId, repoFullName)) {
                 throw new CustomException(ErrorCode.PROJECT_REPO_ALREADY_EXISTS);
             }
@@ -201,5 +204,23 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         return storeFileName;
+    }
+
+    private String extractRepoFullName(String url) {
+        if (url == null || url.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_REPO_URL);
+        }
+
+        try {
+            URI uri = new URI(url);
+            String path = uri.getPath();
+            if (path == null || path.split("/").length < 3) {
+                throw new CustomException(ErrorCode.INVALID_REPO_URL);
+            }
+
+            return path.substring(1);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.FAILED_TO_PARSE_REPO_URL);
+        }
     }
 }

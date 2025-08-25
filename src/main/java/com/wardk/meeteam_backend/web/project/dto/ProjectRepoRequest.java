@@ -9,6 +9,6 @@ import java.util.List;
 @NoArgsConstructor
 public class ProjectRepoRequest {
 
-    private List<String> repoFullNames;
+    private List<String> repoUrls;
 
 }
