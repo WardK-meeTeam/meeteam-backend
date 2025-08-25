@@ -19,7 +19,7 @@ public class GithubApiFetcher implements PullRequestFetcher {
     private final GithubClient githubClient;
 
     @Override
-    public PrData getPr(String repoFullName, Integer prNumber, JsonNode webhookPayload) {
+    public PrData getPr(String repoFullName, int prNumber, JsonNode webhookPayload) {
         PrData base = PrData.fromWebhook(repoFullName, prNumber, webhookPayload.path("pull_request"));
 
         String[] parts = repoFullName.split("/");
@@ -32,7 +32,7 @@ public class GithubApiFetcher implements PullRequestFetcher {
     }
 
     @Override
-    public List<PrFileData> listFiles(String repoFullName, Integer prNumber) {
+    public List<PrFileData> listFiles(String repoFullName, int prNumber) {
         String[] parts = repoFullName.split("/");
 
         JsonNode[] arr = githubClient.getArray("/repos/{owner}/{repo}/pulls/{number}/files", parts[0], parts[1], prNumber);
@@ -51,20 +51,20 @@ public class GithubApiFetcher implements PullRequestFetcher {
         return PrData.builder()
                 .repoFullName(base.getRepoFullName())
                 .prNumber(base.getPrNumber())
-                .title(firstNonNull(base.getTitle(), enriched.getTitle()))
-                .body(firstNonNull(base.getBody(), enriched.getBody()))
-                .state(firstNonNull(base.getState(), enriched.getState()))
-                .draft(base.isDraft() || enriched.isDraft())
-                .merged(base.isMerged() || enriched.isMerged())
-                .baseBranch(firstNonNull(base.getBaseBranch(), enriched.getBaseBranch()))
-                .headBranch(firstNonNull(base.getHeadBranch(), enriched.getHeadBranch()))
-                .headSha(firstNonNull(base.getHeadSha(), enriched.getHeadSha()))
-                .authorLogin(firstNonNull(base.getAuthorLogin(), enriched.getAuthorLogin()))
-                .additions(firstNonZero(base.getAdditions(), enriched.getAdditions()))
-                .deletions(firstNonZero(base.getDeletions(), enriched.getDeletions()))
-                .changedFiles(firstNonZero(base.getChangedFiles(), enriched.getChangedFiles()))
-                .commentsCount(firstNonZero(base.getCommentsCount(), enriched.getCommentsCount()))
-                .reviewCommentsCount(firstNonZero(base.getReviewCommentsCount(), enriched.getReviewCommentsCount()))
+                .title(firstNonNull(enriched.getTitle(), base.getTitle()))
+                .body(firstNonNull(enriched.getBody(), base.getBody()))
+                .state(firstNonNull(enriched.getState(), base.getState()))
+                .draft(enriched.isDraft())
+                .merged(enriched.isMerged())
+                .baseBranch(firstNonNull(enriched.getBaseBranch(), base.getBaseBranch()))
+                .headBranch(firstNonNull(enriched.getHeadBranch(), base.getHeadBranch()))
+                .headSha(firstNonNull(enriched.getHeadSha(), base.getHeadSha()))
+                .authorLogin(firstNonNull(enriched.getAuthorLogin(), base.getAuthorLogin()))
+                .additions(firstNonZero(enriched.getAdditions(), base.getAdditions()))
+                .deletions(firstNonZero(enriched.getDeletions(), base.getDeletions()))
+                .changedFiles(firstNonZero(enriched.getChangedFiles(), base.getChangedFiles()))
+                .commentsCount(firstNonZero(enriched.getCommentsCount(), base.getCommentsCount()))
+                .reviewCommentsCount(firstNonZero(enriched.getReviewCommentsCount(), base.getReviewCommentsCount()))
                 .build();
     }
 

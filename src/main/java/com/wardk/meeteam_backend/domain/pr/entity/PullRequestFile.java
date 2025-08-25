@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Getter
 @NoArgsConstructor
-@Table(name = "pull_request_files")
+@Table(name = "pull_request_file")
 public class PullRequestFile extends BaseEntity {
 
   /**

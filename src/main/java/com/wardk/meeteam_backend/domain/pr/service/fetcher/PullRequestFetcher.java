@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface PullRequestFetcher {
 
-    PrData getPr(String repoFullName, Integer prNumber, JsonNode webhookPayload);
-    List<PrFileData> listFiles(String repoFullName, Integer prNumber);
+    PrData getPr(String repoFullName, int prNumber, JsonNode webhookPayload);
+    List<PrFileData> listFiles(String repoFullName, int prNumber);
 }

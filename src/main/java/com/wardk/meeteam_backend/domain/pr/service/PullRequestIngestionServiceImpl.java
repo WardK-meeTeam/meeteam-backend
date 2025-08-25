@@ -34,7 +34,7 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
     public void handlePullRequest(JsonNode payload) {
 
         String repoFullName = payload.path("repository").path("full_name").asText();
-        Integer prNumber = payload.path("number").asInt();
+        int prNumber = payload.path("number").asInt();
 
         log.info("PR 수신: repo={}, prNumber={}", repoFullName, prNumber);
 

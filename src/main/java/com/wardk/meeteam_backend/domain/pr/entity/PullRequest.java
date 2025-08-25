@@ -17,7 +17,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Table(
-        name = "pull_requests",
+        name = "pull_request",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_project_repo_pr_number",
@@ -45,7 +45,7 @@ public class PullRequest extends BaseEntity {
    * PR 번호
    */
   @Column(nullable = false)
-  private Integer prNumber;
+  private int prNumber;
 
   /**
    * pr 제목
@@ -67,13 +67,13 @@ public class PullRequest extends BaseEntity {
    * draft pr 여부
    */
   @Column(name = "is_draft")
-  private boolean draft;
+  private boolean isDraft;
 
   /**
    * pr 머지 여부
    */
   @Column(name = "is_merged")
-  private boolean merged;
+  private boolean isMerged;
 
   /**
    * pr 닫힌 시각
@@ -138,7 +138,7 @@ public class PullRequest extends BaseEntity {
     file.setPullRequest(this);
   }
 
-  public PullRequest(Integer prNumber) {
+  public PullRequest(int prNumber) {
     this.prNumber = prNumber;
   }
 
@@ -149,8 +149,8 @@ public class PullRequest extends BaseEntity {
     this.title = prNode.path("title").asText(null);
     this.body = prNode.path("body").asText(null);
     this.state = prNode.path("state").asText(null);
-    this.draft = prNode.path("draft").asBoolean(false);
-    this.merged = prNode.path("merged").asBoolean(false);
+    this.isDraft = prNode.path("draft").asBoolean(false);
+    this.isMerged = prNode.path("merged").asBoolean(false);
 
     this.mergedAt = parseDate(prNode, "merged_at");
     this.closedAt = parseDate(prNode, "closed_at");
