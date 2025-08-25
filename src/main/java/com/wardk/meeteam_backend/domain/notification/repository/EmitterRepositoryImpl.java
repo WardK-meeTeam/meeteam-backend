@@ -41,7 +41,9 @@ public class EmitterRepositoryImpl implements EmitterRepository{
 
         String[] parts = eventId.split("_", 2);
 
-        if (parts.length < 2) return;
+        if (parts.length != 2 || parts[0].isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_EVENT_ID);
+        }
 
         String memberId = parts[0];
         long timestamp;
@@ -55,7 +57,7 @@ public class EmitterRepositoryImpl implements EmitterRepository{
         String zkey = "eventCache:" + memberId;
         String vkey = "eventCache:evt:" + eventId;
 
-        // 1) payload: 객체 그대로 저장 (TTL 5일)
+        // 코드: Duration.ofDays(1) TTL : 1일
         redisObjectTemplate.opsForValue().set(vkey, event, Duration.ofDays(1));
 
         // 2) ZSET 인덱스(멤버=eventId, score=timestamp)

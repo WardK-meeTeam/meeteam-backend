@@ -57,10 +57,10 @@ public enum ErrorCode {
 
 
     //NOTIFICATION
-    NOTIFICATION_NOT_FOUND(HttpStatus.BAD_REQUEST, "NOTIFICATION400", "알림에 문제가 발생하였습니다."),
-    ACTOR_NOT_FOUND(HttpStatus.BAD_REQUEST,"ACTOR404", "수신자가 존재하지 않습니다."),
-    INVALID_EVENT_ID(HttpStatus.BAD_REQUEST,"INVALID" ,"잘못된 형식입니다."),
-    NO_MATCHING_TYPE(HttpStatus.NOT_FOUND,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." ),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION404", "알림을 찾을 수 없습니다."),
+    ACTOR_NOT_FOUND(HttpStatus.NOT_FOUND,"ACTOR404", "행위자(신청자)를 찾을 수 없습니다."),
+    INVALID_EVENT_ID(HttpStatus.BAD_REQUEST,"NOTIFICATION_INVALID_EVENT_ID" ,"이벤트 ID 형식이 올바르지 않습니다."),
+    NO_MATCHING_TYPE(HttpStatus.BAD_REQUEST,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." ),
 
 
     // Webhook 관련 에러 코드
