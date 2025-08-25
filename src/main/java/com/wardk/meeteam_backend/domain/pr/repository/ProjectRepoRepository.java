@@ -7,9 +7,7 @@ import java.util.Optional;
 
 public interface ProjectRepoRepository extends JpaRepository<ProjectRepo, Long> {
 
-    Optional<ProjectRepo> findByProjectIdAndRepoFullName(Long projectId, String repoFullName);
-
     Optional<ProjectRepo> findByRepoFullName(String repoFullName);
 
-    boolean existsByProjectIdAndRepoFullName(Long projectId, String repoFullName);
+    boolean existsByRepoFullName(String repoFullName);
 }

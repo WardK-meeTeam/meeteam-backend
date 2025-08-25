@@ -182,7 +182,7 @@ public class ProjectServiceImpl implements ProjectService {
         for (String repoUrl :request.getRepoUrls()){
             String repoFullName = extractRepoFullName(repoUrl);
 
-            if (projectRepoRepository.existsByProjectIdAndRepoFullName(projectId, repoFullName)) {
+            if (projectRepoRepository.existsByRepoFullName(repoFullName)) {
                 throw new CustomException(ErrorCode.PROJECT_REPO_ALREADY_EXISTS);
             }
 
