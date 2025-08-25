@@ -41,6 +41,7 @@ public class ProjectMemberController {
 
         WithdrawResponse response = projectMemberService.withdraw(request, userDetails.getUsername());
 
+
         return SuccessResponse.onSuccess(response);
     }
 }
