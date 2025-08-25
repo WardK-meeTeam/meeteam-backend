@@ -141,6 +141,7 @@ public class NotificationService {
             case PROJECT_APPLY -> { // 내 프로젝트에 누군가 지원
                 if (actor == null) throw new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND);
                 yield new NewApplicantPayload(
+                        receiver.getId(),
                         actor.getId(), // 지원자Id
                         actor.getRealName(), // 지원자이름
                         project.getName(), //프로젝트 이름
