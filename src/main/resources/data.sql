@@ -51,6 +51,7 @@ VALUES ('Java'),
        ('Kibana');
 
 
+
 -- 대분류
 INSERT INTO big_category (big_category_id, big_category)
 VALUES (1, '기획'),
