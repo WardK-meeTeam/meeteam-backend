@@ -3,6 +3,8 @@ package com.wardk.meeteam_backend.domain.projectMember.service;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
+import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
+import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ApplicationStatus;
@@ -15,6 +17,7 @@ import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,8 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
     private final SubCategoryRepository subCategoryRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public ApplicationResponse apply(ApplicationRequest request, String applicantEmail) {
@@ -65,8 +70,32 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
         ProjectMemberApplication saved = applicationRepository.save(application);
 
+        Long receiverId = project.getCreator().getId();
+        Long actorId = member.getId();
+
+        //프로젝트 리더 알림
+        eventPublisher.publishEvent(new NotificationEvent(
+                receiverId,
+                project.getId(),
+                actorId,
+                NotificationType.PROJECT_APPLY
+        ));
+
+
+        // 지원자 알림
+        eventPublisher.publishEvent(new NotificationEvent(
+                actorId,
+                project.getId(),
+                actorId,
+                NotificationType.PROJECT_MY_APPLY
+        ));
+
+
+
         return ApplicationResponse.responseDto(saved);
     }
+
+
 
     @Override
     public List<ProjectApplicationListResponse> getApplicationList(Long projectId, String requesterEmail) {
@@ -99,13 +128,26 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
         application.updateStatus(request.getDecision());
 
+
+        Long projectId = application.getProject().getId(); // 프로젝트 id
+        Long applicantId = application.getApplicant().getId(); // 지원자 id
+        Long projectCreatorId = application.getProject().getCreator().getId(); // 프로젝트 팀장 id
+
         // decision이 ACCEPTED인 경우 프로젝트 멤버로 등록 후 리턴
         if (application.getStatus() == ApplicationStatus.ACCEPTED) {
             projectMemberService.addMember(
-                    application.getProject().getId(),
-                    application.getApplicant().getId(),
+                    projectId,
+                    applicantId,
                     application.getSubCategory()
             );
+
+            eventPublisher.publishEvent(new NotificationEvent(
+                    applicantId,
+                    projectId,
+                    projectCreatorId,
+                    NotificationType.PROJECT_APPROVE
+            ));
+
 
             return ApplicationDecisionResponse.acceptResponseDto(
                     application.getId(),
@@ -114,6 +156,13 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                     application.getStatus()
             );
         }
+
+        eventPublisher.publishEvent(new NotificationEvent(
+                applicantId,
+                projectId,
+                projectCreatorId,
+                NotificationType.PROJECT_REJECT
+        ));
 
         return ApplicationDecisionResponse.rejectResponseDto(
                 application.getId(),
