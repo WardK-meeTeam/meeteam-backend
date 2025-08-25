@@ -1,14 +1,15 @@
 package com.wardk.meeteam_backend.domain.projectMember.entity;
 
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
-import com.wardk.meeteam_backend.domain.member.entity.JobType;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 
 @Entity
 @Getter
@@ -78,7 +79,10 @@ public class ProjectMemberApplication { // 프로젝트 지원서
                 .offlineAvailable(offlineAvailable)
                 .build();
     }
+
+
     public void updateStatus(ApplicationStatus status) {
         this.status = status;
     }
+
 }

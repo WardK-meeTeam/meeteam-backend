@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    
+    <property name="LOG_PATH" value="logs" />
+    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%-40.40logger{39}) : %msg%n"/>
+    
+    <!-- 콘솔 어펜더 커스터마이징 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- 애플리케이션 로그 파일 -->
+    <appender name="APPLICATION" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/application.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/application.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- 웹훅 전용 로그 파일 -->
+    <appender name="WEBHOOK" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/webhook.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/webhook.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- SQL 쿼리 전용 로그 파일 -->
+    <appender name="SQL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/sql.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/sql.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- 컨트롤러 로그 파일 -->
+    <appender name="CONTROLLER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/controller.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/controller.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- 서비스 로그 파일 -->
+    <appender name="SERVICE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/service.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/service.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- 웹훅 로거 -->
+    <logger name="com.wardk.meeteam_backend.domain.webhook" level="INFO" additivity="false">
+        <appender-ref ref="WEBHOOK" />
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APPLICATION" />
+    </logger>
+    
+    <!-- 컨트롤러 로거 -->
+    <logger name="com.wardk.meeteam_backend.web" level="INFO" additivity="false">
+        <appender-ref ref="CONTROLLER" />
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APPLICATION" />
+    </logger>
+    
+    <!-- 서비스 로거 -->
+    <logger name="com.wardk.meeteam_backend.domain" level="INFO" additivity="false">
+        <appender-ref ref="SERVICE" />
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APPLICATION" />
+    </logger>
+    
+    <!-- SQL 로거 -->
+    <logger name="p6spy" level="INFO" additivity="false">
+        <appender-ref ref="SQL" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+    
+    <!-- 필터 로거 -->
+    <logger name="com.wardk.meeteam_backend.global.filter" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APPLICATION" />
+    </logger>
+    
+    <!-- AOP 로깅 레벨 조정 -->
+    <logger name="com.wardk.meeteam_backend.global.logging" level="INFO" />
+    
+    <!-- 프록시 객체 로깅 끄기 -->
+    <logger name="jdk.proxy2" level="WARN" />
+    
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APPLICATION" />
+    </root>
+</configuration>
