@@ -79,7 +79,8 @@ public class SecurityConfig {
                                 "/docs/**", "/default-ui.css", "/favicon.ico",
                                 "/api/login",
                                 "/api/auth/**", "/", "/uploads/**", "/api/register", "/api/project/register", "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**",
-                                "/api/auth/oauth2/success", "/api/auth/oauth2/failure").permitAll()
+                                "/api/auth/oauth2/success", "/api/auth/oauth2/failure",
+                                "/api/webhooks/github").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated() //나머지는 인증이 된 사용자만 가능
                 )
