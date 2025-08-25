@@ -5,6 +5,8 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
+import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
+import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
@@ -21,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -34,6 +37,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
     private final ProjectMemberService projectMemberService;
+    private final ProjectRepoRepository projectRepoRepository;
 
     @Override
     public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
@@ -107,7 +111,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if(!project.getCreator().getEmail().equals(requesterEmail)){
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
@@ -153,13 +157,40 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if(!project.getCreator().getEmail().equals(requesterEmail)){
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
         projectRepository.delete(project);
 
         return ProjectDeleteResponse.responseDto(projectId, project.getName());
+    }
+
+    @Override
+    public List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        List<ProjectRepoResponse> responses = new ArrayList<>();
+
+        for (String repoFullName :request.getRepoFullNames()){
+            if (projectRepoRepository.existsByProjectIdAndRepoFullName(projectId, repoFullName)) {
+                throw new CustomException(ErrorCode.PROJECT_REPO_ALREADY_EXISTS);
+            }
+
+            ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName);
+            project.addRepo(projectRepo);
+            projectRepository.save(project);
+
+            responses.add(ProjectRepoResponse.responseDto(projectRepo));
+        }
+
+        return responses;
     }
 
     private String getStoreFileName(MultipartFile file) {

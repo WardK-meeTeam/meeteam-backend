@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.domain.pr.service;
+package com.wardk.meeteam_backend.domain.pr.service.fetcher;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wardk.meeteam_backend.global.github.GithubClient;
