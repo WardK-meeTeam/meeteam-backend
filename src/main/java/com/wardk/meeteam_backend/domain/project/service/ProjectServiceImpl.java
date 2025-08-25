@@ -185,7 +185,8 @@ public class ProjectServiceImpl implements ProjectService {
 
             ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName);
             project.addRepo(projectRepo);
-            projectRepository.save(project);
+
+            projectRepoRepository.save(projectRepo);
 
             responses.add(ProjectRepoResponse.responseDto(projectRepo));
         }

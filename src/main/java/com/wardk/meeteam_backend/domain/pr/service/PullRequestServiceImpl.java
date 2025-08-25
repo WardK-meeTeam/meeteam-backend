@@ -9,6 +9,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -22,5 +24,13 @@ public class PullRequestServiceImpl implements PullRequestService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PR_NOT_FOUND));
 
         return PullRequestResponse.create(pr);
+    }
+
+    @Override
+    public List<PullRequestResponse> getAllPullRequests(Long projectId) {
+
+        List<PullRequest> prs = pullRequestRepository.findAllByProjectIdWithFiles(projectId);
+
+        return PullRequestResponse.createList(prs);
     }
 }
