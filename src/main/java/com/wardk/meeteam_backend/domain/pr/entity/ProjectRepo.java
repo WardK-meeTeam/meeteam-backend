@@ -28,7 +28,7 @@ public class ProjectRepo {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @Column(nullable = false)
+    @Column(name = "repo_full_name",nullable = false)
     private String repoFullName;
 
     @Builder

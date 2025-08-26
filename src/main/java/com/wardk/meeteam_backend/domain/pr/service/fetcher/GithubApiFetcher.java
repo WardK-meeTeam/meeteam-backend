@@ -60,11 +60,11 @@ public class GithubApiFetcher implements PullRequestFetcher {
                 .headBranch(firstNonNull(enriched.getHeadBranch(), base.getHeadBranch()))
                 .headSha(firstNonNull(enriched.getHeadSha(), base.getHeadSha()))
                 .authorLogin(firstNonNull(enriched.getAuthorLogin(), base.getAuthorLogin()))
-                .additions(firstNonZero(enriched.getAdditions(), base.getAdditions()))
-                .deletions(firstNonZero(enriched.getDeletions(), base.getDeletions()))
-                .changedFiles(firstNonZero(enriched.getChangedFiles(), base.getChangedFiles()))
-                .commentsCount(firstNonZero(enriched.getCommentsCount(), base.getCommentsCount()))
-                .reviewCommentsCount(firstNonZero(enriched.getReviewCommentsCount(), base.getReviewCommentsCount()))
+                .additions(firstNonNull(enriched.getAdditions(), base.getAdditions()))
+                .deletions(firstNonNull(enriched.getDeletions(), base.getDeletions()))
+                .changedFiles(firstNonNull(enriched.getChangedFiles(), base.getChangedFiles()))
+                .commentsCount(firstNonNull(enriched.getCommentsCount(), base.getCommentsCount()))
+                .reviewCommentsCount(firstNonNull(enriched.getReviewCommentsCount(), base.getReviewCommentsCount()))
                 .build();
     }
 
@@ -72,7 +72,7 @@ public class GithubApiFetcher implements PullRequestFetcher {
         return (a != null && !a.isBlank()) ? a : b;
     }
 
-    private Integer firstNonZero(Integer a, Integer b) {
-        return (a != null && a > 0) ? a : b;
+    private Integer firstNonNull(Integer a, Integer b) {
+        return (a != null) ? a : b;
     }
 }
