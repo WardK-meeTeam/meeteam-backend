@@ -35,7 +35,8 @@ public enum ErrorCode {
     // PROJECT
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT404", "프로젝트를 찾을 수 없습니다."),
 
-
+    // CHAT
+    CHAT_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_THREAD404", "해당 쓰레드를 찾을 수 없습니다."),
 
     // PROJECT MEMBER
     PROJECT_MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "이미 프로젝트에 참여 중입니다."),
