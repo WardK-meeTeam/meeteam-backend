@@ -4,7 +4,7 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Instant; import java.util.UUID;
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -13,8 +13,6 @@ import java.time.Instant; import java.util.UUID;
 @NoArgsConstructor
 @Table(indexes = @Index(columnList = "thread_id, createdAt"))
 public class ChatMessage {
-
-  public enum Role { SYSTEM, USER, ASSISTANT, TOOL }
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +24,7 @@ public class ChatMessage {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private Role role;
+  private SenderRole senderRole;
 
   @ManyToOne(fetch = FetchType.LAZY)
   private Member author; // USER 메시지일 때 사용
@@ -34,7 +32,9 @@ public class ChatMessage {
   @Column(columnDefinition = "text")
   private String content;
 
-  private String modelName; private Integer promptTokens; private Integer completionTokens;
+  private String modelName;
+  private Integer promptTokens;
+  private Integer completionTokens;
 
   private Instant createdAt;
 }
