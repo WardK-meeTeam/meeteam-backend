@@ -31,22 +31,25 @@ public class MainPageProjectDto { // 프로젝트 카드 정보
                 .id(String.valueOf(project.getId()))
                 .name(project.getName())
                 .description(project.getDescription())
-                .projectCategory(project.getProjectCategory().name())
-                .platformCategory(project.getPlatformCategory().name())
+                .projectCategory(project.getProjectCategory() != null ? project.getProjectCategory().name() : null)
+                .platformCategory(project.getPlatformCategory() != null ? project.getPlatformCategory().name() : null)
                 .imageUrl(project.getImageUrl())
-                .creatorName(project.getCreator().getRealName())
+                .creatorName(project.getCreator() != null ? project.getCreator().getRealName() : null)
                 .createdDate(project.getCreatedAt())
                 .endDate(project.getEndDate())
                 .skillNames(
                         project.getProjectSkills() != null
                                 ? project.getProjectSkills().stream()
+                                .filter(ps -> ps != null && ps.getSkill() != null && ps.getSkill().getSkillName() != null)
                                 .map(ps -> ps.getSkill().getSkillName())
+                                .distinct() // 중복제거
                                 .collect(Collectors.toList())
                                 : List.of()
                 )
                 .recruitmentInfo(
                         project.getRecruitments() != null
                                 ? project.getRecruitments().stream()
+                                .filter(r -> r != null && r.getSubCategory() != null)  // null 필터링
                                 .map(RecruitmentInfoDto::responseDto)
                                 .collect(Collectors.toList())
                                 : List.of()

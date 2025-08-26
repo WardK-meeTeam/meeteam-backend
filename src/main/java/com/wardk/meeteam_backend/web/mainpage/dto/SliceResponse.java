@@ -16,6 +16,7 @@ public class SliceResponse<T> { // 무한 스크롤용 페이징 응답 래퍼
     private Integer size;
 
     public static <T> SliceResponse<T> of(List<T> contents, Boolean hasNext, Integer currentPage) {
+        List<T> safe = (contents == null) ? List.of() : List.copyOf(contents);  // null-safe & 불변 복사
         return SliceResponse.<T>builder()
                 .content(contents)
                 .hasNext(hasNext)
