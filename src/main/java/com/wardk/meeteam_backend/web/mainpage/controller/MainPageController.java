@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.web.mainpage.controller;
 
-import com.wardk.meeteam_backend.domain.mainpage.service.MainPageService;
+import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
@@ -27,7 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MainPageController {
 
-    private final MainPageService mainPageService;
+    private final ProjectService projectService;
 
     // 대분류별(sub-category 별)
     @Operation(summary = "대분류별 프로젝트 목록 조회", description = "대분류 필터링을 통한 모집중인 프로젝트 목록을 무한 스크롤로 조회합니다.")
@@ -71,7 +71,7 @@ public class MainPageController {
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
 
-        SliceResponse<MainPageProjectDto> response = mainPageService.getRecruitingProjectsByCategory(bigCategoryIds, pageable);
+        SliceResponse<MainPageProjectDto> response = projectService.getRecruitingProjectsByCategory(bigCategoryIds, pageable);
 
         return ResponseEntity.ok(response);
     }
