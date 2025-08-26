@@ -5,6 +5,8 @@ import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -45,16 +47,16 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     // 특정 대분류들을 모집하고 있는 프로젝트 조회 (Slice) - 메인페이지용, recruitmentStatus 파라미터 추가
 
     @Query("SELECT DISTINCT p FROM Project p " +
-            "JOIN FETCH p.creator " +
-            "JOIN FETCH p.recruitments r " +
-            "JOIN FETCH r.subCategory sc " +
-            "JOIN FETCH sc.bigCategory bc " +
+            "LEFT JOIN FETCH p.creator " +           // ToOne 관계만
+            "LEFT JOIN FETCH p.recruitments r " +    // 컬렉션 1개만
+            "LEFT JOIN FETCH r.subCategory sc " +    // ToOne 관계
+            "LEFT JOIN FETCH sc.bigCategory bc " +   // ToOne 관계
             "WHERE bc.id IN :bigCategoryIds " +
-            "AND p.recruitmentStatus = :recruitmentStatus " +  // Enum 파라미터 추가
+            "AND p.recruitmentStatus = :recruitmentStatus " +
             "AND p.isDeleted = false")
     Slice<Project> findRecruitingProjectsByBigCategories(
             @Param("bigCategoryIds") List<Long> bigCategoryIds,
-            @Param("recruitmentStatus") Recruitment recruitmentStatus,  // Enum 파라미터 추가
+            @Param("recruitmentStatus") Recruitment recruitmentStatus,
             Pageable pageable
     );
 
