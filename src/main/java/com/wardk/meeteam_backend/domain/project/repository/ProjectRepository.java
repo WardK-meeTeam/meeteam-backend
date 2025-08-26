@@ -51,8 +51,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "JOIN FETCH sc.bigCategory bc " +
             "WHERE bc.id IN :bigCategoryIds " +
             "AND p.recruitmentStatus = :recruitmentStatus " +  // Enum 파라미터 추가
-            "AND p.isDeleted = false " +
-            "ORDER BY p.id DESC")
+            "AND p.isDeleted = false")
     Slice<Project> findRecruitingProjectsByBigCategories(
             @Param("bigCategoryIds") List<Long> bigCategoryIds,
             @Param("recruitmentStatus") Recruitment recruitmentStatus,  // Enum 파라미터 추가
