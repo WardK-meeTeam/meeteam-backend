@@ -23,6 +23,7 @@ public class MainPageProjectDto { // 프로젝트 카드 정보
     private String creatorName;
     private LocalDateTime createdDate;
     private LocalDate endDate;
+    private Integer likes;
     private List<String> skillNames;
     private List<RecruitmentInfoDto> recruitmentInfo;
 
@@ -37,6 +38,7 @@ public class MainPageProjectDto { // 프로젝트 카드 정보
                 .creatorName(project.getCreator() != null ? project.getCreator().getRealName() : null)
                 .createdDate(project.getCreatedAt())
                 .endDate(project.getEndDate())
+                .likes(project.getLikes())
                 .skillNames(
                         project.getProjectSkills() != null
                                 ? project.getProjectSkills().stream()
