@@ -67,7 +67,14 @@ public enum ErrorCode {
     WEBHOOK_INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "WH001", "웹훅 서명이 유효하지 않습니다"),
     WEBHOOK_SIGNATURE_REQUIRED(HttpStatus.BAD_REQUEST, "WH002", "웹훅 서명이 필요합니다"),
     WEBHOOK_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "WH003", "웹훅 처리 중 오류가 발생했습니다"),
-    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다");
+    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다"),
+
+    // PR
+    PR_NOT_FOUND(HttpStatus.NOT_FOUND, "PR404", "해당 Pull Request를 찾을 수 없습니다."),
+    PROJECT_REPO_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_REPO404", "해당 프로젝트 저장소를 찾을 수 없습니다."),
+    PROJECT_REPO_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "이미 등록된 프로젝트 저장소입니다."),
+    INVALID_REPO_URL(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "유효하지 않은 저장소 URL입니다."),
+    FAILED_TO_PARSE_REPO_URL(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "저장소 URL 파싱에 실패했습니다.");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
