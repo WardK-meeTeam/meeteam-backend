@@ -58,4 +58,11 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             Pageable pageable
     );
 
+    // 필요시 추가로 skills 조회하는 별도 메서드
+    @Query("SELECT p FROM Project p " +
+            "JOIN FETCH p.projectSkills ps " +
+            "JOIN FETCH ps.skill " +
+            "WHERE p IN :projects")
+    List<Project> findProjectsWithSkills(@Param("projects") List<Project> projects);
+
 }
