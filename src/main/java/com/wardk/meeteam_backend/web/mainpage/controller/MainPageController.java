@@ -61,8 +61,10 @@ public class MainPageController {
             throw new CustomException(ErrorCode.MAIN_PAGE_SORT_PARAMETER_INVALID);
         }
 
-        // 유효하지 않은 ID(0이하)가 하나라도 있으면 에러
-        if (bigCategoryIds.stream().anyMatch(id -> id <= 0)) {
+        // 유효하지 않은 ID(0이하) 또는 빈 목록/과다 목록 방어
+        if (bigCategoryIds == null || bigCategoryIds.isEmpty()
+                || bigCategoryIds.size() > 50
+                || bigCategoryIds.stream().anyMatch(id -> id == null || id <= 0)) {
             throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
         }
 
