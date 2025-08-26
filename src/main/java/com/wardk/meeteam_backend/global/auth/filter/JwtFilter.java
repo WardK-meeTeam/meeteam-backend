@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.filter;
+package com.wardk.meeteam_backend.global.auth.filter;
 
 
 
@@ -33,20 +33,22 @@ public class JwtFilter extends OncePerRequestFilter {
     String uri = request.getRequestURI();
     
     if (
-            uri.equals("/api/login") ||
-            uri.equals("/api/register") ||
-            uri.equals("/api/auth/oauth2/success") ||
-            uri.equals("/api/auth/oauth2/failure") ||
+            //uri.equals("/api/login") ||
+            //uri.equals("/api/register") ||
+            //uri.equals("/api/auth/oauth2/success") ||
+            //uri.equals("/api/auth/oauth2/failure") ||
 
+            uri.startsWith("/api/auth") ||
             uri.startsWith("/api/webhooks/github") ||
 
             uri.equals("/docs/swagger-ui/index.html") ||
-            uri.startsWith("/swagger-ui/**") ||
-            uri.equals("/swagger-ui.html") ||
-            uri.startsWith("/swagger-resources/**") ||
+            //uri.startsWith("/swagger-ui/**") ||
+            //uri.equals("/swagger-ui.html") ||
+            //uri.startsWith("/swagger-resources/**") ||
             uri.startsWith("/webjars/**") ||
             uri.startsWith("/v3/api-docs") ||
-            uri.startsWith("/docs/**") || uri.startsWith("/docs") ||
+            //uri.startsWith("/docs/**") ||
+                uri.startsWith("/docs") ||
             uri.startsWith("/actuator") ||
             uri.startsWith("/v3") ||
 
