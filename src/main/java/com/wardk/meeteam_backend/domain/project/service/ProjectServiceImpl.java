@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
+import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
@@ -16,16 +17,21 @@ import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.auth.FileUtil;
+import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
+import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -222,5 +228,30 @@ public class ProjectServiceImpl implements ProjectService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.FAILED_TO_PARSE_REPO_URL);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable) {
+        // 강화된 파라미터 검증
+        if (bigCategoryIds == null || bigCategoryIds.isEmpty()
+                || bigCategoryIds.size() > 50
+                || bigCategoryIds.stream().anyMatch(id -> id == null || id <= 0)) {
+            throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
+        }
+
+        // 대분류별 + 모집중 상태 프로젝트 조회
+        Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategories(
+                bigCategoryIds,
+                Recruitment.RECRUITING,
+                pageable
+        );
+
+        // DTO 변환
+        List<MainPageProjectDto> dtoList = projectSlice.getContent().stream()
+                .map(MainPageProjectDto::responseDto)
+                .collect(Collectors.toList());
+
+        return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
     }
 }
