@@ -8,6 +8,8 @@ services:
     depends_on:
       my-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./files:/app/files
 
@@ -26,7 +28,12 @@ services:
       retries: 10
   redis:
     image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - 6379:6379
     volumes:
       - ./redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping" ]
+      interval: 5s
+      retries: 20
