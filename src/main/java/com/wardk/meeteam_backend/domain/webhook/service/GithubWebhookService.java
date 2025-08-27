@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.webhook.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wardk.meeteam_backend.domain.pr.service.PullRequestIngestionService;
 import com.wardk.meeteam_backend.domain.webhook.entity.WebhookDelivery;
 import com.wardk.meeteam_backend.domain.webhook.repository.WebhookDeliveryRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -18,10 +19,11 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 public class GithubWebhookService {
 
     private final WebhookDeliveryRepository deliveryRepository;
+    private final PullRequestIngestionService pullRequestIngestionService;
 
     /**
      * Webhook 수신 기록을 저장합니다.
@@ -146,37 +148,52 @@ public class GithubWebhookService {
         
         // 실제 비즈니스 로직 구현
         switch (action) {
-            case "opened", "synchronize" -> handlePullRequestUpdate(pr, repoName);
+            case "opened", "synchronize" -> handlePullRequestUpdate(payload);
             case "closed" -> {
                 if (pr.path("merged").asBoolean(false)) {
-                    handlePullRequestMerged(pr, repoName);
+                    handlePullRequestMerged(payload);
                 } else {
-                    handlePullRequestClosed(pr, repoName);
+                    handlePullRequestClosed(payload);
                 }
             }
             default -> log.debug("지원하지 않는 PR 액션: {}", action);
         }
     }
     
-    private void handlePullRequestUpdate(JsonNode pr, String repoName) {
+    private void handlePullRequestUpdate(JsonNode payload) {
+        int prNumber = payload.path("pull_request").path("number").asInt(0);
+        String repoName = payload.path("repository").path("full_name").asText("저장소 없음");
         // PR 생성 또는 업데이트 로직
-        log.debug("PR 생성/업데이트 처리: repo={}, prNumber={}", 
-                repoName, pr.path("number").asText());
+        log.debug("PR 생성/업데이트 처리: repo={}, prNumber={}", repoName, prNumber);
+
         // TODO: 실제 구현
+        pullRequestIngestionService.handlePullRequest(payload);
+
+        log.info("PR 저장 성공: repo={}, prNumber={}", repoName, prNumber);
     }
     
-    private void handlePullRequestMerged(JsonNode pr, String repoName) {
+    private void handlePullRequestMerged(JsonNode payload) {
+        int prNumber = payload.path("pull_request").path("number").asInt(0);
+        String repoName = payload.path("repository").path("full_name").asText("저장소 없음");
         // PR 병합 로직
-        log.debug("PR 병합 처리: repo={}, prNumber={}", 
-                repoName, pr.path("number").asText());
+        log.debug("PR 병합 처리: repo={}, prNumber={}", repoName, prNumber);
+
         // TODO: 실제 구현
+        pullRequestIngestionService.handleMerged(payload);
+
+        log.info("PR 머지 성공: repo={}, prNumber={}", repoName, prNumber);
     }
     
-    private void handlePullRequestClosed(JsonNode pr, String repoName) {
+    private void handlePullRequestClosed(JsonNode payload) {
+        int prNumber = payload.path("pull_request").path("number").asInt(0);
+        String repoName = payload.path("repository").path("full_name").asText("저장소 없음");
         // PR 닫힘 로직
-        log.debug("PR 닫힘 처리: repo={}, prNumber={}", 
-                repoName, pr.path("number").asText());
+        log.debug("PR 닫힘 처리: repo={}, prNumber={}", repoName, prNumber);
+
         // TODO: 실제 구현
+        pullRequestIngestionService.handleClosed(payload);
+
+        log.info("PR 닫힘 성공: repo={}, prNumber={}", repoName, prNumber);
     }
     
     private void handleIssueCommentEvent(JsonNode payload) {

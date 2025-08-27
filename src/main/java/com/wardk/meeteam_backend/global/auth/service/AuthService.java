@@ -9,7 +9,7 @@ import com.wardk.meeteam_backend.domain.skill.repository.MemberSkillRepository;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.global.auth.FileUtil;
+import com.wardk.meeteam_backend.global.util.FileUtil;
 import com.wardk.meeteam_backend.global.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.MemberSubCategoryRepository;

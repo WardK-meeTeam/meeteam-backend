@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -45,7 +46,7 @@ public class AuthController {
      */
 
 
-    @PostMapping(value = "/api/register" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/register" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<RegisterResponse> response(
             @RequestPart("request") RegisterRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file
@@ -58,7 +59,7 @@ public class AuthController {
 
     }
 
-    @PostMapping("/api/login")
+    @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
         return request.getUsername();
     }
