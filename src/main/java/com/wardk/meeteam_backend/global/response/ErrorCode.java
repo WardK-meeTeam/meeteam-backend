@@ -78,6 +78,8 @@ public enum ErrorCode {
 
 
     FAILED_TO_CREATE_APP_JWT(HttpStatus.BAD_REQUEST, "GITHUB400", "GitHub App JWT 생성에 실패했습니다."),
+    GITHUB_APP_NOT_INSTALLED(HttpStatus.BAD_REQUEST, "GITHUB401", "해당 레포에 GitHub App이 설치되지 않았습니다."),
+    GITHUB_API_ERROR(HttpStatus.BAD_GATEWAY, "GITHUB502", "GitHub API 요청 중 오류가 발생했습니다."),
 
     // 메인페이지 관련 에러 코드
     MAIN_PAGE_INVALID_PAGINATION(HttpStatus.BAD_REQUEST, "MAIN_PAGE401", "잘못된 페이징 정보입니다."),

@@ -8,9 +8,11 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
@@ -82,6 +84,34 @@ public class GithubAppAuthService {
         }
 
         return resp.get("token").asText();
+    }
+
+    public Long fetchInstallationId(String owner, String repo) {
+
+        String appJwt = createAppJwt();
+
+        try {
+            JsonNode resp = webClientBuilder.baseUrl("https://api.github.com").build()
+                    .get()
+                    .uri("/repos/{owner}/{repo}/installation", owner, repo)
+                    .headers(h -> {
+                        h.setBearerAuth(appJwt);
+                        h.add("Accept", "application/vnd.github+json");
+                    })
+                    .retrieve()
+                    .onStatus(status -> status.value() == 404, r -> Mono.error(new CustomException(ErrorCode.GITHUB_APP_NOT_INSTALLED)))
+                    .onStatus(HttpStatusCode::isError, r -> Mono.error(new CustomException(ErrorCode.GITHUB_API_ERROR)))
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            return resp.get("id").asLong();
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Github API 호출 실패: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.GITHUB_API_ERROR);
+        }
+
     }
 
     private static RSAPrivateKey loadPrivateKeyFromPem(String pem) throws Exception {

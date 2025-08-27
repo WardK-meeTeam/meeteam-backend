@@ -14,6 +14,7 @@ import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
+import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.auth.FileUtil;
@@ -45,6 +46,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final SkillRepository skillRepository;
     private final ProjectMemberService projectMemberService;
     private final ProjectRepoRepository projectRepoRepository;
+    private final GithubAppAuthService githubAppAuthService;
 
     @Override
     public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
@@ -192,7 +194,10 @@ public class ProjectServiceImpl implements ProjectService {
                 throw new CustomException(ErrorCode.PROJECT_REPO_ALREADY_EXISTS);
             }
 
-            ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName);
+            String[] parts = repoFullName.split("/");
+            Long installationId = githubAppAuthService.fetchInstallationId(parts[0], parts[1]);
+
+            ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName, installationId);
             project.addRepo(projectRepo);
 
             projectRepoRepository.save(projectRepo);
