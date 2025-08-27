@@ -33,6 +33,9 @@ public class ChatThread extends BaseEntity {
   @JoinColumn(name = "pr_id", nullable = false)
   private PullRequest pullRequest;
 
+  @Column(nullable = false, name = "member_id", updatable = false)
+  private Long memberId;
+
   @Column(length = 255)
   private String title;
 }
