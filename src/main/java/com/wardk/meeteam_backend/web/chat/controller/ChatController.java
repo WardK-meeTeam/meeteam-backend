@@ -1,22 +1,20 @@
 package com.wardk.meeteam_backend.web.chat.controller;
 
 
-import com.wardk.meeteam_backend.domain.chat.entity.ChatMessage;
-import com.wardk.meeteam_backend.domain.chat.repository.ChatMessageRepository;
+import com.wardk.meeteam_backend.domain.chat.entity.ChatThread;
 import com.wardk.meeteam_backend.domain.chat.service.ChatService;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.chat.dto.ChatMessageResponse;
+import com.wardk.meeteam_backend.web.chat.dto.ChatThreadRequest;
 import com.wardk.meeteam_backend.web.chat.dto.MessageSendRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List; import java.util.UUID;
 
 /**
  * 채팅 메시지와 관련된 API 요청을 처리하는 컨트롤러입니다.
@@ -30,6 +28,20 @@ public class ChatController {
   private final ChatService chatService;
 
   /**
+   * 모든 채팅 스레드를 조회합니다.
+   *
+   * @param request   채팅 스레드 조회에 필요한 요청 객체
+   * @param customSecurityUserDetails 인증된 사용자 정보
+   * @return 조회된 채팅 스레드 목록을 포함한 성공 응답
+   */
+  @GetMapping
+  public SuccessResponse<Page<ChatThread>> getAllMessages(@RequestBody ChatThreadRequest request,
+                                                          @AuthenticationPrincipal CustomSecurityUserDetails customSecurityUserDetails) {
+    request.setMemberId(customSecurityUserDetails.getMemberId());
+    return SuccessResponse.onSuccess(chatService.getAllThreads(request));
+  }
+
+  /**
    * 특정 채팅 스레드의 메시지를 조회합니다.
    *
    * @param threadId  조회할 채팅 스레드의 ID
@@ -40,8 +52,9 @@ public class ChatController {
   @GetMapping("/{threadId}/messages")
   public SuccessResponse<ChatMessageResponse> getMessages(@PathVariable Long threadId,
                                                           @RequestParam Long cursor,
-                                                          @RequestParam(defaultValue = "20") int pageSize) {
-    return SuccessResponse.onSuccess(chatService.getMessages(threadId, cursor, pageSize));
+                                                          @RequestParam(defaultValue = "20") int pageSize,
+                                                          @AuthenticationPrincipal CustomSecurityUserDetails customSecurityUserDetails) {
+    return SuccessResponse.onSuccess(chatService.getMessages(threadId, customSecurityUserDetails.getUsername(), cursor, pageSize));
   }
 
   /**
@@ -54,7 +67,7 @@ public class ChatController {
    */
   @PostMapping("/{threadId}/messages")
   public ResponseEntity<Void> send(@PathVariable Long threadId,
-                                   @RequestBody MessageSendRequest request,
+                                   @Valid @RequestBody MessageSendRequest request,
                                    @AuthenticationPrincipal CustomSecurityUserDetails customSecurityUserDetails) {
 
     chatService.saveChatMessage(threadId, customSecurityUserDetails.getUsername(), request.text());
