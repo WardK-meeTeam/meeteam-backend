@@ -6,11 +6,13 @@ import com.wardk.meeteam_backend.domain.chat.service.ChatService;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.chat.dto.ChatMessageResponse;
-import com.wardk.meeteam_backend.web.chat.dto.ChatThreadRequest;
 import com.wardk.meeteam_backend.web.chat.dto.MessageSendRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -35,10 +37,11 @@ public class ChatController {
    * @return 조회된 채팅 스레드 목록을 포함한 성공 응답
    */
   @GetMapping
-  public SuccessResponse<Page<ChatThread>> getAllMessages(@RequestBody ChatThreadRequest request,
+  public SuccessResponse<Page<ChatThread>> getAllMessages(@RequestParam int pageNumber,
+                                                          @RequestParam int pageSize,
                                                           @AuthenticationPrincipal CustomSecurityUserDetails customSecurityUserDetails) {
-    request.setMemberId(customSecurityUserDetails.getMemberId());
-    return SuccessResponse.onSuccess(chatService.getAllThreads(request));
+    Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+    return SuccessResponse.onSuccess(chatService.getAllThreads(customSecurityUserDetails.getMemberId(), pageable));
   }
 
   /**
