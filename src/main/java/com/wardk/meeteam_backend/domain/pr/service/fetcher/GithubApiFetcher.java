@@ -47,6 +47,35 @@ public class GithubApiFetcher implements PullRequestFetcher {
         return files;
     }
 
+    @Override
+    public PrData getPr(String repoFullName, int prNumber, JsonNode webhookPayload, String token) {
+        PrData base = PrData.fromWebhook(repoFullName, prNumber, webhookPayload.path("pull_request"));
+
+        String[] parts = repoFullName.split("/");
+
+        JsonNode prNode = githubClient.get(token, "/repos/{owner}/{repo}/pulls/{number}", parts[0], parts[1], prNumber);
+
+        PrData enriched = PrData.fromWebhook(repoFullName, prNumber, prNode);
+
+        return merge(base, enriched);
+    }
+
+    @Override
+    public List<PrFileData> listFiles(String repoFullName, int prNumber, String token) {
+        String[] parts = repoFullName.split("/");
+
+        JsonNode[] arr = githubClient.getArray(token, "/repos/{owner}/{repo}/pulls/{number}/files", parts[0], parts[1], prNumber);
+
+        List<PrFileData> files = new ArrayList<>();
+        if (arr != null) {
+            for (JsonNode f : arr) {
+                files.add(PrFileData.create(f));
+            }
+        }
+
+        return files;
+    }
+
     private PrData merge(PrData base, PrData enriched) {
         return PrData.builder()
                 .repoFullName(base.getRepoFullName())

@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.domain.pr.service.PullRequestIngestionService;
 import com.wardk.meeteam_backend.domain.webhook.entity.WebhookDelivery;
 import com.wardk.meeteam_backend.domain.webhook.repository.WebhookDeliveryRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
+import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class GithubWebhookService {
 
     private final WebhookDeliveryRepository deliveryRepository;
     private final PullRequestIngestionService pullRequestIngestionService;
+    private final GithubAppAuthService githubAppAuthService;
 
     /**
      * Webhook 수신 기록을 저장합니다.
@@ -77,7 +79,31 @@ public class GithubWebhookService {
         try {
             switch (eventType) {
                 case "ping" -> handlePingEvent(payload);
-                case "pull_request" -> handlePullRequestEvent(payload);
+//                case "pull_request" -> handlePullRequestEvent(payload);
+                case "issue_comment" -> handleIssueCommentEvent(payload);
+                default -> log.info("미지원 이벤트 타입: {}, 기록만 저장합니다.", eventType);
+            }
+        } catch (Exception e) {
+            log.error("Webhook 처리 중 오류 발생: type={}, error={}", eventType, e.getMessage(), e);
+            throw new CustomException(ErrorCode.WEBHOOK_PROCESSING_ERROR);
+        }
+    }
+
+    public void dispatch(String eventType, JsonNode payload, Long installationId) {
+        if (eventType == null) {
+            log.error("이벤트 타입이 null입니다");
+            throw new CustomException(ErrorCode.WEBHOOK_PROCESSING_ERROR);
+        }
+
+        try {
+            switch (eventType) {
+                case "ping" -> handlePingEvent(payload);
+                case "pull_request" -> {
+                    String token = githubAppAuthService.getInstallationToken(installationId);
+                    log.info("✅ installation token issued (len={}): installationId={}",
+                            token != null ? token.length() : -1, installationId);
+                    handlePullRequestEvent(payload, token);
+                }
                 case "issue_comment" -> handleIssueCommentEvent(payload);
                 default -> log.info("미지원 이벤트 타입: {}, 기록만 저장합니다.", eventType);
             }
@@ -136,7 +162,7 @@ public class GithubWebhookService {
         log.info("GitHub Ping 이벤트 수신: zen={}, hook_id={}", zen, hookId);
     }
     
-    private void handlePullRequestEvent(JsonNode payload) {
+    private void handlePullRequestEvent(JsonNode payload, String token) {
         String action = payload.path("action").asText("action 없음");
         JsonNode pr = payload.path("pull_request");
         String prTitle = pr.path("title").asText("제목 없음");
@@ -148,7 +174,7 @@ public class GithubWebhookService {
         
         // 실제 비즈니스 로직 구현
         switch (action) {
-            case "opened", "synchronize" -> handlePullRequestUpdate(payload);
+            case "opened", "synchronize" -> handlePullRequestUpdate(payload, token);
             case "closed" -> {
                 if (pr.path("merged").asBoolean(false)) {
                     handlePullRequestMerged(payload);
@@ -160,14 +186,14 @@ public class GithubWebhookService {
         }
     }
     
-    private void handlePullRequestUpdate(JsonNode payload) {
+    private void handlePullRequestUpdate(JsonNode payload, String token) {
         int prNumber = payload.path("pull_request").path("number").asInt(0);
         String repoName = payload.path("repository").path("full_name").asText("저장소 없음");
         // PR 생성 또는 업데이트 로직
         log.debug("PR 생성/업데이트 처리: repo={}, prNumber={}", repoName, prNumber);
 
         // TODO: 실제 구현
-        pullRequestIngestionService.handlePullRequest(payload);
+        pullRequestIngestionService.handlePullRequest(payload, token);
 
         log.info("PR 저장 성공: repo={}, prNumber={}", repoName, prNumber);
     }
