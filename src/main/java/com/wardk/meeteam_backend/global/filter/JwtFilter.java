@@ -4,6 +4,7 @@ package com.wardk.meeteam_backend.global.filter;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.global.config.SecurityUrls;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,45 +25,21 @@ import java.io.IOException;
 public class JwtFilter extends OncePerRequestFilter {
 
   private final JwtUtil jwtUtil;
-  private static final PathMatcher pathMatcher = new AntPathMatcher();
+  private final SecurityUrls securityUrls; // 화이트리스트 경로 관리 클래스
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
     // 인증 생략 경로
     String uri = request.getRequestURI();
-    
-    if (
-            uri.equals("/api/login") ||
-            uri.equals("/api/register") ||
-            uri.equals("/api/auth/oauth2/success") ||
-            uri.equals("/api/auth/oauth2/failure") ||
+    log.debug("JWT 필터 처리 중인 URI: {}", uri);
 
-            uri.startsWith("/api/webhooks/github") ||
-
-            uri.equals("/docs/swagger-ui/index.html") ||
-            uri.startsWith("/swagger-ui/**") ||
-            uri.equals("/swagger-ui.html") ||
-            uri.startsWith("/swagger-resources/**") ||
-            uri.startsWith("/webjars/**") ||
-            uri.startsWith("/v3/api-docs") ||
-            uri.startsWith("/docs/**") || uri.startsWith("/docs") ||
-            uri.startsWith("/actuator") ||
-            uri.startsWith("/v3") ||
-
-            uri.startsWith("/oauth2/") ||
-            uri.startsWith("/login/oauth2/") ||
-
-            uri.equals("/favicon.ico") ||
-            uri.equals("/default-ui.css") ||
-
-            uri.equals("/")
-    ) {
+    // 화이트리스트 경로는 JWT 인증을 건너뛰고 바로 다음 필터로 진행
+    if (securityUrls.isWhitelisted(uri)) {
+      log.debug("화이트리스트 경로로 인증 생략: {}", uri);
       filterChain.doFilter(request, response);
       return;
     }
-
-
 
     // request에서 Authorization 헤더를 찾음
     String authorization = request.getHeader("Authorization");
