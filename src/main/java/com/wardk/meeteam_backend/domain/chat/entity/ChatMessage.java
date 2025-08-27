@@ -30,8 +30,8 @@ public class ChatMessage extends BaseEntity {
   @Column(nullable = false)
   private Long threadId;
 
-  @Column(nullable = false)
-  private Long memberId; // USER 메시지일 때 사용
+  @Column(nullable = true)
+  private Long memberId; // USER 메시지일 때 사용 ( NULL 가능 )
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
