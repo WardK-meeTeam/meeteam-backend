@@ -61,6 +61,9 @@ public class Project extends BaseEntity {
 
     private boolean isDeleted;
 
+    @Column(nullable = false)
+    private Integer likes = 0;
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectMember> members = new ArrayList<>();
 
@@ -75,6 +78,9 @@ public class Project extends BaseEntity {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectCategoryApplication> recruitments = new ArrayList<>();
+
+
+
 
     @Builder
     public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
