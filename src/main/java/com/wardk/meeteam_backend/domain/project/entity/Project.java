@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.domain.project.entity;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
 import com.wardk.meeteam_backend.domain.review.entity.Review;
@@ -10,6 +11,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 @Data
 @Entity
 @NoArgsConstructor
+@BatchSize(size = 50)
 public class Project extends BaseEntity {
 
     @Id
@@ -61,6 +64,10 @@ public class Project extends BaseEntity {
 
     private boolean isDeleted;
 
+    // 좋아요
+    @Column(nullable = false)
+    private Integer likes = 0;
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectMember> members = new ArrayList<>();
 
@@ -68,13 +75,18 @@ public class Project extends BaseEntity {
     private List<ProjectMemberApplication> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
 
     @OneToMany(mappedBy = "project")
     private List<Review> reviews = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20)
     private List<ProjectCategoryApplication> recruitments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectRepo> repos = new ArrayList<>();
 
     @Builder
     public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
@@ -125,6 +137,11 @@ public class Project extends BaseEntity {
     public void addProjectSkill(ProjectSkill projectSkill) {
         this.projectSkills.add(projectSkill);
         projectSkill.assignProject(this);
+    }
+
+    public void addRepo(ProjectRepo repo) {
+        this.repos.add(repo);
+        repo.setProject(this);
     }
 
     public void updateProject(String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
