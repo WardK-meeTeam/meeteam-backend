@@ -35,7 +35,10 @@ public enum ErrorCode {
     // PROJECT
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT404", "프로젝트를 찾을 수 없습니다."),
 
+    // CHAT
+    CHAT_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT404", "해당 쓰레드를 찾을 수 없습니다."),
 
+    NOT_THREAD_MEMBER(HttpStatus.FORBIDDEN, "CHAT403", "해당 쓰레드 멤버가 아닙니다."),
 
     // PROJECT MEMBER
     PROJECT_MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "이미 프로젝트에 참여 중입니다."),
@@ -67,7 +70,19 @@ public enum ErrorCode {
     WEBHOOK_INVALID_SIGNATURE(HttpStatus.UNAUTHORIZED, "WH001", "웹훅 서명이 유효하지 않습니다"),
     WEBHOOK_SIGNATURE_REQUIRED(HttpStatus.BAD_REQUEST, "WH002", "웹훅 서명이 필요합니다"),
     WEBHOOK_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "WH003", "웹훅 처리 중 오류가 발생했습니다"),
-    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다");
+    WEBHOOK_DELIVERY_NOT_FOUND(HttpStatus.NOT_FOUND, "WH004", "웹훅 기록을 찾을 수 없습니다"),
+
+    // PR
+    PR_NOT_FOUND(HttpStatus.NOT_FOUND, "PR404", "해당 Pull Request를 찾을 수 없습니다."),
+    PROJECT_REPO_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_REPO404", "해당 프로젝트 저장소를 찾을 수 없습니다."),
+    PROJECT_REPO_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "이미 등록된 프로젝트 저장소입니다."),
+    INVALID_REPO_URL(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "유효하지 않은 저장소 URL입니다."),
+    FAILED_TO_PARSE_REPO_URL(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "저장소 URL 파싱에 실패했습니다."),
+
+    // 메인페이지 관련 에러 코드
+    MAIN_PAGE_INVALID_PAGINATION(HttpStatus.BAD_REQUEST, "MAIN_PAGE401", "잘못된 페이징 정보입니다."),
+    MAIN_PAGE_CATEGORY_NOT_FOUND(HttpStatus.BAD_REQUEST, "MAIN_PAGE402", "대분류 정보가 필요합니다."),
+    MAIN_PAGE_SORT_PARAMETER_INVALID(HttpStatus.BAD_REQUEST, "MAIN_PAGE403", "정렬 기준이 올바르지 않습니다.");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
