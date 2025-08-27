@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public interface PullRequestIngestionService {
   void handlePullRequest(JsonNode payload); // TODO: 구현체는 후속 이슈에서 작성
+  void handlePullRequest(JsonNode payload, String token);
   void handleMerged(JsonNode payload);
   void handleClosed(JsonNode payload);
 }

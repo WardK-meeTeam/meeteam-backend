@@ -66,6 +66,40 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
     }
 
     @Override
+    public void handlePullRequest(JsonNode payload, String token) {
+        String repoFullName = payload.path("repository").path("full_name").asText();
+        int prNumber = payload.path("number").asInt();
+
+        log.info("PR 수신: repo={}, prNumber={}", repoFullName, prNumber);
+
+        ProjectRepo projectRepo = projectRepoRepository.findByRepoFullName(repoFullName)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_REPO_NOT_FOUND));
+
+        PrData prData = fetcher.getPr(repoFullName, prNumber, payload, token);
+        List<PrFileData> files = fetcher.listFiles(repoFullName, prNumber, token);
+
+        PullRequest pr = pullRequestRepository.findByProjectRepoIdAndPrNumber(projectRepo.getId(), prNumber)
+                .orElseGet(() -> {
+                    PullRequest newPr = new PullRequest(prNumber);
+                    newPr.setProjectRepo(projectRepo);
+                    return newPr;
+                });
+
+        pr.updateFromPayload(payload.path("pull_request"));
+//        pr.updateFromPayload(prData);
+
+        pr.getFiles().clear();
+        for (PrFileData f : files) {
+            PullRequestFile file = PullRequestFile.createPullRequestFile(f);
+            pr.addFile(file);
+        }
+
+        pullRequestRepository.save(pr);
+
+        log.info("PR 저장 완료: id={}, repo={}, prNumber={}", pr.getId(), repoFullName, prNumber);
+    }
+
+    @Override
     public void handleMerged(JsonNode payload) {
 
         String repoFullName = payload.path("repository").path("full_name").asText();
