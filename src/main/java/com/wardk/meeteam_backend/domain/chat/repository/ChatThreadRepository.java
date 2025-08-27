@@ -12,7 +12,5 @@ import java.util.Optional; import java.util.UUID;
 
 public interface ChatThreadRepository extends JpaRepository<ChatThread, Long> {
   Optional<ChatThread> findByPullRequest(PullRequest pullRequest);
-
-  @Query("SELECT ct FROM ChatThread ct WHERE ct.memberId = :memberId ORDER BY ct.createdAt DESC")
   Page<ChatThread> findAllByMemberIdOrderByCreatedAt(Long memberId, Pageable pageable);
 }

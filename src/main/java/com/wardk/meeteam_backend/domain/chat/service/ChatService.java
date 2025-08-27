@@ -36,9 +36,8 @@ public class ChatService {
 
   // 채팅 스레드 목록 조회 (페이징)
   @Transactional(readOnly = true)
-  public Page<ChatThread> getAllThreads(ChatThreadRequest request) {
-    Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize(), Sort.Direction.DESC);
-    return chatThreadRepository.findAllByMemberIdOrderByCreatedAt(request.getMemberId(), pageable);
+  public Page<ChatThread> getAllThreads(Long memberId, Pageable pageable) {
+    return chatThreadRepository.findAllByMemberIdOrderByCreatedAt(memberId, pageable);
   }
 
   // 채팅 메시지 저장

@@ -27,7 +27,7 @@ public class ChatBootService {
    * - 최초 생성 시 SYSTEM/USER 초기 메시지 삽입
    */
   @Transactional
-  public ChatThread ensureThreadForPr(PullRequest pullRequest, String summary) {
+  public ChatThread ensureThreadForPr(PullRequest pullRequest, String summary, Long memberId) {
     // 이미 존재하면 재사용
     Optional<ChatThread> existing = chatThreadRepository.findByPullRequest(pullRequest);
     if (existing.isPresent()) return existing.get();
@@ -35,6 +35,7 @@ public class ChatBootService {
     ChatThread saved;
     try {
       ChatThread thread = ChatThread.builder()
+          .memberId(memberId)
           .pullRequest(pullRequest)
           .title(summary)
           .build();
