@@ -53,7 +53,7 @@ public class SecurityConfig {
 
         // 로그인 경로를 설정하기 위해 LoginFilter 생성
         LoginFilter loginFilter = new LoginFilter(jwtUtil, authenticationManager(authenticationConfiguration));
-        loginFilter.setFilterProcessesUrl("/api/login"); // TODO: 로그인 경로 커스텀 "/api/auth/login"
+        loginFilter.setFilterProcessesUrl("/api/auth/login"); // TODO: 로그인 경로 커스텀 "/api/auth/login"
         //->경로를 커스텀 할 수 있다.
         return http
                 // cors 설정
