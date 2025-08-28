@@ -64,7 +64,11 @@ public class Project extends BaseEntity {
     private boolean isDeleted;
 
     @Column(nullable = false)
-    private Integer likes = 0;
+    private Integer likeCount = 0;
+
+    @Version
+    private Long version;
+
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectMember> members = new ArrayList<>();
@@ -83,6 +87,17 @@ public class Project extends BaseEntity {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectRepo> repos = new ArrayList<>();
+
+
+    public void increaseLike() {
+        this.likeCount++;
+    }
+
+    public void decreaseLike() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
 
     @Builder
     public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,

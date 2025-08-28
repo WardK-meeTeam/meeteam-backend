@@ -38,7 +38,7 @@ public class MainPageProjectDto { // 프로젝트 카드 정보
                 .creatorName(project.getCreator() != null ? project.getCreator().getRealName() : null)
                 .createdDate(project.getCreatedAt())
                 .endDate(project.getEndDate())
-                .likes(project.getLikes())
+                .likes(project.getLikeCount())
                 .skillNames(
                         project.getProjectSkills() != null
                                 ? project.getProjectSkills().stream()
