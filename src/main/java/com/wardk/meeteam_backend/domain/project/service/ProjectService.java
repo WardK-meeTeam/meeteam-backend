@@ -6,6 +6,8 @@ import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -21,5 +23,6 @@ public interface ProjectService {
 
     // 메인 페이지용 메서드
     SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable);
+    Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable);
 }
 
