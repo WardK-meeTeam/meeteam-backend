@@ -12,6 +12,9 @@ public class ProjectSkillRequest {
 
 
     public ProjectSkillRequest(ProjectSkill projectSkill) {
-        this.name = projectSkill.getSkill().getSkillName();
+        this.name = (projectSkill != null && projectSkill.getSkill() != null)
+                ? projectSkill.getSkill().getSkillName()
+                : null;
     }
+
 }

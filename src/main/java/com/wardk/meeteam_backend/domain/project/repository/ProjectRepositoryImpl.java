@@ -15,7 +15,7 @@ import static com.wardk.meeteam_backend.domain.category.entity.QSubCategory.*;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProject.*;
 
-public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements ProjectRepositoryCustom{
+public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements ProjectRepositoryCustom {
 
 
     private final JPAQueryFactory queryFactory;
@@ -28,27 +28,28 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
     @Override
     public Slice<ProjectSearchResponse> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
-       return applySlicing(pageable, contentQuery -> contentQuery
-               .select(new QProjectSearchResponse(
-                       project.id,
-                       project.platformCategory,
-                       project.name,
-                       member.realName,
-                       project.createdAt,
-                       project.projectCategory
+        return applySlicing(pageable, contentQuery -> contentQuery
+                .select(new QProjectSearchResponse(
+                        project.id,
+                        project.platformCategory,
+                        project.name,
+                        member.realName,
+                        project.createdAt,
+                        project.projectCategory
 
-               ))
-               .from(project)
-               .join(project.creator, member)
-               .join(project.recruitments, projectCategoryApplication)
-               .join(projectCategoryApplication.subCategory, subCategory)
-               .join(subCategory.bigCategory, bigCategory)
-               .where(
-                       platformCategoryEq(condition.getPlatformCategory()),
-                       recruitmentEq(condition.getRecruitment()),
-                       projectCategoryEq(condition.getProjectCategory()),
-                       bigCategoryEq(condition.getBigCategory())
-               ));
+                ))
+                .from(project)
+                .join(project.creator, member)
+                .leftJoin(project.recruitments, projectCategoryApplication)
+                .leftJoin(projectCategoryApplication.subCategory, subCategory)
+                .leftJoin(subCategory.bigCategory, bigCategory)
+                .where(
+                        platformCategoryEq(condition.getPlatformCategory()),
+                        recruitmentEq(condition.getRecruitment()),
+                        projectCategoryEq(condition.getProjectCategory()),
+                        bigCategoryEq(condition.getBigCategory()),
+                        notDeleted()
+                ));
 
     }
 
@@ -68,11 +69,13 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
 
 
     private BooleanExpression bigCategoryEq(String category) {
-        return (category == null) ? null : bigCategory.name.eq(category);
+        if (category == null || category.isBlank()) return null;
+        return bigCategory.name.eq(category);
     }
 
-
-
+    private BooleanExpression notDeleted() {
+        return project.isDeleted.eq(false);
+    }
 
 
 }
