@@ -49,12 +49,14 @@ public class ProjectLikeService {
         // 2) 없으면 삽입 시도 (동시성에서 유니크 제약 위반 가능)
         try {
             ProjectLike newLike = ProjectLike.create(member, project); // 이미 조회된 영속 엔티티 재사용
-            projectLikeRepository.save(newLike);
+            projectLikeRepository.saveAndFlush(newLike);  // ← 여기서 즉시 제약 위반 감지
             project.increaseLike();
             return new ToggleLikeResponse(projectId, true, project.getLikeCount());
         } catch (DataIntegrityViolationException e) {
-            // 동시 삽입 레이스: 다른 트랜잭션이 먼저 INSERT 했다면 여기서 제약 위반 발생 가능 → 최종 상태는 '좋아요 ON'
-            throw new CustomException(ErrorCode.DB_LIKES_DUPLICATE);
+
+            Project fresh = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+            return new ToggleLikeResponse(projectId, true, fresh.getLikeCount());
         }
     }
 
