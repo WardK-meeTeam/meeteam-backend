@@ -44,4 +44,21 @@ public class ProjectApplicationController {
 
         return SuccessResponse.onSuccess(response);
     }
+
+    @PostMapping("/{projectId}/{applicationId}")
+    public SuccessResponse<ApplicationDetailResponse> getApplicationDetail(@PathVariable Long projectId, @PathVariable Long applicationId,
+                                                                           @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        ApplicationDetailResponse applicationDetail = applicationService.getApplicationDetail(projectId, applicationId, userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(applicationDetail);
+    }
+
+    @GetMapping("/my")
+    public SuccessResponse<List<AppliedProjectResponse>> getMyAppliedProjects(@AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        List<AppliedProjectResponse> appliedProjects = applicationService.getAppliedProjects(userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(appliedProjects);
+    }
 }

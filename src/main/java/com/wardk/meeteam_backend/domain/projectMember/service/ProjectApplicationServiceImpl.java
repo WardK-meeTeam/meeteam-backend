@@ -108,8 +108,25 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         }
 
         return applicationRepository.findByProjectId(projectId).stream()
+                .filter(application -> application.getStatus() == ApplicationStatus.PENDING)
                 .map(ProjectApplicationListResponse::responseDto)
                 .toList();
+    }
+
+    @Override
+    public ApplicationDetailResponse getApplicationDetail(Long projectId, Long applicationId, String requesterEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        ProjectMemberApplication application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
+
+        return ApplicationDetailResponse.responseDto(application);
     }
 
     @Override
@@ -168,5 +185,19 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 application.getId(),
                 application.getStatus()
         );
+    }
+
+    @Override
+    public List<AppliedProjectResponse> getAppliedProjects(String requesterEmail) {
+
+        Member member = memberRepository.findByEmail(requesterEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        List<ProjectMemberApplication> applications = applicationRepository.findAllByApplicantId(member.getId());
+
+        return applications.stream()
+                .filter(application -> application.getStatus() == ApplicationStatus.PENDING)
+                .map(AppliedProjectResponse::responseDto)
+                .toList();
     }
 }
