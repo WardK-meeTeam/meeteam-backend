@@ -123,7 +123,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMemberApplication application = applicationRepository.findById(applicationId)
+        ProjectMemberApplication application = applicationRepository.findByIdWithApplicantAndSubCategory(applicationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
         return ApplicationDetailResponse.responseDto(application);
