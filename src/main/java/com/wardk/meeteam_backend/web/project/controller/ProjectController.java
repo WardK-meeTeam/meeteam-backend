@@ -28,7 +28,7 @@ public class ProjectController {
             @RequestPart @Validated ProjectPostRequest projectPostRequest,
             @RequestPart(name = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
-            ) {
+    ) {
         log.info("Project Post Request: {}", projectPostRequest);
         ProjectPostResponse projectPostResponse = projectService.postProject(projectPostRequest, file, userDetails.getUsername());
 
@@ -83,5 +83,13 @@ public class ProjectController {
         List<ProjectRepoResponse> responses = projectService.addRepo(projectId, request, userDetails.getUsername());
 
         return SuccessResponse.onSuccess(responses);
+    }
+
+    @GetMapping("my")
+    public SuccessResponse<List<MyProjectResponse>> getMyProjects(@AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        List<MyProjectResponse> myProjects = projectService.getMyProject(userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(myProjects);
     }
 }

@@ -11,6 +11,8 @@ import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
@@ -48,6 +50,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final SkillRepository skillRepository;
     private final ProjectMemberService projectMemberService;
     private final ProjectRepoRepository projectRepoRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     @Override
     public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
@@ -221,6 +224,25 @@ public class ProjectServiceImpl implements ProjectService {
 
         return content;
 
+    }
+
+    @Override
+    public List<MyProjectResponse> getMyProject(String requesterEmail) {
+
+        Member member = memberRepository.findByEmail(requesterEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(member.getId());
+
+        return projectMembers.stream()
+                .map( pm -> MyProjectResponse.responseDto(
+                        pm.getProject().getId(),
+                        pm.getProject().getName(),
+                        pm.getProject().getStatus(),
+                        pm.getProject().getStartDate(),
+                        pm.getProject().getEndDate(),
+                        pm.getSubCategory().getName()
+                )).toList();
     }
 
     private String getStoreFileName(MultipartFile file) {
