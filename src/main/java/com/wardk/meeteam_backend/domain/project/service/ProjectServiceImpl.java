@@ -235,14 +235,8 @@ public class ProjectServiceImpl implements ProjectService {
         List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(member.getId());
 
         return projectMembers.stream()
-                .map( pm -> MyProjectResponse.responseDto(
-                        pm.getProject().getId(),
-                        pm.getProject().getName(),
-                        pm.getProject().getStatus(),
-                        pm.getProject().getStartDate(),
-                        pm.getProject().getEndDate(),
-                        pm.getSubCategory().getName()
-                )).toList();
+                .map(MyProjectResponse::responseDto)
+                .toList();
     }
 
     private String getStoreFileName(MultipartFile file) {

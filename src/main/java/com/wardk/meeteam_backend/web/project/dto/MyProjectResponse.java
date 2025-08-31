@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.web.project.dto;
 
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,14 +18,14 @@ public class MyProjectResponse {
     private LocalDate endDate;
     private String subCategoryName;
 
-    public static MyProjectResponse responseDto(Long projectId, String projectName, ProjectStatus projectStatus, LocalDate startDate, LocalDate endDate, String subCategoryName) {
+    public static MyProjectResponse responseDto(ProjectMember pm) {
         return MyProjectResponse.builder()
-                .projectId(projectId)
-                .projectName(projectName)
-                .projectStatus(projectStatus)
-                .startDate(startDate)
-                .endDate(endDate)
-                .subCategoryName(subCategoryName)
+                .projectId(pm.getProject().getId())
+                .projectName(pm.getProject().getName())
+                .projectStatus(pm.getProject().getStatus())
+                .startDate(pm.getProject().getStartDate())
+                .endDate(pm.getProject().getEndDate())
+                .subCategoryName(pm.getSubCategory().getName())
                 .build();
     }
 }

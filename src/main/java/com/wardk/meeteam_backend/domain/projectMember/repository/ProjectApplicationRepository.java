@@ -17,4 +17,7 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectMembe
             "JOIN FETCH a.subCategory " +
             "WHERE a.project.id = :projectId")
     List<ProjectMemberApplication> findByProjectId(Long projectId);
+
+    @Query("SELECT a FROM ProjectMemberApplication a JOIN FETCH a.project p JOIN FETCH a.subCategory WHERE a.applicant.id = :applicantId")
+    List<ProjectMemberApplication> findAllByApplicantId(Long applicantId);
 }
