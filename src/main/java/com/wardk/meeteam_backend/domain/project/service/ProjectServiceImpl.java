@@ -23,6 +23,9 @@ import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -201,6 +204,23 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         return responses;
+    }
+
+    @Override
+    public Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable) {
+
+        Slice<ProjectSearchResponse> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
+
+        content.forEach(
+                dto -> {
+                    Project project = projectRepository.findById(dto.getProjectId())
+                            .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+                    dto.settingSkills(project);
+                }
+        );
+
+        return content;
+
     }
 
     private String getStoreFileName(MultipartFile file) {
