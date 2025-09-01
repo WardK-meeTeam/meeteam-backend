@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.domain.pr.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
+import com.wardk.meeteam_backend.web.pr.dto.PrData;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -142,9 +143,6 @@ public class PullRequest extends BaseEntity {
     this.prNumber = prNumber;
   }
 
-  /**
-   * github webhook payload에서 필드 매핑
-   */
   public void updateFromPayload(JsonNode prNode) {
     this.title = prNode.path("title").asText(null);
     this.body = prNode.path("body").asText(null);
@@ -169,6 +167,32 @@ public class PullRequest extends BaseEntity {
     this.changedFiles = prNode.path("changed_files").asInt(0);
     this.commentsCount = prNode.path("comments").asInt(0);
     this.reviewCommentsCount = prNode.path("review_comments").asInt(0);
+  }
+
+  public void updateFromPayload(PrData prData) {
+    this.title = prData.getTitle();
+    this.body = prData.getBody();
+    this.state = prData.getState();
+    this.isDraft = prData.isDraft();
+    this.isMerged = prData.isMerged();
+
+    this.mergedAt = prData.getMergedAt();
+    this.closedAt = prData.getClosedAt();
+
+    this.authorLogin = prData.getAuthorLogin();
+
+    this.baseRepo = prData.getBaseRepo();
+    this.baseBranch = prData.getBaseBranch();
+
+    this.headRepo = prData.getHeadRepo();
+    this.headBranch = prData.getHeadBranch();
+    this.headSha = prData.getHeadSha();
+
+    this.additions = prData.getAdditions();
+    this.deletions = prData.getDeletions();
+    this.changedFiles = prData.getChangedFiles();
+    this.commentsCount = prData.getCommentsCount();
+    this.reviewCommentsCount = prData.getReviewCommentsCount();
   }
 
   public void setProjectRepo(ProjectRepo projectRepo) {
