@@ -2,8 +2,8 @@ package com.wardk.meeteam_backend.global.config;
 
 import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
 import com.wardk.meeteam_backend.global.exception.RestAuthenticationEntryPoint;
-import com.wardk.meeteam_backend.global.filter.JwtFilter;
-import com.wardk.meeteam_backend.global.filter.LoginFilter;
+import com.wardk.meeteam_backend.global.auth.filter.JwtFilter;
+import com.wardk.meeteam_backend.global.auth.filter.LoginFilter;
 import com.wardk.meeteam_backend.global.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +38,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    private final SecurityUrls securityUrls;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService;
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
@@ -52,7 +53,7 @@ public class SecurityConfig {
 
         // 로그인 경로를 설정하기 위해 LoginFilter 생성
         LoginFilter loginFilter = new LoginFilter(jwtUtil, authenticationManager(authenticationConfiguration));
-        loginFilter.setFilterProcessesUrl("/api/login"); // TODO: 로그인 경로 커스텀 "/api/auth/login"
+        loginFilter.setFilterProcessesUrl("/api/auth/login"); // TODO: 로그인 경로 커스텀 "/api/auth/login"
         //->경로를 커스텀 할 수 있다.
         return http
                 // cors 설정
@@ -74,15 +75,11 @@ public class SecurityConfig {
                         .authenticationEntryPoint(restAuthenticationEntryPoint) // ★ 401을 ErrorResponse로
                         .accessDeniedHandler(restAccessDeniedHandler)           // ★ 403을 ErrorResponse로
                 )
+                // 인증 필요 없는(화이트리스트) 경로 한 곳에서 관리
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/webjars/**", "/swagger-resources/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**",
-                                "/docs/**", "/default-ui.css", "/favicon.ico",
-                                "/api/login",
-                                "/api/auth/**", "/", "/uploads/**", "/api/register", "/api/project/register", "/oauth2/**", "/login/oauth2/**", "/login/oauth2/code/**",
-                                "/api/auth/oauth2/success", "/api/auth/oauth2/failure",
-                                "/api/webhooks/github").permitAll()
+                        .requestMatchers(SecurityUrls.WHITELIST.toArray(String[]::new)).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated() //나머지는 인증이 된 사용자만 가능
+                        .anyRequest().authenticated() // 나머지는 인증이 된 사용자만 가능
                 )
                 // OAuth 2.0 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
@@ -101,7 +98,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .addFilterBefore(
-                        new JwtFilter(jwtUtil),
+                        new JwtFilter(jwtUtil, securityUrls),
                         LoginFilter.class
                 )
                 .addFilterAt(

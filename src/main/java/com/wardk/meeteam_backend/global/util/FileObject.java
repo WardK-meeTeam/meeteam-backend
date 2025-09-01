@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth;
+package com.wardk.meeteam_backend.global.util;
 
 import lombok.Getter;
 
