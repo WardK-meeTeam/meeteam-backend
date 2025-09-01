@@ -13,13 +13,13 @@ public enum ErrorCode {
 
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON500", "서버에 문제가 발생했습니다."),
 
-    INVALID_REQUEST(HttpStatus.BAD_REQUEST,"COMMON400", "잘못된 요청입니다."),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "COMMON403","접근이 거부되었습니다"),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "COMMON400", "잘못된 요청입니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "COMMON403", "접근이 거부되었습니다"),
 
 
     // LOGIN
-    DUPLICATE_MEMBER(HttpStatus.BAD_REQUEST,"MEMBER400", "이미 존재하는 회원입니다."),
-    DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST,"MEMBER400" , "다시 로그인하세요"),
+    DUPLICATE_MEMBER(HttpStatus.BAD_REQUEST, "MEMBER400", "이미 존재하는 회원입니다."),
+    DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "MEMBER400", "다시 로그인하세요"),
 
     // OAUTH2
     OAUTH2_ATTRIBUTES_EMPTY(HttpStatus.BAD_REQUEST, "OAUTH400", "OAuth2 사용자 정보가 비어있습니다."),
@@ -28,7 +28,7 @@ public enum ErrorCode {
     OAUTH2_NAME_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH403", "OAuth2 사용자 이름 추출에 실패했습니다."),
 
     //이미지 첨부
-    FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST,"FILE401", "파일 저장에 실패했습니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "FILE401", "파일 저장에 실패했습니다."),
 
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER404", "회원을 찾을 수 없습니다."),
 
@@ -55,15 +55,15 @@ public enum ErrorCode {
     PROJECT_APPLICATION_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 신청한 프로젝트입니다."),
 
     // MEMBER SKILL
-    SKILL_NOT_FOUND(HttpStatus.NOT_FOUND,"SKILL404", "해당 기술스택이 존재하지 않습니다."),
-    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404","해당 직무는 존재하지 않습니다." ),
+    SKILL_NOT_FOUND(HttpStatus.NOT_FOUND, "SKILL404", "해당 기술스택이 존재하지 않습니다."),
+    SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404", "해당 직무는 존재하지 않습니다."),
 
 
     //NOTIFICATION
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION404", "알림을 찾을 수 없습니다."),
-    ACTOR_NOT_FOUND(HttpStatus.NOT_FOUND,"ACTOR404", "행위자(신청자)를 찾을 수 없습니다."),
-    INVALID_EVENT_ID(HttpStatus.BAD_REQUEST,"NOTIFICATION_INVALID_EVENT_ID" ,"이벤트 ID 형식이 올바르지 않습니다."),
-    NO_MATCHING_TYPE(HttpStatus.BAD_REQUEST,"NOTIFICATION_NO_MATCHINGTYPE","맞는 알림 타입정보가 없습니다." ),
+    ACTOR_NOT_FOUND(HttpStatus.NOT_FOUND, "ACTOR404", "행위자(신청자)를 찾을 수 없습니다."),
+    INVALID_EVENT_ID(HttpStatus.BAD_REQUEST, "NOTIFICATION_INVALID_EVENT_ID", "이벤트 ID 형식이 올바르지 않습니다."),
+    NO_MATCHING_TYPE(HttpStatus.BAD_REQUEST, "NOTIFICATION_NO_MATCHINGTYPE", "맞는 알림 타입정보가 없습니다."),
 
 
     // Webhook 관련 에러 코드
@@ -79,10 +79,19 @@ public enum ErrorCode {
     INVALID_REPO_URL(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "유효하지 않은 저장소 URL입니다."),
     FAILED_TO_PARSE_REPO_URL(HttpStatus.BAD_REQUEST, "PROJECT_REPO400", "저장소 URL 파싱에 실패했습니다."),
 
+
+    FAILED_TO_CREATE_APP_JWT(HttpStatus.BAD_REQUEST, "GITHUB400", "GitHub App JWT 생성에 실패했습니다."),
+    GITHUB_APP_NOT_INSTALLED(HttpStatus.BAD_REQUEST, "GITHUB401", "해당 레포에 GitHub App이 설치되지 않았습니다."),
+    GITHUB_API_ERROR(HttpStatus.BAD_GATEWAY, "GITHUB502", "GitHub API 요청 중 오류가 발생했습니다."),
+
     // 메인페이지 관련 에러 코드
     MAIN_PAGE_INVALID_PAGINATION(HttpStatus.BAD_REQUEST, "MAIN_PAGE401", "잘못된 페이징 정보입니다."),
     MAIN_PAGE_CATEGORY_NOT_FOUND(HttpStatus.BAD_REQUEST, "MAIN_PAGE402", "대분류 정보가 필요합니다."),
-    MAIN_PAGE_SORT_PARAMETER_INVALID(HttpStatus.BAD_REQUEST, "MAIN_PAGE403", "정렬 기준이 올바르지 않습니다.");
+    MAIN_PAGE_SORT_PARAMETER_INVALID(HttpStatus.BAD_REQUEST, "MAIN_PAGE403", "정렬 기준이 올바르지 않습니다."),
+    //DB
+    DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반"),
+    ;
+
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;
