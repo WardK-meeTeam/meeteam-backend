@@ -40,11 +40,16 @@ dependencies {
 	// OAuth2
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+
+	// auth0
+	implementation 'com.auth0:java-jwt:4.4.0'
+
 	// Spring retry -> 낙관적 락에 적용
 	implementation 'org.springframework.retry:spring-retry'
 
 	// Spring AOP
 	implementation 'org.springframework:spring-aspects'
+
 
 	// jwt
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
