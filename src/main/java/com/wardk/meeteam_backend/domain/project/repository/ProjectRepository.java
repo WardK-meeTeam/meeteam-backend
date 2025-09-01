@@ -17,7 +17,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface ProjectRepository extends JpaRepository<Project, Long> {
+public interface ProjectRepository extends JpaRepository<Project, Long> , ProjectRepositoryCustom{
 
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN FETCH p.recruitments r " +
