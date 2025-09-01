@@ -26,13 +26,11 @@ import java.util.List;
 public class PullRequestIngestionServiceImpl implements PullRequestIngestionService {
 
     private final PullRequestRepository pullRequestRepository;
-    private final PullRequestFileRepository fileRepository;
     private final ProjectRepoRepository projectRepoRepository;
     private final PullRequestFetcher fetcher;
 
     @Override
-    public void handlePullRequest(JsonNode payload) {
-
+    public void handlePullRequest(JsonNode payload, String token) {
         String repoFullName = payload.path("repository").path("full_name").asText();
         int prNumber = payload.path("number").asInt();
 
@@ -41,8 +39,8 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         ProjectRepo projectRepo = projectRepoRepository.findByRepoFullName(repoFullName)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_REPO_NOT_FOUND));
 
-        PrData prData = fetcher.getPr(repoFullName, prNumber, payload);
-        List<PrFileData> files = fetcher.listFiles(repoFullName, prNumber);
+        PrData prData = fetcher.getPr(repoFullName, prNumber, payload, token);
+        List<PrFileData> files = fetcher.listFiles(repoFullName, prNumber, token);
 
         PullRequest pr = pullRequestRepository.findByProjectRepoIdAndPrNumber(projectRepo.getId(), prNumber)
                 .orElseGet(() -> {
@@ -51,8 +49,8 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
                     return newPr;
                 });
 
-        pr.updateFromPayload(payload.path("pull_request"));
-//        pr.updateFromPayload(prData);
+//        pr.updateFromPayload(payload.path("pull_request"));
+        pr.updateFromPayload(prData);
 
         pr.getFiles().clear();
         for (PrFileData f : files) {

@@ -63,6 +63,9 @@ public class GithubWebhookController {
             // JSON 파싱
             JsonNode payload = objectMapper.readTree(rawBody);
 
+            long installationId = payload.path("installation").path("id").asLong();
+            log.info("event={}, installationId={}, deliveryId={}", eventType, installationId, deliveryId);
+
             // Webhook 수신 기록
             WebhookDelivery delivery = webhookService.recordWebhook(
                     deliveryId,
@@ -77,7 +80,7 @@ public class GithubWebhookController {
             }
 
             //  비동기 처리를 위해 이벤트 발행
-            webhookService.dispatch(eventType, payload);
+            webhookService.dispatch(eventType, payload, installationId);
 
             // 처리 완료 표시
             webhookService.markProcessed(delivery.getId());
