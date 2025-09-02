@@ -92,6 +92,7 @@ public class ProjectController {
         return SuccessResponse.onSuccess(responses);
     }
 
+    @Operation(summary = "내가 진행 중인/완료한 프로젝트 조회")
     @GetMapping("my")
     public SuccessResponse<List<MyProjectResponse>> getMyProjects(@AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
