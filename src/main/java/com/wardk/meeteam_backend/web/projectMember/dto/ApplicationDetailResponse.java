@@ -14,7 +14,7 @@ public class ApplicationDetailResponse {
     private Long applicantId;
     private String applicantName;
     private String subCategoryName; // 피그마엔 대분류 같긴 한데...
-    private int age;
+    private Integer age;
     private Gender gender;
     private String applicantEmail;
     private String motivation;
