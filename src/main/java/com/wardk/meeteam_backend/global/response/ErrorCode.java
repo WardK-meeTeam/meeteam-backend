@@ -88,9 +88,46 @@ public enum ErrorCode {
     MAIN_PAGE_INVALID_PAGINATION(HttpStatus.BAD_REQUEST, "MAIN_PAGE401", "잘못된 페이징 정보입니다."),
     MAIN_PAGE_CATEGORY_NOT_FOUND(HttpStatus.BAD_REQUEST, "MAIN_PAGE402", "대분류 정보가 필요합니다."),
     MAIN_PAGE_SORT_PARAMETER_INVALID(HttpStatus.BAD_REQUEST, "MAIN_PAGE403", "정렬 기준이 올바르지 않습니다."),
+
+    
+    /* AI 코드 리뷰 관련 에러 코드 */
+    // 리소스 관련
+    PR_REVIEW_JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "CODE_REVIEW404", "해당 코드 리뷰 작업을 찾을 수 없습니다."),
+    PR_REVIEW_FINDING_NOT_FOUND(HttpStatus.NOT_FOUND, "CODE_REVIEW404", "해당 코드 리뷰 발견 항목을 찾을 수 없습니다."),
+    PR_HUNK_SHARD_NOT_FOUND(HttpStatus.NOT_FOUND, "CODE_REVIEW404", "해당 코드 변경 샤드를 찾을 수 없습니다."),
+    
+    // 상태 관련
+    PR_REVIEW_JOB_ALREADY_RUNNING(HttpStatus.BAD_REQUEST, "CODE_REVIEW400", "이미 실행 중인 코드 리뷰 작업입니다."),
+    PR_REVIEW_JOB_INVALID_STATE(HttpStatus.BAD_REQUEST, "CODE_REVIEW400", "유효하지 않은 코드 리뷰 작업 상태입니다."),
+    PR_FINDING_INVALID_STATUS(HttpStatus.BAD_REQUEST, "CODE_REVIEW400", "유효하지 않은 발견 항목 상태입니다."),
+    
+    // 서비스 관련
+    AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI503", "AI 서비스를 일시적으로 사용할 수 없습니다."),
+    AI_REQUEST_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "AI408", "AI 서비스 요청 시간이 초과되었습니다."),
+    AI_QUOTA_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "AI429", "AI 서비스 할당량을 초과했습니다."),
+    AI_MODEL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI500", "AI 모델 처리 중 오류가 발생했습니다."),
+    
+    // 크기 형식 제한 관련
+    PR_REVIEW_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "CODE_REVIEW413", "코드 변경 사항이 너무 큽니다."),
+    PR_REVIEW_UNSUPPORTED_FILE(HttpStatus.BAD_REQUEST, "CODE_REVIEW400", "지원하지 않는 파일 형식입니다."),
+    PR_REVIEW_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "CODE_REVIEW429", "코드 리뷰 요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
+    
+    // 패치 관련
+    PATCH_APPLY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "패치 적용에 실패했습니다."),
+    PATCH_GENERATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "패치 생성에 실패했습니다."),
+    
+    LLM_CONFIG_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AI500", "LLM 설정 오류가 발생했습니다."),
+    LLM_CONTEXT_OVERFLOW(HttpStatus.PAYLOAD_TOO_LARGE, "AI413", "LLM 컨텍스트 크기가 최대 허용치를 초과했습니다."),
+    
+    // 일반 처리 오류
+    CODE_REVIEW_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "코드 리뷰 생성에 실패했습니다."),
+    CODE_REVIEW_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "코드 리뷰 처리 중 오류가 발생했습니다."),
+    CODE_REVIEW_CHAT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "코드 리뷰 채팅 처리 중 오류가 발생했습니다."),
+
+    UNSUPPORTED_TASK_TYPE(HttpStatus.BAD_REQUEST, "AI400", "지원하지 않는 태스크 유형입니다."),
+
     //DB
-    DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반"),
-    ;
+    DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반");
 
 
     ErrorCode(HttpStatus status, String code, String message) {
