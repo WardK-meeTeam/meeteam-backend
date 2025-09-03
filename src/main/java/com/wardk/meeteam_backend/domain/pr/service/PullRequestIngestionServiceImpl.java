@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.pr.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wardk.meeteam_backend.domain.codereview.service.PrReviewService;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequestFile;
@@ -28,6 +29,7 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
     private final PullRequestRepository pullRequestRepository;
     private final ProjectRepoRepository projectRepoRepository;
     private final PullRequestFetcher fetcher;
+    private final PrReviewService PrReviewService;
 
     @Override
     public void handlePullRequest(JsonNode payload, String token) {
@@ -59,6 +61,7 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         }
 
         pullRequestRepository.save(pr);
+        PrReviewService.createReviewJob(pr);
 
         log.info("PR 저장 완료: id={}, repo={}, prNumber={}", pr.getId(), repoFullName, prNumber);
     }
