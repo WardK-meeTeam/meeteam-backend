@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectApplicationRepository extends JpaRepository<ProjectMemberApplication, Long> {
 
@@ -17,4 +18,16 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectMembe
             "JOIN FETCH a.subCategory " +
             "WHERE a.project.id = :projectId")
     List<ProjectMemberApplication> findByProjectId(Long projectId);
+
+    @Query("SELECT a FROM ProjectMemberApplication a " +
+            "JOIN FETCH a.project p " +
+            "JOIN FETCH a.subCategory " +
+            "WHERE a.applicant.id = :applicantId")
+    List<ProjectMemberApplication> findAllByApplicantId(Long applicantId);
+
+    @Query("SELECT a FROM ProjectMemberApplication a " +
+            "JOIN FETCH a.applicant " +
+            "JOIN FETCH a.subCategory " +
+            "WHERE a.project.id = :projectId AND a.id = :applicationId")
+    Optional<ProjectMemberApplication> findByIdWithApplicantAndSubCategory(Long projectId, Long applicationId);
 }

@@ -24,5 +24,8 @@ public interface ProjectService {
     // 메인 페이지용 메서드
     SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable);
     Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable);
+
+    // 참여중, 종료된 프로젝트 조회
+    List<MyProjectResponse> getMyProject(String requesterEmail);
 }
 

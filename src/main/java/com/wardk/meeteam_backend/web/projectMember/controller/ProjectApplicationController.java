@@ -48,4 +48,23 @@ public class ProjectApplicationController {
 
         return SuccessResponse.onSuccess(response);
     }
+
+    @Operation(summary = "프로젝트 지원 상세 조회")
+    @GetMapping("/{projectId}/{applicationId}")
+    public SuccessResponse<ApplicationDetailResponse> getApplicationDetail(@PathVariable Long projectId, @PathVariable Long applicationId,
+                                                                           @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        ApplicationDetailResponse applicationDetail = applicationService.getApplicationDetail(projectId, applicationId, userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(applicationDetail);
+    }
+
+    @Operation(summary = "내가 지원한 프로젝트 조회")
+    @GetMapping("/my")
+    public SuccessResponse<List<AppliedProjectResponse>> getMyAppliedProjects(@AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        List<AppliedProjectResponse> appliedProjects = applicationService.getAppliedProjects(userDetails.getUsername());
+
+        return SuccessResponse.onSuccess(appliedProjects);
+    }
 }
