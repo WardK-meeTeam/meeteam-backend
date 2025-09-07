@@ -46,6 +46,7 @@ public class GithubAppAuthService {
         String appJwt = createAppJwt();
         String token = requestInstallationToken(installationId, appJwt);
 
+        log.info("Installation token obtained (len={}): {}", token.length(), token);
         tokenCache.put(installationId, token);
         return token;
     }

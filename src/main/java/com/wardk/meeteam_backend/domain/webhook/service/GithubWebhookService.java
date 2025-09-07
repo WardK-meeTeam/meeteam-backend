@@ -1,6 +1,8 @@
 package com.wardk.meeteam_backend.domain.webhook.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wardk.meeteam_backend.domain.codereview.service.PrReviewService;
+import com.wardk.meeteam_backend.domain.pr.repository.PullRequestRepository;
 import com.wardk.meeteam_backend.domain.pr.service.PullRequestIngestionService;
 import com.wardk.meeteam_backend.domain.webhook.entity.WebhookDelivery;
 import com.wardk.meeteam_backend.domain.webhook.repository.WebhookDeliveryRepository;
@@ -8,6 +10,7 @@ import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 
+import io.lettuce.core.dynamic.domain.Timeout;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,8 @@ public class GithubWebhookService {
     private final WebhookDeliveryRepository deliveryRepository;
     private final PullRequestIngestionService pullRequestIngestionService;
     private final GithubAppAuthService githubAppAuthService;
+    private final PrReviewService simplePrReviewService;
+    private final PullRequestRepository pullRequestRepository;
 
     /**
      * Webhook 수신 기록을 저장합니다.
@@ -99,6 +104,7 @@ public class GithubWebhookService {
             switch (eventType) {
                 case "ping" -> handlePingEvent(payload);
                 case "pull_request" -> {
+                    log.info("pr event");
                     String token = githubAppAuthService.getInstallationToken(installationId);
                     log.info("✅ installation token issued (len={}): installationId={}",
                             token != null ? token.length() : -1, installationId);
@@ -192,10 +198,21 @@ public class GithubWebhookService {
         // PR 생성 또는 업데이트 로직
         log.debug("PR 생성/업데이트 처리: repo={}, prNumber={}", repoName, prNumber);
 
-        // TODO: 실제 구현
         pullRequestIngestionService.handlePullRequest(payload, token);
 
         log.info("PR 저장 성공: repo={}, prNumber={}", repoName, prNumber);
+
+        // PR 리뷰 작업 시작
+        // PR 리뷰 요청 처리 추가
+        // pr 정보가 저장된 다음에 실행 되도록 해야함
+        // try {
+        //     simplePrReviewService.createReviewJob(pullRequestRepository.findByProjectRepoIdAndPrNumber(payload.path("repository").path("id").asLong(0), prNumber)
+        //             .orElseThrow(() -> new CustomException(ErrorCode.PR_NOT_FOUND)));
+        //     log.info("PR 리뷰 요청 처리 성공: repo={}, prNumber={}", repoName, prNumber);
+        // } catch (Exception e) {
+        //     log.error("PR 리뷰 요청 처리 실패: repo={}, prNumber={}", repoName, prNumber, e);
+        // }
+
     }
     
     private void handlePullRequestMerged(JsonNode payload) {

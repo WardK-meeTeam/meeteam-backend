@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.pr.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wardk.meeteam_backend.domain.codereview.service.PrReviewService;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequestFile;
@@ -16,8 +17,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.util.List;
+
+import static org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive;
+import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +33,7 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
     private final PullRequestRepository pullRequestRepository;
     private final ProjectRepoRepository projectRepoRepository;
     private final PullRequestFetcher fetcher;
+    private final PrReviewService prReviewService;
 
     @Override
     public void handlePullRequest(JsonNode payload, String token) {
@@ -59,6 +65,17 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         }
 
         pullRequestRepository.save(pr);
+        if (isActualTransactionActive()) {
+            registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    prReviewService.createReviewJob(pr);
+                }
+            });
+        } else {
+            prReviewService.createReviewJob(pr);
+        }
+
 
         log.info("PR 저장 완료: id={}, repo={}, prNumber={}", pr.getId(), repoFullName, prNumber);
     }

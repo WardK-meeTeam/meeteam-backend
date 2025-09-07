@@ -63,7 +63,7 @@ public class GithubWebhookController {
             // JSON 파싱
             JsonNode payload = objectMapper.readTree(rawBody);
 
-            long installationId = payload.path("installation").path("id").asLong();
+            Long installationId = payload.path("installation").path("id").asLong();
             log.info("event={}, installationId={}, deliveryId={}", eventType, installationId, deliveryId);
 
             // Webhook 수신 기록
