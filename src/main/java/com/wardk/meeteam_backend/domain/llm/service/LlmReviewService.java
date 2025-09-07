@@ -103,17 +103,20 @@ public class LlmReviewService {
     private List<Message> createReviewPrompt(PullRequestFile file) {
         List<Message> messages = new ArrayList<>();
 
-        // 시스템 메시지: LLM의 역할 정의
+        // 시스템 메시지: LLM의 역할 정의 (대폭 간소화)
         String systemPrompt = """
-                당신은 경험이 풍부한 시니어 소프트웨어 엔지니어로서 건설적인 코드 리뷰를 수행합니다.
-                
+                코드 리뷰어로서 다음 파일을 간략히 분석하세요:
+                1. 주요 문제점 1개 (있는 경우만)
+                2. 개선 제안 1개 (있는 경우만)
+                3. 긍정적 측면 1개
+
                 ## 리뷰 지침
                 아래 코드를 분석하여 다음을 제공하세요:
                 1. 코드 품질 평가 (가독성, 네이밍, 복잡도)
-                    """;
+                """;
         messages.add(new SystemMessage(systemPrompt));
 
-        // 사용자 메시지
+        // 사용자 메시지 (대폭 간소화)
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append("## 파일명: ").append(file.getFileName()).append("\n\n");
         userPrompt.append("## 변경 유형: ").append(file.getStatus()).append("\n\n");

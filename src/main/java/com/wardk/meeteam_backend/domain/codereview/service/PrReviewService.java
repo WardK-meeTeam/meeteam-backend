@@ -16,29 +16,33 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
+import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
+
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class PrReviewService {
 
     private final PullRequestFileRepository fileRepository;
     private final PrReviewJobRepository prReviewJobRepository;
     private final ChatThreadRepository chatThreadRepository;
-    private final LlmReviewService llmReviewService;
     // private final ExecutorService asyncTaskExecutor;
     private final LlmOrchestrator llmOrchestrator;
 
     /**
      * PR에 대한 리뷰 작업을 생성하고 비동기 처리를 시작합니다.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public PrReviewJob createReviewJob(PullRequest pullRequest) {
 
         if (pullRequest == null) {
@@ -51,7 +55,7 @@ public class PrReviewService {
                 pullRequest.getHeadSha());
 
         // 이미 동일한 HEAD SHA에 대한 리뷰 작업이 있는지 확인
-        Optional<PrReviewJob> existingJob = prReviewJobRepository.findByProjectRepoIdAndPullRequestIdAndHeadSha(
+        Optional<PrReviewJob> existingJob = prReviewJobRepository.findByProjectRepoIdAndPrNumberAndHeadSha(
                 pullRequest.getProjectRepo().getId(),
                 pullRequest.getPrNumber(),
                 pullRequest.getHeadSha());
@@ -62,17 +66,24 @@ public class PrReviewService {
 
             // 완료된 작업이면 그대로 반환
             if (job.getStatus() == PrReviewJob.Status.SUCCEEDED ||
-                job.getStatus() == PrReviewJob.Status.PARTIAL) {
+                    job.getStatus() == PrReviewJob.Status.PARTIAL) {
                 return job;
             }
 
             // 실패 또는 대기 중인 작업이면 상태 초기화 후 재사용
             if (job.getStatus() == PrReviewJob.Status.FAILED ||
-                job.getStatus() == PrReviewJob.Status.QUEUED) {
+                    job.getStatus() == PrReviewJob.Status.QUEUED) {
 
                 job.updateStatus(PrReviewJob.Status.QUEUED);
                 job.recordError(null);
-                return prReviewJobRepository.save(job);
+                PrReviewJob savedJob = prReviewJobRepository.save(job);
+                prReviewJobRepository.flush(); // 즉시 DB에 반영하여 ID 생성
+
+                // 기존 작업 재시작
+                log.info("기존 작업 재시작: id={}", savedJob.getId());
+                llmOrchestrator.startPrReview(savedJob.getId());
+
+                return savedJob;
             }
         }
 
@@ -95,11 +106,11 @@ public class PrReviewService {
                 .build();
 
         prReviewJobRepository.save(reviewJob);
-        prReviewJobRepository.flush(); // 명시적으로 flush하여 DB에 즉시 반영
-        log.info("PR 리뷰 작업 생성 완료: id={}", reviewJob.getId());
+        prReviewJobRepository.flush(); // 즉시 DB에 반영하여 ID 생성
 
-        // LLM 오케스트레이터 시작
-        llmOrchestrator.startPrReview(reviewJob);
+        // 새 리뷰 작업 시작
+        log.info("새 리뷰 작업 시작: id={}", reviewJob.getId());
+        llmOrchestrator.startPrReview(reviewJob.getId());
 
         return reviewJob;
     }

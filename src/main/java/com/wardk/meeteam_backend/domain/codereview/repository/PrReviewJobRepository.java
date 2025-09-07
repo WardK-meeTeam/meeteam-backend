@@ -22,6 +22,16 @@ public interface PrReviewJobRepository extends JpaRepository<PrReviewJob, Long> 
         """)
     Optional<PrReviewJob> findByIdWithPullRequest(@Param("id") Long id);
 
+    @Query("""
+        SELECT j 
+        FROM PrReviewJob j 
+        JOIN FETCH j.pullRequest pr
+        JOIN FETCH j.projectRepo repo
+        JOIN FETCH pr.files
+        WHERE j.id = :id
+        """)
+    Optional<PrReviewJob> findByIdWithAllAssociations(@Param("id") Long id);
+
     /**
      * 저장소 ID, PR 번호, HEAD SHA로 리뷰 작업을 조회
      */
@@ -32,7 +42,7 @@ public interface PrReviewJobRepository extends JpaRepository<PrReviewJob, Long> 
         AND j.prNumber = :prNumber 
         AND j.headSha = :headSha
         """)
-    Optional<PrReviewJob> findByProjectRepoIdAndPullRequestIdAndHeadSha(
+    Optional<PrReviewJob> findByProjectRepoIdAndPrNumberAndHeadSha(
             @Param("repoId") Long repoId, 
             @Param("prNumber") Integer prNumber, 
             @Param("headSha") String headSha);
