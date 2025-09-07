@@ -5,7 +5,7 @@ import com.wardk.meeteam_backend.domain.pr.entity.PullRequestFile;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Version;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 

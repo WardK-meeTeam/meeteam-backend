@@ -26,7 +26,7 @@ public class AiConfig {
     @Value("${spring.ai.openai.api-key}")
     private String openaiApiKey;
 
-    @Value("${spring.ai.openai.model:gpt-4o}")
+    @Value("${spring.ai.openai.model:gpt-4o-mini}")
     private String model;
 
     /**
@@ -36,24 +36,28 @@ public class AiConfig {
     public WebClient openAiWebClient() {
         // 커넥션 풀: 대기시간/타임아웃 감소
         ConnectionProvider provider = ConnectionProvider.builder("openai-pool")
-                .maxConnections(200)
-                .pendingAcquireMaxCount(1000)
-                .pendingAcquireTimeout(Duration.ofSeconds(30))
+                .maxConnections(30)  // 50→30으로 적정화
+                .pendingAcquireMaxCount(60)  // 100→60으로 적정화
+                .pendingAcquireTimeout(Duration.ofSeconds(5))  // 10→5초로 단축
+                .maxIdleTime(Duration.ofSeconds(20))  // 30→20초로 단축
                 .build();
 
         HttpClient httpClient = HttpClient.create(provider)
                 .compress(true) // gzip
                 .keepAlive(true)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15_000) // TCP connect 15s
-                .responseTimeout(Duration.ofSeconds(60)) // 첫 바이트까지 60s
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5_000) // 10s→5s로 단축
+                .responseTimeout(Duration.ofSeconds(8)) // 18s→8s로 대폭 단축 (가드 타임아웃보다 작게)
                 .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(60)) // read 60s
-                        .addHandlerLast(new WriteTimeoutHandler(60))); // write 60s
+                        .addHandlerLast(new ReadTimeoutHandler(8)) // 18s→8s로 대폭 단축
+                        .addHandlerLast(new WriteTimeoutHandler(5))); // 10s→5s로 단축
 
         return WebClient.builder()
-                .baseUrl("https://api.openai.com/v1") // 바로 /v1로
+                .baseUrl("https://api.openai.com")
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + openaiApiKey)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .defaultHeader(HttpHeaders.USER_AGENT, "MeeTeam-Backend/1.0")
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(5 * 1024 * 1024)) // 5MB 제한
                 .build();
     }
 
@@ -71,19 +75,17 @@ public class AiConfig {
 
     /**
      * 기본 Chat 옵션: 모델/토큰/스트리밍 등
-     * - stream 기본 ON: 첫 바이트가 빨리 와서 ReadTimeout 리스크↓
-     * - maxTokens은 상황에 맞게 조정
+     * - temperature 0.0으로 일관성 확보
      */
     @Bean
     public OpenAiChatOptions openAiDefaultOptions() {
         return OpenAiChatOptions.builder()
-                .model("gpt-4o") // 모델명
-                .temperature(0.1) // 창의성 제어
-                .topP(1.0) // 다양성 제어
-                .maxTokens(1024) // 서비스 특성에 맞춰 조정
+                .model("gpt-4o-mini") // 더 빠른 모델 사용
+                .temperature(0.0) // 창의성 제어 (일관성 우선)
+                .topP(0.8) // 다양성 약간 제한
+                .maxTokens(2048) // 토큰 수 절반으로 축소 (빠른 응답)
                 .presencePenalty(0.0)
                 .frequencyPenalty(0.0)
-                // .responseFormat() // 반환 타입 적용
                 .build();
     }
 
