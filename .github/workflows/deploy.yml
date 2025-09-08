@@ -47,36 +47,6 @@ jobs:
       - name: ECR에 Docker 이미지 Push
         run: docker push ${{ steps.login-ecr.outputs.registry }}/meeteam-server:latest
 
-      - name: EC2 배포 디렉터리 준비
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script_stop: true
-          script: |
-            mkdir -p /home/ubuntu/meeteam
-
-      - name: 기존 compose.yml 삭제 (있으면)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script_stop: false
-          script: |
-            rm -f /home/ubuntu/meeteam/compose.yml
-
-      - name: EC2에 compose.yml 업로드
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          source: "compose.yml"
-          target: "/home/ubuntu/meeteam"
-          overwrite: true
-
       - name: SSH 로 EC2 에 접속하기
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -87,7 +57,7 @@ jobs:
           script: |
             set -e
             cd /home/ubuntu/meeteam
-            docker compose -f compose.yml pull meeteam-server
             docker stop meeteam-server || true
             docker rm meeteam-server || true
-            docker compose -f compose.yml up -d meeteam-server
+            docker compose pull meeteam-server
+            docker compose up -d meeteam-server
