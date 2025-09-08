@@ -7,10 +7,12 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.RollbackException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -21,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * - 트랜잭션2가 구버전 상태로 갱신/flush 시 OptimisticLockException 발생
  */
 @SpringBootTest
+@ActiveProfiles("test")
 class ProjectMemberServiceImplTest {
 
     @Autowired
@@ -29,6 +32,7 @@ class ProjectMemberServiceImplTest {
     /**
      * 초기 데이터(서브카테고리, 지원카테고리 엔티티)를 별도 트랜잭션으로 저장하고 ID를 반환
      */
+
     private Long prepareInitialData() {
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = em.getTransaction();

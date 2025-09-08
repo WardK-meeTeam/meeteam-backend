@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop   # 테스트 시 테이블 자동 생성/삭제
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false       # 필요하면 true로 해서 SQL 로그 보기
+  sql:
+    init:
+      mode: never            # schema.sql, data.sql 있으면 실행
+  h2:
+    console:
+      enabled: true           # http://localhost:8080/h2-console (테스트시 편의)
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace
