@@ -20,7 +20,7 @@ jobs:
 
 
       - name: application.yml 파일 만들기
-        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > ./src/main/resources/application-dev.yml
+        run: echo "${{ secrets.APPLICATION_PROPERTIES }}" > | base64 -d > ./src/main/resources/application-dev.yml
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
