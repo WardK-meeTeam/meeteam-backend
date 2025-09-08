@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * - 트랜잭션1이 선반영(commit)하여 version 증가
  * - 트랜잭션2가 구버전 상태로 갱신/flush 시 OptimisticLockException 발생
  */
-@SpringBootTest
+@DataJpaTest
 @ActiveProfiles("test")
 class ProjectMemberServiceImplTest {
 
