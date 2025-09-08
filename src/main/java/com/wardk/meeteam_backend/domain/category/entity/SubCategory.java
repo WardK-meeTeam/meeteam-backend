@@ -3,10 +3,13 @@ package com.wardk.meeteam_backend.domain.category.entity;
 
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SubCategory  {
 
 
@@ -22,6 +25,7 @@ public class SubCategory  {
     @Column(name = "sub_category")
     private String name;
 
-    public SubCategory() {
+    public SubCategory(String name) {
+        this.name = name;
     }
 }

@@ -8,6 +8,7 @@ import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.global.aop.Retry;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
@@ -45,6 +46,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         projectMemberRepository.save(projectMember);
     }
 
+    @Retry
     @Override
     public void addMember(Long projectId, Long memberId, SubCategory subCategory) {
 
