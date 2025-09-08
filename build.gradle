@@ -93,6 +93,8 @@ dependencies {
 
 	// 테스트용 h2
 	testImplementation 'com.h2database:h2'
+
+	testRuntimeOnly 'com.mysql:mysql-connector-j'
 }
 
 dependencyManagement {
