@@ -57,6 +57,16 @@ jobs:
           script: |
             mkdir -p /home/ubuntu/meeteam
 
+      - name: 기존 compose.yml 삭제 (있으면)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script_stop: false
+          script: |
+            rm -f /home/ubuntu/meeteam/compose.yml
+
       - name: EC2에 compose.yml 업로드
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -65,6 +75,7 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           source: "compose.yml"
           target: "/home/ubuntu/meeteam"
+          overwrite: true
 
       - name: SSH 로 EC2 에 접속하기
         uses: appleboy/ssh-action@v1.0.3
