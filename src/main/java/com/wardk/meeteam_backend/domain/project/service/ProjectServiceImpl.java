@@ -203,6 +203,11 @@ public class ProjectServiceImpl implements ProjectService {
         return responses;
     }
 
+    @Override
+    public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryIds, Pageable pageable) {
+        return null;
+    }
+
     private String getStoreFileName(MultipartFile file) {
         String storeFileName = null;
         if (file != null && !file.isEmpty()) {
@@ -230,8 +235,8 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
-    @Override
     @Transactional(readOnly = true)
+    @Override
     public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable) {
         // 강화된 파라미터 검증
         if (bigCategoryIds == null || bigCategoryIds.isEmpty()
@@ -241,7 +246,7 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         // 대분류별 + 모집중 상태 프로젝트 조회
-        Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategories(
+        Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategory(
                 bigCategoryIds,
                 Recruitment.RECRUITING,
                 pageable
