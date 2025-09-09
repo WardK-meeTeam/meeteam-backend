@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,12 +20,12 @@ public class GithubApiFetcher implements PullRequestFetcher {
     private final GithubClient githubClient;
 
     @Override
-    public PrData getPr(String repoFullName, int prNumber, JsonNode webhookPayload) {
+    public PrData getPr(String repoFullName, int prNumber, JsonNode webhookPayload, String token) {
         PrData base = PrData.fromWebhook(repoFullName, prNumber, webhookPayload.path("pull_request"));
 
         String[] parts = repoFullName.split("/");
 
-        JsonNode prNode = githubClient.get("/repos/{owner}/{repo}/pulls/{number}", parts[0], parts[1], prNumber);
+        JsonNode prNode = githubClient.get(token, "/repos/{owner}/{repo}/pulls/{number}", parts[0], parts[1], prNumber);
 
         PrData enriched = PrData.fromWebhook(repoFullName, prNumber, prNode);
 
@@ -32,10 +33,10 @@ public class GithubApiFetcher implements PullRequestFetcher {
     }
 
     @Override
-    public List<PrFileData> listFiles(String repoFullName, int prNumber) {
+    public List<PrFileData> listFiles(String repoFullName, int prNumber, String token) {
         String[] parts = repoFullName.split("/");
 
-        JsonNode[] arr = githubClient.getArray("/repos/{owner}/{repo}/pulls/{number}/files", parts[0], parts[1], prNumber);
+        JsonNode[] arr = githubClient.getArray(token, "/repos/{owner}/{repo}/pulls/{number}/files", parts[0], parts[1], prNumber);
 
         List<PrFileData> files = new ArrayList<>();
         if (arr != null) {
@@ -54,9 +55,11 @@ public class GithubApiFetcher implements PullRequestFetcher {
                 .title(firstNonNull(enriched.getTitle(), base.getTitle()))
                 .body(firstNonNull(enriched.getBody(), base.getBody()))
                 .state(firstNonNull(enriched.getState(), base.getState()))
-                .draft(enriched.isDraft())
-                .merged(enriched.isMerged())
+                .isDraft(enriched.isDraft())
+                .isMerged(enriched.isMerged())
+                .baseRepo(firstNonNull(enriched.getBaseRepo(), base.getBaseRepo()))
                 .baseBranch(firstNonNull(enriched.getBaseBranch(), base.getBaseBranch()))
+                .headRepo(firstNonNull(enriched.getHeadRepo(), base.getHeadRepo()))
                 .headBranch(firstNonNull(enriched.getHeadBranch(), base.getHeadBranch()))
                 .headSha(firstNonNull(enriched.getHeadSha(), base.getHeadSha()))
                 .authorLogin(firstNonNull(enriched.getAuthorLogin(), base.getAuthorLogin()))
@@ -65,6 +68,8 @@ public class GithubApiFetcher implements PullRequestFetcher {
                 .changedFiles(firstNonNull(enriched.getChangedFiles(), base.getChangedFiles()))
                 .commentsCount(firstNonNull(enriched.getCommentsCount(), base.getCommentsCount()))
                 .reviewCommentsCount(firstNonNull(enriched.getReviewCommentsCount(), base.getReviewCommentsCount()))
+                .closedAt(firstNonNull(enriched.getClosedAt(), base.getClosedAt()))
+                .mergedAt(firstNonNull(enriched.getMergedAt(), base.getMergedAt()))
                 .build();
     }
 
@@ -73,6 +78,10 @@ public class GithubApiFetcher implements PullRequestFetcher {
     }
 
     private Integer firstNonNull(Integer a, Integer b) {
+        return (a != null) ? a : b;
+    }
+
+    private LocalDateTime firstNonNull(LocalDateTime a, LocalDateTime b) {
         return (a != null) ? a : b;
     }
 }
