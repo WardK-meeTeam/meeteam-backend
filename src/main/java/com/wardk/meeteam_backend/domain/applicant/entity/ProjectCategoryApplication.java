@@ -31,6 +31,7 @@ public class ProjectCategoryApplication {//project_대분류_모집
     @Column(name = "recruit_count")
     private Integer recruitmentCount;
 
+    @Version
     @Column(name = "current_count")
     private Integer currentCount;
 
@@ -46,6 +47,8 @@ public class ProjectCategoryApplication {//project_대분류_모집
 
         this.currentCount++;
     }
+
+
     public void updateCurrentCount(Integer currentCount) {
         if (currentCount < 0 || currentCount > this.recruitmentCount) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);

@@ -2,8 +2,8 @@ package com.wardk.meeteam_backend.global.config;
 
 import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
 import com.wardk.meeteam_backend.global.exception.RestAuthenticationEntryPoint;
-import com.wardk.meeteam_backend.global.filter.JwtFilter;
-import com.wardk.meeteam_backend.global.filter.LoginFilter;
+import com.wardk.meeteam_backend.global.auth.filter.JwtFilter;
+import com.wardk.meeteam_backend.global.auth.filter.LoginFilter;
 import com.wardk.meeteam_backend.global.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +53,7 @@ public class SecurityConfig {
 
         // 로그인 경로를 설정하기 위해 LoginFilter 생성
         LoginFilter loginFilter = new LoginFilter(jwtUtil, authenticationManager(authenticationConfiguration));
-        loginFilter.setFilterProcessesUrl("/api/login"); // TODO: 로그인 경로 커스텀 "/api/auth/login"
+        loginFilter.setFilterProcessesUrl("/api/auth/login"); // TODO: 로그인 경로 커스텀 "/api/auth/login"
         //->경로를 커스텀 할 수 있다.
         return http
                 // cors 설정

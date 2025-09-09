@@ -6,7 +6,8 @@ import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -20,8 +21,11 @@ public interface ProjectService {
     ProjectDeleteResponse deleteProject(Long projectId, String requesterEmail);
     List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail);
 
+    // 메인 페이지용 메서드
+    SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable);
+    Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable);
 
-    @Transactional(readOnly = true)
-    SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable);
+    // 참여중, 종료된 프로젝트 조회
+    List<MyProjectResponse> getMyProject(String requesterEmail);
 }
 

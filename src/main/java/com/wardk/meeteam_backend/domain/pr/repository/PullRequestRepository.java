@@ -1,6 +1,8 @@
 package com.wardk.meeteam_backend.domain.pr.repository;
 
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
+import com.wardk.meeteam_backend.domain.webhook.entity.WebhookDelivery;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -15,4 +17,6 @@ public interface PullRequestRepository extends JpaRepository<PullRequest, Long> 
 
   @Query("SELECT pr FROM PullRequest pr JOIN FETCH pr.projectRepo repo LEFT JOIN FETCH pr.files WHERE repo.project.id = :projectId")
   List<PullRequest> findAllByProjectIdWithFiles(Long projectId);
+
+  Optional<PullRequest> findByProjectRepoRepoFullNameAndPrNumber(String repoName, int prNumber);
 }

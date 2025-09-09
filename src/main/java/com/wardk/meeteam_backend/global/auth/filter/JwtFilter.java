@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.filter;
+package com.wardk.meeteam_backend.global.auth.filter;
 
 
 

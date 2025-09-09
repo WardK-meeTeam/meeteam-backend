@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.domain.pr.repository.PullRequestRepository;
 import com.wardk.meeteam_backend.domain.pr.service.PullRequestService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.pr.dto.PullRequestResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ public class PullRequestController {
      * @param prNumber
      * @return
      */
+    @Operation(summary = "특정 레포 PR 조회")
     @GetMapping("/{owner}/{repo}/{prNumber}")
     public SuccessResponse<PullRequestResponse> get(
             @PathVariable String owner,
@@ -42,6 +44,7 @@ public class PullRequestController {
      * @param projectId
      * @return
      */
+    @Operation(summary = "특정 프로젝트 내 모든 PR 조회")
     @GetMapping("/{projectId}")
     public SuccessResponse<List<PullRequestResponse>> getAllPullRequests(@PathVariable Long projectId) {
 
