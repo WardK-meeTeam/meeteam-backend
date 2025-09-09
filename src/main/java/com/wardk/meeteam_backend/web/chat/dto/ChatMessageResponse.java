@@ -10,7 +10,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-public class ChatMessageResponse {
+public class
+ChatMessageResponse {
   private List<ChatMessage> messages;
   private Long nextCursor;
 }
