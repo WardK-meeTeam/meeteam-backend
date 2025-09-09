@@ -30,4 +30,7 @@ public class CustomSecurityUserDetails implements UserDetails {
     return member.getEmail();
   }
 
+  public Long getMemberId() {
+    return member.getId();
+  }
 }

@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.pr.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wardk.meeteam_backend.domain.codereview.service.PrReviewService;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequestFile;
@@ -16,8 +17,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.util.List;
+
+import static org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive;
+import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
 
 @Service
 @RequiredArgsConstructor
@@ -26,13 +31,12 @@ import java.util.List;
 public class PullRequestIngestionServiceImpl implements PullRequestIngestionService {
 
     private final PullRequestRepository pullRequestRepository;
-    private final PullRequestFileRepository fileRepository;
     private final ProjectRepoRepository projectRepoRepository;
     private final PullRequestFetcher fetcher;
+    private final PrReviewService prReviewService;
 
     @Override
-    public void handlePullRequest(JsonNode payload) {
-
+    public void handlePullRequest(JsonNode payload, String token) {
         String repoFullName = payload.path("repository").path("full_name").asText();
         int prNumber = payload.path("number").asInt();
 
@@ -41,8 +45,8 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         ProjectRepo projectRepo = projectRepoRepository.findByRepoFullName(repoFullName)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_REPO_NOT_FOUND));
 
-        PrData prData = fetcher.getPr(repoFullName, prNumber, payload);
-        List<PrFileData> files = fetcher.listFiles(repoFullName, prNumber);
+        PrData prData = fetcher.getPr(repoFullName, prNumber, payload, token);
+        List<PrFileData> files = fetcher.listFiles(repoFullName, prNumber, token);
 
         PullRequest pr = pullRequestRepository.findByProjectRepoIdAndPrNumber(projectRepo.getId(), prNumber)
                 .orElseGet(() -> {
@@ -51,8 +55,8 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
                     return newPr;
                 });
 
-        pr.updateFromPayload(payload.path("pull_request"));
-//        pr.updateFromPayload(prData);
+//        pr.updateFromPayload(payload.path("pull_request"));
+        pr.updateFromPayload(prData);
 
         pr.getFiles().clear();
         for (PrFileData f : files) {
@@ -61,6 +65,17 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         }
 
         pullRequestRepository.save(pr);
+        if (isActualTransactionActive()) {
+            registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    prReviewService.createReviewJob(pr);
+                }
+            });
+        } else {
+            prReviewService.createReviewJob(pr);
+        }
+
 
         log.info("PR 저장 완료: id={}, repo={}, prNumber={}", pr.getId(), repoFullName, prNumber);
     }

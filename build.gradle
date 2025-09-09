@@ -21,6 +21,8 @@ configurations {
 
 repositories {
 	mavenCentral()
+	// Spring milestone 저장소 추가
+	maven { url 'https://repo.spring.io/milestone' }
 }
 
 dependencies {
@@ -39,6 +41,23 @@ dependencies {
 
 	// OAuth2
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+	// 마이크로미터 프로메테우스 구현 라이브러리
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
+	// actuator
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+
+	// auth0
+	implementation 'com.auth0:java-jwt:4.4.0'
+
+	// Spring retry -> 낙관적 락에 적용
+	implementation 'org.springframework.retry:spring-retry'
+
+	// Spring AOP
+	implementation 'org.springframework:spring-aspects'
+
 
 	// jwt
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
@@ -67,6 +86,17 @@ dependencies {
 
 	// p6spy
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
+
+
+	// Spring AI
+	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.ai:spring-ai-bom:1.0.1"
+	}
 }
 
 tasks.named('test') {
