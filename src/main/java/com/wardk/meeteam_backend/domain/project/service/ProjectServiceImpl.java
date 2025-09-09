@@ -272,28 +272,26 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-  @Override
-  @org.springframework.transaction.annotation.Transactional(readOnly = true)
-  public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable) {
-    // 강화된 파라미터 검증
-    if (bigCategoryIds == null || bigCategoryIds.isEmpty()
-        || bigCategoryIds.size() > 50
-        || bigCategoryIds.stream().anyMatch(id -> id == null || id <= 0)) {
-      throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
+  @Transactional(readOnly = true)
+    @Override
+    public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable) {
+        if (bigCategoryId == null || bigCategoryId <= 0) {
+            throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
+        }
+
+        // 대분류별 + 모집중 상태 프로젝트 조회
+        Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategory(
+                bigCategoryId,
+                Recruitment.RECRUITING,
+                pageable
+        );
+
+        // DTO 변환
+        List<MainPageProjectDto> dtoList = projectSlice.getContent().stream()
+                .map(MainPageProjectDto::responseDto)
+                .collect(Collectors.toList());
+
+        return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
     }
 
-    // 대분류별 + 모집중 상태 프로젝트 조회
-    Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategories(
-        bigCategoryIds,
-        Recruitment.RECRUITING,
-        pageable
-    );
-
-    // DTO 변환
-    List<MainPageProjectDto> dtoList = projectSlice.getContent().stream()
-        .map(MainPageProjectDto::responseDto)
-        .collect(Collectors.toList());
-
-    return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
-  }
 }
