@@ -1,6 +1,7 @@
 
 package com.wardk.meeteam_backend.domain.project.service;
 
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
 import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
@@ -28,6 +29,6 @@ public interface ProjectService {
     Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable);
 
     // 참여중, 종료된 프로젝트 조회
-    List<MyProjectResponse> getMyProject(String requesterEmail);
+    List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails);
 }
 
