@@ -49,7 +49,7 @@ public class ProjectLikeService {
         // 2) 없으면 삽입 시도 (동시성에서 유니크 제약 위반 가능)
         try {
             ProjectLike newLike = ProjectLike.create(member, project); // 이미 조회된 영속 엔티티 재사용
-            projectLikeRepository.saveAndFlush(newLike);  // ← 여기서 즉시 제약 위반 감지
+            projectLikeRepository.saveAndFlush(newLike);  // ← 여기서 즉시 제약 위반 감지ㅛ
             project.increaseLike();
             return new ToggleLikeResponse(projectId, true, project.getLikeCount());
         } catch (DataIntegrityViolationException e) {
