@@ -20,6 +20,6 @@ public interface ProjectService {
     List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail);
 
     // 메인 페이지용 메서드
-    SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable);
+    SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryIds, Pageable pageable);
 }
 
