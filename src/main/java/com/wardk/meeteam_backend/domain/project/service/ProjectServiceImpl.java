@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,6 +62,12 @@ public class ProjectServiceImpl implements ProjectService {
 
         String storeFileName = getStoreFileName(file);
 
+        LocalDate endDate = projectPostRequest.getEndDate();
+
+        if(endDate != null && !endDate.isAfter(LocalDate.now())) {
+            throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
+        }
+
         Project project = Project.createProject(
                 creator,
                 projectPostRequest.getProjectName(),
@@ -69,7 +76,7 @@ public class ProjectServiceImpl implements ProjectService {
                 projectPostRequest.getPlatformCategory(),
                 storeFileName,
                 projectPostRequest.getOfflineRequired(),
-                projectPostRequest.getEndDate()
+                endDate
         );
 
 
@@ -129,6 +136,13 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
+        LocalDate startDate = request.getStartDate();
+        LocalDate endDate = request.getEndDate();
+
+        if (endDate != null && startDate != null && !endDate.isAfter(startDate)) {
+            throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
+        }
+
         String storeFileName = getStoreFileName(file);
 
         project.updateProject(
@@ -139,8 +153,8 @@ public class ProjectServiceImpl implements ProjectService {
                 storeFileName,
                 request.getOfflineRequired(),
                 request.getStatus(),
-                request.getStartDate(),
-                request.getEndDate()
+                startDate,
+                endDate
         );
 
         List<ProjectCategoryApplication> recruitments = request.getRecruitments().stream()
