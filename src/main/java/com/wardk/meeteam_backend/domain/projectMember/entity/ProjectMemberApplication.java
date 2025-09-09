@@ -4,6 +4,7 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +17,7 @@ import org.springframework.context.ApplicationEventPublisher;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProjectMemberApplication { // 프로젝트 지원서
+public class ProjectMemberApplication extends BaseEntity { // 프로젝트 지원서
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

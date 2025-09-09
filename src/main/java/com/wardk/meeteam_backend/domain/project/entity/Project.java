@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 @Data
 @Entity
 @NoArgsConstructor
-@BatchSize(size = 50)
 public class Project extends BaseEntity {
 
     @Id
@@ -64,9 +63,12 @@ public class Project extends BaseEntity {
 
     private boolean isDeleted;
 
-    // 좋아요
     @Column(nullable = false)
-    private Integer likes = 0;
+    private Integer likeCount = 0;
+
+    @Version
+    private Long version;
+
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectMember> members = new ArrayList<>();
@@ -75,18 +77,27 @@ public class Project extends BaseEntity {
     private List<ProjectMemberApplication> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    @BatchSize(size = 20)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
 
     @OneToMany(mappedBy = "project")
     private List<Review> reviews = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    @BatchSize(size = 20)
     private List<ProjectCategoryApplication> recruitments = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectRepo> repos = new ArrayList<>();
+
+
+    public void increaseLike() {
+        this.likeCount++;
+    }
+
+    public void decreaseLike() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
 
     @Builder
     public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,

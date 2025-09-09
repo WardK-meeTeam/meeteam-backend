@@ -11,21 +11,27 @@ import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
+import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.global.auth.FileUtil;
+import com.wardk.meeteam_backend.global.util.FileUtil;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
 import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
@@ -45,6 +51,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final SkillRepository skillRepository;
     private final ProjectMemberService projectMemberService;
     private final ProjectRepoRepository projectRepoRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final GithubAppAuthService githubAppAuthService;
 
     @Override
     public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
@@ -192,7 +200,10 @@ public class ProjectServiceImpl implements ProjectService {
                 throw new CustomException(ErrorCode.PROJECT_REPO_ALREADY_EXISTS);
             }
 
-            ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName);
+            String[] parts = repoFullName.split("/");
+            Long installationId = githubAppAuthService.fetchInstallationId(parts[0], parts[1]);
+
+            ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName, installationId);
             project.addRepo(projectRepo);
 
             projectRepoRepository.save(projectRepo);
@@ -203,28 +214,35 @@ public class ProjectServiceImpl implements ProjectService {
         return responses;
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable) {
-        if (bigCategoryId == null || bigCategoryId <= 0) {
-            throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
-        }
+    public Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable) {
 
-        // 대분류별 + 모집중 상태 프로젝트 조회
-        Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategory(
-                bigCategoryId,
-                Recruitment.RECRUITING,
-                pageable
+        Slice<ProjectSearchResponse> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
+
+        content.forEach(
+                dto -> {
+                    Project project = projectRepository.findById(dto.getProjectId())
+                            .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+                    dto.settingSkills(project);
+                }
         );
 
-        // DTO 변환
-        List<MainPageProjectDto> dtoList = projectSlice.getContent().stream()
-                .map(MainPageProjectDto::responseDto)
-                .collect(Collectors.toList());
+        return content;
 
-        return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
     }
-    
+
+    @Override
+    public List<MyProjectResponse> getMyProject(String requesterEmail) {
+
+        Member member = memberRepository.findByEmail(requesterEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(member.getId());
+
+        return projectMembers.stream()
+                .map(MyProjectResponse::responseDto)
+                .toList();
+    }
 
     private String getStoreFileName(MultipartFile file) {
         String storeFileName = null;
@@ -253,4 +271,29 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
+
+  @Override
+  @org.springframework.transaction.annotation.Transactional(readOnly = true)
+  public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(List<Long> bigCategoryIds, Pageable pageable) {
+    // 강화된 파라미터 검증
+    if (bigCategoryIds == null || bigCategoryIds.isEmpty()
+        || bigCategoryIds.size() > 50
+        || bigCategoryIds.stream().anyMatch(id -> id == null || id <= 0)) {
+      throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
+    }
+
+    // 대분류별 + 모집중 상태 프로젝트 조회
+    Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategories(
+        bigCategoryIds,
+        Recruitment.RECRUITING,
+        pageable
+    );
+
+    // DTO 변환
+    List<MainPageProjectDto> dtoList = projectSlice.getContent().stream()
+        .map(MainPageProjectDto::responseDto)
+        .collect(Collectors.toList());
+
+    return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
+  }
 }

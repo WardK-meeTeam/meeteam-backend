@@ -16,24 +16,27 @@ public class GithubClient {
 
     private final WebClient webClient;
 
-    public GithubClient(WebClient.Builder builder, @Value("${github.token}") String token) {
+    public GithubClient(WebClient.Builder builder) {
         this.webClient = builder
                 .baseUrl("https://api.github.com")
                 .defaultHeader("Accept", "application/vnd.github+json")
                 .defaultHeader("User-Agent", "meeteam-pr-ingestion")
-                .defaultHeader("Authorization", "Bearer " + token)
                 .build();
     }
 
-    public JsonNode get(String path, Object... uriVars) {
+    public JsonNode get(String token, String path, Object... uriVars) {
         return webClient.get()
                 .uri(path, uriVars)
+                .headers(h -> {
+                    if(token != null && !token.isEmpty())
+                        h.setBearerAuth(token);
+                })
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .block();
     }
 
-    public JsonNode[] getArray(String path, Object... uriVars) {
+    public JsonNode[] getArray(String token, String path, Object... uriVars) {
         final int PER_PAGE = 100;
         int page = 1;
 
@@ -47,6 +50,10 @@ public class GithubClient {
                             .queryParam("per_page", PER_PAGE)
                             .queryParam("page", currentPage)
                             .build(uriVars))
+                    .headers(h -> {
+                        if(token != null && !token.isEmpty())
+                            h.setBearerAuth(token);
+                    })
                     .retrieve()
                     .toEntity(JsonNode[].class)
                     .block();
