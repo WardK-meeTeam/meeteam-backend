@@ -51,11 +51,11 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             "LEFT JOIN FETCH p.recruitments r " +    // 컬렉션 1개만
             "LEFT JOIN FETCH r.subCategory sc " +    // ToOne 관계
             "LEFT JOIN FETCH sc.bigCategory bc " +   // ToOne 관계
-            "WHERE bc.id IN :bigCategoryIds " +
+            "WHERE bc.id IN :bigCategoryId " +
             "AND p.recruitmentStatus = :recruitmentStatus " +
             "AND p.isDeleted = false")
-    Slice<Project> findRecruitingProjectsByBigCategories(
-            @Param("bigCategoryIds") List<Long> bigCategoryIds,
+    Slice<Project> findRecruitingProjectsByBigCategory(
+            @Param("bigCategoryId") List<Long> bigCategoryId,
             @Param("recruitmentStatus") Recruitment recruitmentStatus,
             Pageable pageable
     );
