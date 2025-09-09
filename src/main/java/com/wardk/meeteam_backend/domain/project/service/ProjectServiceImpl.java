@@ -16,6 +16,7 @@ import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRe
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -230,12 +231,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public List<MyProjectResponse> getMyProject(String requesterEmail) {
+    public List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails) {
 
-        Member member = memberRepository.findByEmail(requesterEmail)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(member.getId());
+        List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(userDetails.getMemberId());
 
         return projectMembers.stream()
                 .map(MyProjectResponse::responseDto)
