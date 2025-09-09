@@ -79,6 +79,16 @@ public class JwtUtil {
             .get("category", String.class);
   }
 
+  public Long getMemberId(String token) {
+    return Jwts.parser()
+            .verifyWith(getSignKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .get("id", Long.class);
+  }
+
+
   /**
    * AccessToken 생성
    *
@@ -114,6 +124,7 @@ public class JwtUtil {
             .subject(customSecurityUserDetails.getUsername())
             .claim("category", category)
             .claim("username", customSecurityUserDetails.getUsername())
+            .claim("id", customSecurityUserDetails.getMemberId())
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + expiredAt))
             .signWith(getSignKey())
