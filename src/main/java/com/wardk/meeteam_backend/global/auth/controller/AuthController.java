@@ -19,7 +19,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-
     /**
      *  요청 형식
      * {
