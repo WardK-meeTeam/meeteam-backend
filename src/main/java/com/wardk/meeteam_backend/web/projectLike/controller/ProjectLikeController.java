@@ -1,10 +1,9 @@
 package com.wardk.meeteam_backend.web.projectLike.controller;
 
-import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.projectLike.service.ProjectLikeService;
+import com.wardk.meeteam_backend.global.aop.aspect.OptimisticLockRetryAspect;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.web.projectLike.dto.ProjectLikeCountRequest;
 import com.wardk.meeteam_backend.web.projectLike.dto.ToggleLikeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li><b>낙관적 락</b> — Project 엔티티의 버전 필드를 통해 동시 갱신 충돌을 감지합니다.
  *       충돌 시 JPA가 {@code OptimisticLockException}을 발생시킵니다.</li>
  *   <li><b>Retry AOP</b> — {@link com.wardk.meeteam_backend.global.aop.Retry} 가 부착된 메서드는
- *       {@link com.wardk.meeteam_backend.domain.projectLike.OptimisticLockRetryAspect} 에 의해
+ *       {@link OptimisticLockRetryAspect} 에 의해
  *       짧은 대기 후 최대 N회 자동 재시도되어, 일시적 버전 충돌을 해소합니다.</li>
  *   <li><b>결과적 일관성</b> — 중복 클릭/경합 상황에서도 최종 좋아요 집계 수가 정확히 반영됩니다.</li>
  * </ul>
@@ -45,7 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 응답은 현재 좋아요 상태와 집계 수를 포함합니다.
  *
  * @see com.wardk.meeteam_backend.domain.projectLike.service.ProjectLikeService
- * @see com.wardk.meeteam_backend.domain.projectLike.OptimisticLockRetryAspect
+ * @see OptimisticLockRetryAspect
  * @see com.wardk.meeteam_backend.global.aop.Retry
  */
 @RestController
