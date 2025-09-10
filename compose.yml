@@ -7,7 +7,6 @@ services:
       - .env   # 현재 docker-compose.yml 과 같은 경로의 .env 파일을 읽음
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - .env
     depends_on:
       redis:
         condition: service_healthy
