@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     private final AuthService authService;
+
     /**
      *  요청 형식
      * {
