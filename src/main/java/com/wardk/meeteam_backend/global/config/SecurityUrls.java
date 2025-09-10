@@ -31,6 +31,7 @@ public class SecurityUrls {
             "/api/auth/oauth2/failure",
             "/api/webhooks/github",
             "/api/v1/files/**"  // 파일 업로드 API 경로 추가
+            ,"index.html"
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();

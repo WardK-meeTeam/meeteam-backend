@@ -16,6 +16,7 @@ import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRe
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -34,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,6 +65,12 @@ public class ProjectServiceImpl implements ProjectService {
 
         String storeFileName = getStoreFileName(file);
 
+        LocalDate endDate = projectPostRequest.getEndDate();
+
+        if(endDate != null && !endDate.isAfter(LocalDate.now())) {
+            throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
+        }
+
         Project project = Project.createProject(
                 creator,
                 projectPostRequest.getProjectName(),
@@ -71,7 +79,7 @@ public class ProjectServiceImpl implements ProjectService {
                 projectPostRequest.getPlatformCategory(),
                 storeFileName,
                 projectPostRequest.getOfflineRequired(),
-                projectPostRequest.getEndDate()
+                endDate
         );
 
 
@@ -131,6 +139,13 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
+        LocalDate startDate = request.getStartDate();
+        LocalDate endDate = request.getEndDate();
+
+        if (endDate != null && startDate != null && !endDate.isAfter(startDate)) {
+            throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
+        }
+
         String storeFileName = getStoreFileName(file);
 
         project.updateProject(
@@ -141,8 +156,8 @@ public class ProjectServiceImpl implements ProjectService {
                 storeFileName,
                 request.getOfflineRequired(),
                 request.getStatus(),
-                request.getStartDate(),
-                request.getEndDate()
+                startDate,
+                endDate
         );
 
         List<ProjectCategoryApplication> recruitments = request.getRecruitments().stream()
@@ -233,12 +248,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public List<MyProjectResponse> getMyProject(String requesterEmail) {
+    public List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails) {
 
-        Member member = memberRepository.findByEmail(requesterEmail)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(member.getId());
+        List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(userDetails.getMemberId());
 
         return projectMembers.stream()
                 .map(MyProjectResponse::responseDto)
