@@ -69,7 +69,7 @@ public class ProjectApplicationController {
     @GetMapping("/my")
     public SuccessResponse<List<AppliedProjectResponse>> getMyAppliedProjects(@AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
-        List<AppliedProjectResponse> appliedProjects = applicationService.getAppliedProjects(userDetails.getUsername());
+        List<AppliedProjectResponse> appliedProjects = applicationService.getAppliedProjects(userDetails);
 
         return SuccessResponse.onSuccess(appliedProjects);
     }
