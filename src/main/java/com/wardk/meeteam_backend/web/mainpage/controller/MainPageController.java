@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Tag(name = "mainpage-controller", description = "메인페이지 API")
 @RestController
@@ -48,8 +47,8 @@ public class MainPageController {
             @Parameter(description = "정렬 방향", example = "desc")
             @RequestParam(defaultValue = "desc") String direction,
 
-            @Parameter(description = "대분류 ID 목록 (필수)", example = "[3, 4]", required = true)
-            @RequestParam List<Long> bigCategoryIds) {
+            @Parameter(description = "대분류 ID (필수)", example = "3", required = true)
+            @RequestParam Long bigCategoryId) {
 
         // 파라미터 검증
         if (page < 0 || size <= 0 || size > 50) {
@@ -62,9 +61,7 @@ public class MainPageController {
         }
 
         // 유효하지 않은 ID(0이하) 또는 빈 목록/과다 목록 방어
-        if (bigCategoryIds == null || bigCategoryIds.isEmpty()
-                || bigCategoryIds.size() > 50
-                || bigCategoryIds.stream().anyMatch(id -> id == null || id <= 0)) {
+        if (bigCategoryId == null || bigCategoryId <= 0) {
             throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
         }
 
@@ -73,7 +70,8 @@ public class MainPageController {
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
 
-        SliceResponse<MainPageProjectDto> response = projectService.getRecruitingProjectsByCategory(bigCategoryIds, pageable);
+        SliceResponse<MainPageProjectDto> response = projectService.getRecruitingProjectsByCategory(
+                bigCategoryId, pageable);
 
         return ResponseEntity.ok(response);
     }
