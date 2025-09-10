@@ -24,7 +24,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class S3FileService {
-
         private final AmazonS3 amazonS3;
     private final UploadedFileRepository uploadedFileRepository;
 
