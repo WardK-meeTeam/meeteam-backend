@@ -24,7 +24,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class S3FileService {
+
     private final AmazonS3 amazonS3;
+
     private final UploadedFileRepository uploadedFileRepository;
 
     @Value("${cloud.aws.s3.bucket}")
@@ -40,7 +42,7 @@ public class S3FileService {
     private String baseUrl;
 
     public String uploadFile(MultipartFile file, String directory) {
-        // TODO: uploaderId 처리
+
         return uploadFile(file, directory, null);
     }
 
