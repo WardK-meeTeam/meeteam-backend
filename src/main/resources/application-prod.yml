@@ -1,0 +1,154 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
+
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope:
+              - user:email
+              - read:user
+            redirect-uri: "http://localhost:8080/login/oauth2/code/github"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+            user-name-attribute: sub
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+            user-name-attribute: id
+  datasource:
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
+    password: ${DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  ai:
+    retry:
+      max-attempts: 3
+      initial-interval: 1000  # 1초로 단축
+      multiplier: 1.5         # 배수 축소
+      max-interval: 5000      # 5초로 단축
+      backoff:
+        initial-interval: 500ms  # 초기 간격 단축
+        max-interval: 3s         # 최대 간격 단축
+    openai:
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+      api-key: ${OPENAI_API_KEY}
+
+      chat:
+        options:
+          model: gpt-4o-mini      # 더 빠른 모델로 변경
+          temperature: 0.0
+          max-tokens: 2048        # 토큰 수 절반으로 축소
+          timeout: 30s            # 30초로 단축
+          connect-timeout: 30s
+          read-timeout: 30s       # 읽기 타임아웃 추가
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 500
+    open-in-view: false
+  sql:
+    init:
+      mode: always
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  access-exp-time: ${JWT_ACCESS_EXP_TIME:36000000} # 액세스 토큰 만료 시간 (밀리초 단위, 예: 1시간)
+  refresh-exp-time: ${JWT_REFRESH_EXP_TIME:604800000} # 리프레시 토큰 만료 시간
+
+
+# AWS S3 설정
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID}
+      secret-key: ${AWS_SECRET_ACCESS_KEY}
+    s3:
+      bucket: ${S3_BUCKET:meeteam-bucket}
+    region:
+      static: ${AWS_REGION:ap-northeast-2}
+    stack:
+      auto: false
+
+# 파일 업로드 설정
+file:
+  dir: ${FILE_UPLOAD_DIR:/home/ubuntu/meeteam/upload}
+  upload:
+    max-size: 10MB
+    allowed-extensions: jpg,jpeg,png,gif,webp
+    s3:
+      base-url: https://${cloud.aws.s3.bucket}.s3.${cloud.aws.region.static}.amazonaws.com
+
+
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+server:
+  servlet:
+    context-path: /
+  tomcat:
+    mbeanregistry:
+      enabled: true
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - "*"
+  endpoint:
+    health:
+      show-components: always
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    root: info
+    p6spy: off
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    com.wardk.meeteam_backend.global.loginRegister: DEBUG
+    com.wardk.meeteam_backend.global.filter: DEBUG
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+
+
+github:
+  webhook:
+    secret: ${GITHUB_WEBHOOK_SECRET}
+  token: ${GITHUB_TOKEN}
+  app:
+    id: ${GITHUB_APP_ID}
+    private-key-pem: ${GITHUB_APP_PRIVATE_KEY_PEM}
