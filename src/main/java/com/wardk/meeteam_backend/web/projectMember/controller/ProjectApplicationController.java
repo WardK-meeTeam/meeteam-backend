@@ -34,7 +34,6 @@ public class ProjectApplicationController {
 
         return SuccessResponse.onSuccess(response);
     }
-
     @Operation(summary = "프로젝트 지원자 목록 조회")
     @GetMapping("/{projectId}")
     public SuccessResponse<List<ProjectApplicationListResponse>> getApplicationList(@PathVariable Long projectId,
