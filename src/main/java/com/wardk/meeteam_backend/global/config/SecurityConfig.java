@@ -126,9 +126,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
+
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",// React 프론트
-                "http://3.37.43.118:8080" // Swagger UI
+                "http://3.37.43.118" // Swagger UI
         )); // 허용할 오리진 TODO: CORS 경로 설정 "http://localhost:3000"
 
 
