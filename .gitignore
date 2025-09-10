@@ -38,10 +38,12 @@ out/
 
 ### application.yml ###
 src/main/resources/application.yml
-src/main/resources/application-dev.yml
 
 # .DS_Store
 .DS_Store
 
 # log files
 /logs
+
+.env
+
