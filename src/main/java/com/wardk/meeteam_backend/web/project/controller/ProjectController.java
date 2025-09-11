@@ -96,7 +96,7 @@ public class ProjectController {
     @GetMapping("my")
     public SuccessResponse<List<MyProjectResponse>> getMyProjects(@AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
-        List<MyProjectResponse> myProjects = projectService.getMyProject(userDetails.getUsername());
+        List<MyProjectResponse> myProjects = projectService.getMyProject(userDetails);
 
         return SuccessResponse.onSuccess(myProjects);
     }

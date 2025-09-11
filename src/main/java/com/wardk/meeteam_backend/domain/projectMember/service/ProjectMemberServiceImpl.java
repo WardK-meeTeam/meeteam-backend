@@ -99,8 +99,14 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+        Member creator = project.getCreator();
+
+        if (!creator.getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        if (creator.getId().equals(request.getMemberId())) {
+            throw new CustomException(ErrorCode.CREATOR_DELETE_FORBIDDEN);
         }
 
         if (!projectMemberRepository.existsByProjectIdAndMemberId(request.getProjectId(), request.getMemberId())) {
@@ -125,7 +131,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (project.getCreator().getId().equals(member.getId())) {
-            throw new CustomException(ErrorCode.CREATOR_WITHDRAW_FORBIDDEN);
+            throw new CustomException(ErrorCode.CREATOR_DELETE_FORBIDDEN);
         }
 
         ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(project.getId(), member.getId())

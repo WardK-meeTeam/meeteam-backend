@@ -69,10 +69,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
     //토큰에서 username과 role 획득
     String email = jwtUtil.getUsername(token);
+    Long memberId = jwtUtil.getMemberId(token);
 
     //user를 생성하여 값 set
     Member member = Member.builder()
             .email(email)
+            .id(memberId)
             .build();
 
     //UserDetails에 회원 정보 객체 담기

@@ -12,10 +12,12 @@ import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplic
 import com.wardk.meeteam_backend.domain.projectMember.entity.WeekDay;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectApplicationRepository;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
+import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,8 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
     private final ApplicationEventPublisher eventPublisher;
 
+
+    @Counted("project.apply")
     @Override
     public ApplicationResponse apply(ApplicationRequest request, String applicantEmail) {
 
@@ -188,12 +192,9 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     }
 
     @Override
-    public List<AppliedProjectResponse> getAppliedProjects(String requesterEmail) {
+    public List<AppliedProjectResponse> getAppliedProjects(CustomSecurityUserDetails userDetails) {
 
-        Member member = memberRepository.findByEmail(requesterEmail)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        List<ProjectMemberApplication> applications = applicationRepository.findAllByApplicantId(member.getId());
+        List<ProjectMemberApplication> applications = applicationRepository.findAllByApplicantId(userDetails.getMemberId());
 
         return applications.stream()
                 .filter(application -> application.getStatus() == ApplicationStatus.PENDING)
