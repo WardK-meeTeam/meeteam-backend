@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -57,9 +58,28 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    /**
+     * 4) Validation 에러를 400 에러로 처리 (새로 추가)
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        log.error("Validation Exception 발생: {}", e.getMessage());
+
+        ErrorCode errorCode = ErrorCode.INVALID_REQUEST;  // BAD_REQUEST (400)
+
+        // 첫 번째 validation 에러 메시지 사용
+        String errorMessage = "입력값이 올바르지 않습니다.";
+        if (e.getBindingResult().hasFieldErrors()) {
+            errorMessage = e.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
+        }
+
+        ErrorResponse response = ErrorResponse.getResponse(errorCode.getCode(), errorMessage);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
 
     /**
-     * 4) 그 외 예외 처리
+     * 5) 그 외 예외 처리
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
