@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.project.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
@@ -8,6 +9,8 @@ import com.wardk.meeteam_backend.web.project.dto.ProjectSearchResponse;
 import com.wardk.meeteam_backend.web.project.dto.QProjectSearchResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+
+import java.util.List;
 
 import static com.wardk.meeteam_backend.domain.applicant.entity.QProjectCategoryApplication.*;
 import static com.wardk.meeteam_backend.domain.category.entity.QBigCategory.*;
@@ -28,29 +31,50 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
     @Override
     public Slice<ProjectSearchResponse> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
-        return applySlicing(pageable, contentQuery -> contentQuery
-                .select(new QProjectSearchResponse(
-                        project.id,
-                        project.platformCategory,
-                        project.name,
-                        member.realName,
-                        project.createdAt,
-                        project.projectCategory
-
-                ))
+        // 1) ID 선조회
+        List<Long> ids = queryFactory
+                .select(project.id)
                 .from(project)
-                .join(project.creator, member)
-                .leftJoin(project.recruitments, projectCategoryApplication)
-                .leftJoin(projectCategoryApplication.subCategory, subCategory)
-                .leftJoin(subCategory.bigCategory, bigCategory)
                 .where(
+                        notDeleted(),
                         platformCategoryEq(condition.getPlatformCategory()),
                         recruitmentEq(condition.getRecruitment()),
-                        projectCategoryEq(condition.getProjectCategory()),
-                        bigCategoryEq(condition.getBigCategory()),
-                        notDeleted()
-                ));
+                        bigCategoryExists(condition.getBigCategory()),
+                        projectCategoryEq(condition.getProjectCategory())
+                )
+                .fetch();
 
+
+        // 2) 본문조회 → applySlicing에 위임
+        return applySlicing(pageable, queryFactory ->
+                queryFactory
+                        .select(new QProjectSearchResponse(
+                                project.id,
+                                project.platformCategory,
+                                project.name,
+                                member.realName,
+                                project.createdAt,
+                                project.projectCategory
+                        ))
+                        .from(project)
+                        .join(project.creator, member)
+                        .where(project.id.in(ids))
+        );
+
+    }
+
+    private BooleanExpression bigCategoryExists(String bigCategoryName) {
+        if (bigCategoryName == null || bigCategoryName.isBlank()) return null;
+        return JPAExpressions
+                .selectOne()
+                .from(projectCategoryApplication)
+                .join(projectCategoryApplication.subCategory, subCategory)
+                .join(subCategory.bigCategory, bigCategory)
+                .where(
+                        projectCategoryApplication.project.eq(project),
+                        bigCategory.name.eq(bigCategoryName)
+                )
+                .exists();
     }
 
 
