@@ -8,10 +8,7 @@ import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +17,7 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 public class Member extends BaseEntity {
