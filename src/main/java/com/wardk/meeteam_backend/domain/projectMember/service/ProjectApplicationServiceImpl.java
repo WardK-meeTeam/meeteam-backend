@@ -17,6 +17,7 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
+import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,8 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
     private final ApplicationEventPublisher eventPublisher;
 
+
+    @Counted("project.apply")
     @Override
     public ApplicationResponse apply(ApplicationRequest request, String applicantEmail) {
 

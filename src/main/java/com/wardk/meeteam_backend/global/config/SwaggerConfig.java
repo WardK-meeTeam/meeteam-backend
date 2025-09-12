@@ -26,7 +26,7 @@ import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
         ),
         servers = {
                 @Server(url = "http://localhost:8080", description = "로컬 서버"),
-                @Server(url = "http://3.37.43.118:8080", description = "EC2 서버")
+                @Server(url = "https://api.meeteam.alom-sejong.com", description = "EC2 서버")
         }
 
 )
@@ -54,7 +54,7 @@ public class SwaggerConfig {
                                         .url("http://localhost:8080")
                                         .description("로컬 서버"),
                                 new io.swagger.v3.oas.models.servers.Server()
-                                        .url("http://3.37.43.118:8080")
+                                        .url("https://api.meeteam.alom-sejong.com")
                                         .description("EC2 서버")
 
                         )
