@@ -331,7 +331,7 @@ class ProjectControllerTest {
                         .build()
         );
 
-        given(projectService.getMyProject("test@example.com")).willReturn(expectedList);
+        given(projectService.getMyProject(any(CustomSecurityUserDetails.class))).willReturn(expectedList);
 
         // When & Then
         mockMvc.perform(get("/api/projects/my"))
