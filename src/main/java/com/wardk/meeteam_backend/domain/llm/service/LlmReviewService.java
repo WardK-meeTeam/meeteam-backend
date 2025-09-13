@@ -33,9 +33,8 @@ public class LlmReviewService {
 
     /**
      * LLM을 사용하여 PR 파일에 대한 코드 리뷰를 수행합니다.
-     * 
-     * @param file 리뷰할 Pull Request 파일
-     * @param job  리뷰 작업
+     *
+     * @param task 리뷰할 LLM 태스크
      * @return LLM의 응답
      */
     public LlmTaskResult reviewFile(LlmTask task) {
