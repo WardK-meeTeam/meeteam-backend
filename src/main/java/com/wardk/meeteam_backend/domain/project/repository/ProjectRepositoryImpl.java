@@ -5,10 +5,9 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
-import com.wardk.meeteam_backend.web.project.dto.ProjectSearchResponse;
-import com.wardk.meeteam_backend.web.project.dto.QProjectSearchResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 
 import java.util.List;
 
@@ -17,6 +16,8 @@ import static com.wardk.meeteam_backend.domain.category.entity.QBigCategory.*;
 import static com.wardk.meeteam_backend.domain.category.entity.QSubCategory.*;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProject.*;
+import static com.wardk.meeteam_backend.domain.project.entity.QProjectSkill.*;
+import static com.wardk.meeteam_backend.domain.skill.entity.QSkill.skill;
 
 public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements ProjectRepositoryCustom {
 
@@ -29,38 +30,37 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
     }
 
     @Override
-    public Slice<ProjectSearchResponse> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
+    public Slice<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
-        // 1) ID 선조회
-        List<Long> ids = queryFactory
-                .select(project.id)
-                .from(project)
-                .where(
-                        notDeleted(),
-                        platformCategoryEq(condition.getPlatformCategory()),
-                        recruitmentEq(condition.getRecruitment()),
-                        bigCategoryExists(condition.getBigCategory()),
-                        projectCategoryEq(condition.getProjectCategory())
-                )
-                .fetch();
-
-
-        // 2) 본문조회 → applySlicing에 위임
-        return applySlicing(pageable, queryFactory ->
-                queryFactory
-                        .select(new QProjectSearchResponse(
-                                project.id,
-                                project.platformCategory,
-                                project.name,
-                                member.realName,
-                                project.createdAt,
-                                project.projectCategory
-                        ))
+        Slice<Project> projects = applySlicing(pageable, qf ->
+                qf.select(project)
                         .from(project)
-                        .join(project.creator, member)
-                        .where(project.id.in(ids))
+                        .join(project.creator, member).fetchJoin()
+                        .where(
+                                notDeleted(),
+                                platformCategoryEq(condition.getPlatformCategory()),
+                                recruitmentEq(condition.getRecruitment()),
+                                projectTechNameExists(condition.getTechStack()),
+                                bigCategoryExists(condition.getBigCategory()),
+                                projectCategoryEq(condition.getProjectCategory())
+                        )
         );
 
+        return projects;
+
+    }
+
+    private BooleanExpression projectTechNameExists(TechStack techStack) {
+        if (techStack == null) return null;
+        return JPAExpressions
+                .selectOne()
+                .from(projectSkill)
+                .leftJoin(projectSkill.skill,skill)
+                .where(
+                        projectSkill.project.eq(project),
+                        skill.skillName.eq(techStack.getTechName())
+                )
+                .exists();
     }
 
     private BooleanExpression bigCategoryExists(String bigCategoryName) {

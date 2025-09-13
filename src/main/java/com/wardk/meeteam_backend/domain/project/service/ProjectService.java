@@ -26,9 +26,10 @@ public interface ProjectService {
     // 메인 페이지용 메서드
     @Transactional(readOnly = true)
     SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable);
-    Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable);
+
 
     // 참여중, 종료된 프로젝트 조회
     List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails);
+    Slice<ProjectConditionRequest> searchProject(ProjectSearchCondition condition, Pageable pageable);
 }
 
