@@ -11,9 +11,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,4 +69,14 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
             "WHERE p IN :projects")
     List<Project> findProjectsWithSkills(@Param("projects") List<Project> projects);
 
+
+    // 테스트 용도
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+            "update Project p set p.createdAt = :ts where p.id = :id"
+    )
+    void overrideTimestamps(
+            @Param("id") Long id,
+            @Param("ts") java.time.LocalDateTime ts
+    );
 }

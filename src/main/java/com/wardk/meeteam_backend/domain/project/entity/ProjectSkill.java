@@ -2,11 +2,14 @@ package com.wardk.meeteam_backend.domain.project.entity;
 
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProjectSkill {//프로젝트_기술_스택_테이블(중간테이블)
 
     @Id
@@ -14,12 +17,12 @@ public class ProjectSkill {//프로젝트_기술_스택_테이블(중간테이�
     @Column(name = "project_skill_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "skill_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "skill_id", nullable = false)
     private Skill skill;
 
     @Builder
@@ -27,14 +30,16 @@ public class ProjectSkill {//프로젝트_기술_스택_테이블(중간테이�
         this.skill = skill;
     }
 
-    public ProjectSkill() {
-
-    }
-
     public static ProjectSkill createProjectSkill(Skill skill) {
         return ProjectSkill.builder()
                 .skill(skill)
                 .build();
+    }
+
+    public static ProjectSkill create(Project project, Skill skill) {
+        ProjectSkill ps = new ProjectSkill(skill);
+        ps.assignProject(project);
+        return ps;
     }
 
     public void assignProject(Project project) {

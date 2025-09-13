@@ -27,7 +27,6 @@ import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -231,19 +230,15 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable) {
+    public Slice<ProjectConditionRequest> searchProject(ProjectSearchCondition condition, Pageable pageable) {
 
-        Slice<ProjectSearchResponse> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
+        Slice<Project> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
 
-        content.forEach(
-                dto -> {
-                    Project project = projectRepository.findById(dto.getProjectId())
-                            .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-                    dto.settingSkills(project);
-                }
+        Slice<ProjectConditionRequest> map = content.map(
+                project -> new ProjectConditionRequest(project)
         );
 
-        return content;
+        return map;
 
     }
 
@@ -285,7 +280,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-  @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     @Override
     public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable) {
         if (bigCategoryId == null || bigCategoryId <= 0) {

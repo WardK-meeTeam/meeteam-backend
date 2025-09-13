@@ -25,13 +25,6 @@ import java.util.List;
 import java.util.function.Function;
 
 
-/**
- * Querydsl 4.x 버전에 맞춘 Querydsl 지원 라이브러리 *
- * @author Younghan Kim
- * @see org.springframework.data.jpa.repository.support.QuerydslRepositorySupport
- */
-
-
 @Repository
 public abstract class Querydsl4RepositorySupport {
 
