@@ -7,10 +7,6 @@ import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
-
-import java.util.List;
-
 import static com.wardk.meeteam_backend.domain.applicant.entity.QProjectCategoryApplication.*;
 import static com.wardk.meeteam_backend.domain.category.entity.QBigCategory.*;
 import static com.wardk.meeteam_backend.domain.category.entity.QSubCategory.*;
@@ -21,14 +17,12 @@ import static com.wardk.meeteam_backend.domain.skill.entity.QSkill.skill;
 
 public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements ProjectRepositoryCustom {
 
-
     private final JPAQueryFactory queryFactory;
 
     public ProjectRepositoryImpl(JPAQueryFactory queryFactory) {
         super(Project.class);
         this.queryFactory = queryFactory;
     }
-
     @Override
     public Slice<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
@@ -47,7 +41,6 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         );
 
         return projects;
-
     }
 
     private BooleanExpression projectTechNameExists(TechStack techStack) {
@@ -91,11 +84,6 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         return (projectCategory == null) ? null : project.projectCategory.eq(projectCategory);
     }
 
-
-    private BooleanExpression bigCategoryEq(String category) {
-        if (category == null || category.isBlank()) return null;
-        return bigCategory.name.eq(category);
-    }
 
     private BooleanExpression notDeleted() {
         return project.isDeleted.eq(false);
