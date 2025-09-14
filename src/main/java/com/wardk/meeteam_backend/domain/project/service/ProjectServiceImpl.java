@@ -24,6 +24,7 @@ import com.wardk.meeteam_backend.global.util.FileUtil;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
 import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
@@ -119,13 +120,24 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getProject(Long projectId) {
+    public ProjectResponse getProjectV1(Long projectId) {
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
 
         return ProjectResponse.responseDto(project);
+    }
+
+
+    @Override
+    public ProjectWithLikeDto getProjectV2(Long projectId) {
+
+        ProjectWithLikeDto projectWithLikeDto = projectRepository.findProjectWithLikeCount(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+
+        return projectWithLikeDto;
     }
 
     @Override

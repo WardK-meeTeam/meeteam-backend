@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
 import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,6 @@ public interface ProjectService {
 
     ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail);
     List<ProjectListResponse> getProjectList();
-    ProjectResponse getProject(Long projectId);
     ProjectUpdateResponse updateProject(Long projectId, ProjectUpdateRequest request, MultipartFile file, String requesterEmail);
     ProjectDeleteResponse deleteProject(Long projectId, String requesterEmail);
     List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail);
@@ -31,5 +31,9 @@ public interface ProjectService {
     // 참여중, 종료된 프로젝트 조회
     List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails);
     Slice<ProjectConditionRequest> searchProject(ProjectSearchCondition condition, Pageable pageable);
+
+
+    ProjectResponse getProjectV1(Long projectId);
+    ProjectWithLikeDto getProjectV2(Long projectId);
 }
 
