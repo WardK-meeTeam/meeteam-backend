@@ -152,3 +152,24 @@ github:
   app:
     id: ${GITHUB_APP_ID}
     private-key-pem: ${GITHUB_APP_PRIVATE_KEY_PEM}
+
+app:
+  oauth2:
+    redirect:
+      success-base-url: ${FRONTEND_BASE_URL:https://meeteam.alom-sejong.com}
+      success-path: ${OAUTH2_SUCCESS_PATH:/oauth2/redirect}
+      failure-base-url: ${FRONTEND_BASE_URL:https://meeteam.alom-sejong.com}
+      failure-path: ${OAUTH2_FAILURE_PATH:/login}
+      failure-endpoint: ${OAUTH2_FAILURE_ENDPOINT:/api/auth/oauth2/failure}
+    providers:
+      google:
+        name: "google"
+        user-name-attribute: "name"
+        email-attribute: "email"
+        id-attribute: "sub"
+      github:
+        name: "github"
+        user-name-attribute: "name"
+        login-attribute: "login"
+        email-attribute: "email"
+        id-attribute: "id"
