@@ -86,7 +86,7 @@ public class PrReviewService {
                 return savedJob;
             }
         }
-
+        // 진행 중인 작업이면
         // 채팅 스레드 생성
         ChatThread chatThread = ChatThread.builder()
                 .pullRequest(pullRequest)
@@ -111,6 +111,8 @@ public class PrReviewService {
         // 새 리뷰 작업 시작
         log.info("새 리뷰 작업 시작: id={}", reviewJob.getId());
         llmOrchestrator.startPrReview(reviewJob.getId());
+
+        // 채팅 스레드에 채팅 메시지 생성
 
         return reviewJob;
     }

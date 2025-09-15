@@ -10,12 +10,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Getter
+@Setter
 public class ProjectUpdateRequest {
 
     @Schema(description = "프로젝트 제목", example = "test")
