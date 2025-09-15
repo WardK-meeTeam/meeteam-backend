@@ -31,6 +31,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.session:spring-session-data-redis'
 
 	// Spring WebSocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
@@ -100,6 +101,11 @@ dependencies {
 	// AWS S3
 	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.470'
+
+	// test 롬복
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+
 }
 
 dependencyManagement {
@@ -111,3 +117,23 @@ dependencyManagement {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+
+def querydslDir = "$buildDir/generated/querydsl"
+
+sourceSets {
+	main.java.srcDirs += [ querydslDir ]
+}
+
+configurations {
+	querydsl.extendsFrom compileClasspath
+}
+
+task compileQuerydsl(type: JavaCompile) {
+	source = sourceSets.main.java
+	classpath = configurations.querydsl
+	options.annotationProcessorPath = configurations.annotationProcessor
+	options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
+}
+
+compileQuerydsl.dependsOn clean
