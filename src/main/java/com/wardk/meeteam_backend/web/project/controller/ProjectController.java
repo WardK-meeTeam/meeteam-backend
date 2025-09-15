@@ -4,6 +4,7 @@ import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -48,11 +49,19 @@ public class ProjectController {
     }
 
     @Operation(summary = "프로젝트 상세 조회")
-    @GetMapping("/{projectId}")
-    public SuccessResponse<ProjectResponse> getProject(@PathVariable Long projectId) {
+    @GetMapping("V1/{projectId}")
+    public SuccessResponse<ProjectResponse> getProjectV1(@PathVariable Long projectId) {
 
-        ProjectResponse projectResponse = projectService.getProject(projectId);
+        ProjectResponse projectResponse = projectService.getProjectV1(projectId);
         return SuccessResponse.onSuccess(projectResponse);
+    }
+
+    @Operation(summary = "프로젝트 상세 조회")
+    @GetMapping("V2/{projectId}")
+    public SuccessResponse<ProjectWithLikeDto> getProjectV2(@PathVariable Long projectId) {
+
+        ProjectWithLikeDto projectV1 = projectService.getProjectV2(projectId);
+        return SuccessResponse.onSuccess(projectV1);
     }
 
     @Operation(summary = "프로젝트 수정")
