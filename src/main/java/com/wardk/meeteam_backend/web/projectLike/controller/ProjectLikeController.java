@@ -54,12 +54,12 @@ public class ProjectLikeController {
     private final ProjectLikeService projectLikeService;
 
 
-    @PostMapping("api/project/{projectId}")
+    @PostMapping("api/project/like/{projectId}")
     public SuccessResponse<ToggleLikeResponse> toggleLike(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
 
-        return SuccessResponse.onSuccess(projectLikeService.toggle(projectId, userDetails.getUsername()));
+        return SuccessResponse.onSuccess(projectLikeService.toggleWithOptimistic(projectId, userDetails.getUsername()));
     }
 }
