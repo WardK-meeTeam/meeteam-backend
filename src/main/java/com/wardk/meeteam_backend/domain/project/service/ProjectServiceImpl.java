@@ -67,7 +67,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         LocalDate endDate = projectPostRequest.getEndDate();
 
-        if(endDate != null && !endDate.isAfter(LocalDate.now())) {
+        if (endDate != null && !endDate.isAfter(LocalDate.now())) {
             throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
         }
 
@@ -209,7 +209,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         List<ProjectRepoResponse> responses = new ArrayList<>();
 
-        for (String repoUrl :request.getRepoUrls()){
+        for (String repoUrl : request.getRepoUrls()) {
             String repoFullName = extractRepoFullName(repoUrl);
 
             if (projectRepoRepository.existsByRepoFullName(repoFullName)) {
@@ -285,7 +285,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-  @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     @Override
     public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable) {
         if (bigCategoryId == null || bigCategoryId <= 0) {
