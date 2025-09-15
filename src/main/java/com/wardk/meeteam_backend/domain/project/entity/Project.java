@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.domain.project.entity;
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
+import com.wardk.meeteam_backend.domain.projectLike.entity.ProjectLike;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
 import com.wardk.meeteam_backend.domain.review.entity.Review;
@@ -66,8 +67,6 @@ public class Project extends BaseEntity {
     @Column(nullable = false)
     private Integer likeCount = 0;
 
-    @Version
-    private Long version;
 
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -78,6 +77,9 @@ public class Project extends BaseEntity {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProjectLike> projectLikes = new ArrayList<>();
 
     @OneToMany(mappedBy = "project")
     private List<Review> reviews = new ArrayList<>();

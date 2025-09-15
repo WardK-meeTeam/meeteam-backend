@@ -5,15 +5,16 @@ import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
 import jakarta.persistence.Entity;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.OneToMany;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,4 +68,27 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
             "WHERE p IN :projects")
     List<Project> findProjectsWithSkills(@Param("projects") List<Project> projects);
 
+    @Query("""
+       SELECT new com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto(p, COUNT(pl))
+       FROM Project p
+       LEFT JOIN p.projectLikes pl
+       WHERE p.id = :projectId
+       GROUP BY p
+       """)
+    Optional<ProjectWithLikeDto> findProjectWithLikeCount(@Param("projectId") Long projectId);
+
+    // 테스트 용도
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+            "update Project p set p.createdAt = :ts where p.id = :id"
+    )
+    void overrideTimestamps(
+            @Param("id") Long id,
+            @Param("ts") java.time.LocalDateTime ts
+    );
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Project p where p.id = :id")
+    Optional<Project> findByIdForUpdate(@Param("id") Long id);
 }
