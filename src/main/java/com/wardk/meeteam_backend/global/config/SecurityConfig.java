@@ -7,6 +7,7 @@ import com.wardk.meeteam_backend.global.auth.filter.LoginFilter;
 import com.wardk.meeteam_backend.global.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,10 +25,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
+import org.springframework.session.web.http.CookieSerializer;
+import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +48,11 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
+    private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
+
+    // 환경변수에서 쿠키 도메인 읽기 (없으면 null)
+    @Value("${app.cookie.domain:#{null}}")
+    private String cookieDomain;
 
     /**
      * Security Filter Chain 설정
@@ -84,18 +93,17 @@ public class SecurityConfig {
                 // OAuth 2.0 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oauth2SuccessHandler) // OAuth 성공 후 핸들러 설정
-                        .failureUrl("/api/auth/oauth2/failure") // OAuth 실패 후 리다이렉트 URL
+                        .failureUrl(oAuth2Properties.getRedirect().getFailureEndpoint()) // 설정에서 가져온 실패 URL
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
                         )
                 )
-//            .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/login", "/api/auth/join").permitAll() // 로그인, 회원가입은 누구나 접근 가능
-//                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // /api/admin/** 경로는 ROLE_ADMIN만 접근 가능
-//                        .anyRequest().authenticated()
-                // 세션 설정 STATELESS 에서 세션 설정 수정 - OAuth2 사용시 IF_REQUIRED 필요
+                // 세션 설정 - OAuth2 사용시 IF_REQUIRED 필요
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                                .sessionFixation().migrateSession()
+                                .maximumSessions(1)
+                                .maxSessionsPreventsLogin(false)
                 )
                 .addFilterBefore(
                         new JwtFilter(jwtUtil, securityUrls),
@@ -106,6 +114,27 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class
                 )
                 .build();
+    }
+
+    /**
+     * Redis 세션용 쿠키 설정
+     */
+    @Bean
+    public CookieSerializer cookieSerializer() {
+        DefaultCookieSerializer serializer = new DefaultCookieSerializer();
+        serializer.setCookieName("JSESSIONID");
+        serializer.setCookiePath("/");
+        serializer.setUseHttpOnlyCookie(true);        // XSS 보호
+        serializer.setUseSecureCookie(false);         // 로컬: false, 배포: true
+        serializer.setSameSite("Lax");                // CSRF 보호 + OAuth2 호환
+        serializer.setCookieMaxAge(30 * 60); // 30분
+
+        // ✅ 도메인이 설정되어 있을 때만 적용
+        if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+            serializer.setDomainName(cookieDomain);
+        }
+
+        return serializer;
     }
 
     /**
