@@ -23,7 +23,7 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         super(Project.class);
         this.queryFactory = queryFactory;
     }
-    @Override
+
     public Slice<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
         Slice<Project> projects = applySlicing(pageable, qf ->
@@ -52,6 +52,21 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
                 .where(
                         projectSkill.project.eq(project),
                         skill.skillName.eq(techStack.getTechName())
+                )
+                .exists();
+    }
+
+
+    private BooleanExpression bigCategoryExists(String bigCategoryName) {
+        if (bigCategoryName == null || bigCategoryName.isBlank()) return null;
+        return JPAExpressions
+                .selectOne()
+                .from(projectCategoryApplication)
+                .join(projectCategoryApplication.subCategory, subCategory)
+                .join(subCategory.bigCategory, bigCategory)
+                .where(
+                        projectCategoryApplication.project.eq(project),
+                        bigCategory.name.eq(bigCategoryName)
                 )
                 .exists();
     }
