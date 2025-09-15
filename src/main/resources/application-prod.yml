@@ -10,12 +10,14 @@ spring:
               - openid
               - profile
               - email
+            redirect-uri: https://api.meeteam.alom-sejong.com/login/oauth2/code/google  # 강제 지정
           github:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope:
               - user:email
               - read:user
+            redirect-uri: https://api.meeteam.alom-sejong.com/login/oauth2/code/github  # 강제 지정
 
   datasource:
     url: ${DATASOURCE_URL}
@@ -104,6 +106,7 @@ server:
   tomcat:
     mbeanregistry:
       enabled: true
+  forward-headers-strategy: framework
 
 
 management:
