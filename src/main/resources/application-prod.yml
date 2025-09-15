@@ -10,7 +10,6 @@ spring:
               - openid
               - profile
               - email
-            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
 
           github:
             client-id: ${GITHUB_CLIENT_ID}
@@ -18,7 +17,6 @@ spring:
             scope:
               - user:email
               - read:user
-            redirect-uri: "http://localhost:8080/login/oauth2/code/github"
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
