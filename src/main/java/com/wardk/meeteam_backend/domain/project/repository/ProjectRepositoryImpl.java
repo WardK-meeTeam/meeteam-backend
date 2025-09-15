@@ -71,19 +71,6 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
                 .exists();
     }
 
-    private BooleanExpression bigCategoryExists(String bigCategoryName) {
-        if (bigCategoryName == null || bigCategoryName.isBlank()) return null;
-        return JPAExpressions
-                .selectOne()
-                .from(projectCategoryApplication)
-                .join(projectCategoryApplication.subCategory, subCategory)
-                .join(subCategory.bigCategory, bigCategory)
-                .where(
-                        projectCategoryApplication.project.eq(project),
-                        bigCategory.name.eq(bigCategoryName)
-                )
-                .exists();
-    }
 
 
     private BooleanExpression platformCategoryEq(PlatformCategory platformCategory) {

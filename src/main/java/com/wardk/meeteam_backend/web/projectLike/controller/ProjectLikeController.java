@@ -60,6 +60,6 @@ public class ProjectLikeController {
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
 
-        return SuccessResponse.onSuccess(projectLikeService.toggleWithOptimistic(projectId, userDetails.getUsername()));
+        return SuccessResponse.onSuccess(projectLikeService.toggleWithPessimistic(projectId, userDetails.getUsername()));
     }
 }
