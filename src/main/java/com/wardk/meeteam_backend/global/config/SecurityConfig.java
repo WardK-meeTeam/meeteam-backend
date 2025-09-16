@@ -50,10 +50,6 @@ public class SecurityConfig {
     private final RestAccessDeniedHandler restAccessDeniedHandler;
     private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
 
-    // 환경변수에서 쿠키 도메인 읽기 (없으면 null)
-    @Value("${app.cookie.domain:#{null}}")
-    private String cookieDomain;
-
     /**
      * Security Filter Chain 설정
      */
@@ -98,12 +94,9 @@ public class SecurityConfig {
                                 .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
                         )
                 )
-                // 세션 설정 - OAuth2 사용시 IF_REQUIRED 필요
+                // ★ 완전한 STATELESS (세션 사용하지 않음)
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                                .sessionFixation().migrateSession()
-                                .maximumSessions(1)
-                                .maxSessionsPreventsLogin(false)
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .addFilterBefore(
                         new JwtFilter(jwtUtil, securityUrls),
@@ -114,27 +107,6 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class
                 )
                 .build();
-    }
-
-    /**
-     * Redis 세션용 쿠키 설정
-     */
-    @Bean
-    public CookieSerializer cookieSerializer() {
-        DefaultCookieSerializer serializer = new DefaultCookieSerializer();
-        serializer.setCookieName("JSESSIONID");
-        serializer.setCookiePath("/");
-        serializer.setUseHttpOnlyCookie(true);        // XSS 보호
-        serializer.setUseSecureCookie(false);         // 로컬: false, 배포: true
-        serializer.setSameSite("Lax");                // CSRF 보호 + OAuth2 호환
-        serializer.setCookieMaxAge(30 * 60); // 30분
-
-        // ✅ 도메인이 설정되어 있을 때만 적용
-        if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
-            serializer.setDomainName(cookieDomain);
-        }
-
-        return serializer;
     }
 
     /**
