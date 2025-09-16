@@ -410,4 +410,36 @@ class ProjectServiceImplTest {
 
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_PROJECT_DATE);
     }
+
+    @Test
+    @DisplayName("프로젝트 삭제 성공")
+    void delete_project_success() {
+        /**
+         * 프로젝트 조회
+         * 생성자 확인
+         * 삭제
+         */
+        //given
+        Long projectId = 1L;
+
+        Project project = Project.createProject(
+                creator,
+                "test",
+                "description",
+                ProjectCategory.ENVIRONMENT,
+                PlatformCategory.IOS,
+                "test.png",
+                true,
+                LocalDate.now().plusDays(30)
+        );
+
+        when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
+
+        //when
+        ProjectDeleteResponse resp = projectService.deleteProject(projectId, creator.getEmail());
+
+        //then
+        assertThat(resp.getProjectId()).isEqualTo(projectId);
+        assertThat(resp.getProjectName()).isEqualTo(project.getName());
+    }
 }
