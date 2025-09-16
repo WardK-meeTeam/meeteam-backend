@@ -18,6 +18,7 @@ public class ProjectResponse {
     private String name;
     private String description;
     private PlatformCategory platformCategory;
+    private Integer projectLike;
     private ProjectCategory projectCategory;
     private String imageUrl;
     private boolean offlineRequired;
@@ -32,6 +33,7 @@ public class ProjectResponse {
         return ProjectResponse.builder()
                 .name(project.getName())
                 .description(project.getDescription())
+                .projectLike(project.getLikeCount())
                 .platformCategory(project.getPlatformCategory())
                 .projectCategory(project.getProjectCategory())
                 .imageUrl(project.getImageUrl())
