@@ -16,6 +16,8 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -63,18 +65,8 @@ public class CustomOauth2UserService extends DefaultOAuth2UserService {
 
             log.info("OAuth2 사용자 정보 - email: {}, name: {}, providerId: {}", email, name, providerId);
 
-            Member findMember = memberRepository.findByEmail(email)
-                .orElse(
-                    memberRepository.save(
-                        Member.builder()
-                            .email(email)
-                            .realName(name)
-                            .provider(provider)
-                            .providerId(providerId)
-                            .role(UserRole.USER)
-                            .build()
-                    )
-                );
+            Member findMember = findOrCreateMember(email, name, providerId, provider);  // ← Provider 기반 조회
+
 
             return new CustomOauth2UserDetails(findMember, oAuth2User.getAttributes());
 
@@ -84,4 +76,51 @@ public class CustomOauth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException(error, e);
         }
     }
+
+    /**
+     * Provider + ProviderId 기반으로 회원 조회 또는 생성
+     */
+    private Member findOrCreateMember(String email, String name, String providerId, String provider) {
+        log.info("회원 조회/생성 시작: provider={}, providerId={}, email={}", provider, providerId, email);
+
+        // 1순위: Provider + ProviderId로 조회 (가장 확실한 방법)
+        Optional<Member> existingMember = memberRepository.findByProviderAndProviderId(provider, providerId);
+        if (existingMember.isPresent()) {
+            log.info("기존 회원 조회 성공: id={}, email={}", existingMember.get().getId(), existingMember.get().getEmail());
+            return existingMember.get();
+        }
+
+        // 2순위: 신규 회원 생성
+        log.info("새로운 OAuth2 사용자 생성: email={}, provider={}, providerId={}", email, provider, providerId);
+
+        try {
+            Member newMember = Member.builder()
+                    .email(email)
+                    .realName(name)
+                    .provider(provider)
+                    .providerId(providerId)
+                    .role(UserRole.USER)
+                    .build();
+
+            Member savedMember = memberRepository.save(newMember);
+            log.info("새 회원 생성 성공: id={}, email={}", savedMember.getId(), email);
+            return savedMember;
+
+        } catch (Exception e) {
+            log.error("새로운 OAuth2 사용자 생성 중 오류 발생: email={}, provider={}, providerId={}",
+                    email, provider, providerId, e);
+
+            // 동시성 문제로 인해 다른 스레드에서 생성되었을 가능성 체크
+            Optional<Member> concurrentMember = memberRepository.findByProviderAndProviderId(provider, providerId);
+            if (concurrentMember.isPresent()) {
+                log.info("동시성 문제로 다른 스레드에서 생성된 회원 발견: id={}", concurrentMember.get().getId());
+                return concurrentMember.get();
+            }
+
+            // 이메일 중복으로 실패한 경우 기존 회원 조회 시도
+            return memberRepository.findByEmail(email)
+                    .orElseThrow(() -> new OAuth2AuthenticationException("사용자 생성 실패: " + e.getMessage()));
+        }
+    }
+
 }
