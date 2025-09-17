@@ -2,30 +2,22 @@ package com.wardk.meeteam_backend.domain.codereview.service;
 
 import com.wardk.meeteam_backend.domain.chat.entity.ChatThread;
 import com.wardk.meeteam_backend.domain.chat.repository.ChatThreadRepository;
+import com.wardk.meeteam_backend.domain.chat.service.ChatService;
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewJob;
 import com.wardk.meeteam_backend.domain.codereview.repository.PrReviewJobRepository;
 import com.wardk.meeteam_backend.domain.llm.service.LlmOrchestrator;
-import com.wardk.meeteam_backend.domain.llm.service.LlmReviewService;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
-import com.wardk.meeteam_backend.domain.pr.entity.PullRequestFile;
 import com.wardk.meeteam_backend.domain.pr.repository.PullRequestFileRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-
-import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
 
 @Slf4j
 @Service
@@ -36,7 +28,7 @@ public class PrReviewService {
     private final PullRequestFileRepository fileRepository;
     private final PrReviewJobRepository prReviewJobRepository;
     private final ChatThreadRepository chatThreadRepository;
-    // private final ExecutorService asyncTaskExecutor;
+    private final ChatService chatService;
     private final LlmOrchestrator llmOrchestrator;
 
     /**
@@ -91,7 +83,7 @@ public class PrReviewService {
         ChatThread chatThread = ChatThread.builder()
                 .pullRequest(pullRequest)
                 .title("PR #" + pullRequest.getPrNumber() + " 코드 리뷰")
-                .memberId(Long.valueOf(1)) // 임의 수
+                .memberId(1L) // 임의 수
                 .build();
         chatThreadRepository.save(chatThread);
 
@@ -108,11 +100,37 @@ public class PrReviewService {
         prReviewJobRepository.save(reviewJob);
         prReviewJobRepository.flush(); // 즉시 DB에 반영하여 ID 생성
 
+        // 채팅 스레드에 리뷰 시작 메시지 추가
+        try {
+            String startMessage = String.format(
+                    "🔍 **PR #%d 코드 리뷰를 시작합니다**\n\n" +
+                            "**저장소**: %s\n" +
+                            "**커밋**: %s\n" +
+                            "**파일 수**: %d개\n\n" +
+                            "리뷰가 완료되면 요약 결과를 알려드리겠습니다.",
+                    pullRequest.getPrNumber(),
+                    pullRequest.getProjectRepo().getRepoFullName(),
+                    pullRequest.getHeadSha().substring(0, 7), // 커밋 해시 앞 7자리만
+                    pullRequest.getFiles() != null ? pullRequest.getFiles().size() : 0
+            );
+
+            chatService.saveSystemMessage(
+                    chatThread.getId(),
+                    startMessage,
+                    null, // 모델명 없음
+                    null  // 토큰 사용량 없음
+            );
+
+            log.info("PR #{} 리뷰 시작 메시지가 채팅방에 저장되었습니다.", reviewJob.getPrNumber());
+        } catch (Exception e) {
+            log.error("PR #{} 리뷰 시작 메시지 저장 중 오류 발생", reviewJob.getPrNumber(), e);
+            // 메시지 저장 실패는 전체 프로세스에 영향을 주지 않도록 무시
+        }
+
         // 새 리뷰 작업 시작
         log.info("새 리뷰 작업 시작: id={}", reviewJob.getId());
         llmOrchestrator.startPrReview(reviewJob.getId());
 
-        // 채팅 스레드에 채팅 메시지 생성
 
         return reviewJob;
     }
@@ -130,6 +148,7 @@ public class PrReviewService {
                 lowerFilename.endsWith(".svg") ||
                 lowerFilename.endsWith(".pdf") ||
                 lowerFilename.endsWith(".zip") ||
-                lowerFilename.endsWith(".jar");
+                lowerFilename.endsWith(".jar") ||
+                lowerFilename.endsWith(".xml");
     }
 }

@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +52,25 @@ public class ChatService {
                 .build();
 
         chatMessageRepository.save(chatMessage);
+    }
+
+    // 시스템 메시지 저장 (PR 리뷰 완료 등)
+    @Transactional
+    public ChatMessage saveSystemMessage(Long threadId, String content, String modelName, Integer totalTokens) {
+        // thread 존재 확인
+        chatThreadRepository.findById(threadId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHAT_THREAD_NOT_FOUND));
+
+        ChatMessage chatMessage = ChatMessage.builder()
+                .threadId(threadId)
+                .senderRole(SenderRole.ASSISTANT)
+                .memberId(null) // 시스템 메시지이므로 null
+                .content(content)
+                .modelName(modelName)
+                .completionTokens(totalTokens)
+                .build();
+
+        return chatMessageRepository.save(chatMessage);
     }
 
     // cursor 기반 페이지네이션으로 메시지 조회
