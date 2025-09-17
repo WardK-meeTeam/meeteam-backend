@@ -45,11 +45,11 @@ public class AiConfig {
         HttpClient httpClient = HttpClient.create(provider)
                 .compress(true) // gzip
                 .keepAlive(true)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5_000) // 10s→5s로 단축
-                .responseTimeout(Duration.ofSeconds(8)) // 18s→8s로 대폭 단축 (가드 타임아웃보다 작게)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000) // 10s→5s로 단축
+                .responseTimeout(Duration.ofSeconds(20)) // 18s→8s로 대폭 단축 (가드 타임아웃보다 작게)
                 .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(8)) // 18s→8s로 대폭 단축
-                        .addHandlerLast(new WriteTimeoutHandler(5))); // 10s→5s로 단축
+                        .addHandlerLast(new ReadTimeoutHandler(20)) // 18s→8s로 대폭 단축
+                        .addHandlerLast(new WriteTimeoutHandler(20))); // 10s→5s로 단축
 
         return WebClient.builder()
                 .baseUrl("https://api.openai.com")

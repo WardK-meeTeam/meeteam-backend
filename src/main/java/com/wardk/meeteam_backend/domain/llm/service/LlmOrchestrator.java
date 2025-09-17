@@ -21,7 +21,7 @@ public interface LlmOrchestrator {
      * @param reviewJobId PR 리뷰 작업 ID
      * @return 완료를 나타내는 CompletableFuture
      */
-    CompletableFuture<Void> startPrReview(Long reviewJobId);
+    public CompletableFuture<Void> startPrReview(Long reviewJobId);
     
     /**
      * PR 리뷰 작업에 대한 파일 리뷰 태스크를 생성합니다.
