@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -53,14 +54,33 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 // GitHub 로그인
                 DefaultOAuth2User oauth2User = (DefaultOAuth2User) principal;
                 Map<String, Object> attributes = oauth2User.getAttributes();
+
+                // 전체 attributes 로깅 (디버깅용)
+                log.info("GitHub attributes 전체: {}", attributes);
+
+                // ProviderId 확실하게 추출
+                Object idObj = attributes.get(oAuth2Properties.getProviders().getGithub().getIdAttribute());
+                providerId = idObj != null ? String.valueOf(idObj) : null;
+
+                // 이메일 처리
                 email = (String) attributes.get(oAuth2Properties.getProviders().getGithub().getEmailAttribute());
+                if (email == null || email.trim().isEmpty()) {
+                    // GitHub username을 사용
+                    String login = (String) attributes.get(oAuth2Properties.getProviders().getGithub().getLoginAttribute());
+                    email = login + "@github.local";
+                    log.warn("GitHub 사용자 {}의 이메일 정보가 없어 임시 이메일 생성: {}", login, email);
+                }
+
+                // Name 처리
                 name = (String) attributes.get(oAuth2Properties.getProviders().getGithub().getUserNameAttribute());
                 if (name == null || name.trim().isEmpty()) {
                     name = (String) attributes.get(oAuth2Properties.getProviders().getGithub().getLoginAttribute());
                 }
-                providerId = String.valueOf(attributes.get(oAuth2Properties.getProviders().getGithub().getIdAttribute()));
+
                 provider = oAuth2Properties.getProviders().getGithub().getName();
-                log.info("GitHub OAuth2 User 로그인 성공: {}", email);
+
+                log.info("GitHub OAuth2 User 로그인: email={}, name={}, providerId={}, login={}",
+                        email, name, providerId, attributes.get("login"));
             } else if (principal instanceof CustomOauth2UserDetails) {
                 CustomOauth2UserDetails oauth2User = (CustomOauth2UserDetails) principal;
                 Member member = oauth2User.getMember();
@@ -106,32 +126,59 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
      * 중복 이메일 문제를 해결하기 위해 Provider 정보를 우선으로 사용
      */
     private Member findOrCreateMember(String email, String name, String providerId, String provider) {
-        // 1순위: Provider + ProviderId로 기존 회원 조회 (가장 정확)
-        return memberRepository.findByProviderAndProviderId(provider, providerId)
-                .orElseGet(() -> {
-                    // 2순위: 신규 회원 생성
-                    log.info("새로운 OAuth2 사용자 생성: email={}, provider={}, providerId={}", email, provider, providerId);
+        log.info("회원 조회/생성 시작: provider={}, providerId={}, email={}", provider, providerId, email);
 
-                    try {
-                        Member newMember = Member.builder()
-                                .email(email)
-                                .realName(name)
-                                .provider(provider)
-                                .providerId(providerId)
-                                .role(UserRole.USER)
-                                .build();
+        // 필수 정보 검증
+        if (providerId == null || provider == null) {
+            throw new RuntimeException("Provider 정보가 없습니다: provider=" + provider + ", providerId=" + providerId);
+        }
 
-                        return memberRepository.save(newMember);
+        // 1순위: Provider + ProviderId로 조회 (가장 확실한 방법)
+        Optional<Member> existingMember = memberRepository.findByProviderAndProviderId(provider, providerId);
+        if (existingMember.isPresent()) {
+            log.info("기존 회원 조회 성공: id={}, email={}", existingMember.get().getId(), existingMember.get().getEmail());
+            return existingMember.get();
+        }
 
-                    } catch (Exception e) {
-                        log.error("새로운 OAuth2 사용자 생성 중 오류 발생: email={}, provider={}, providerId={}",
-                                email, provider, providerId, e);
+        // 2순위: 동일 provider에서 이메일로 조회 (이메일이 변경된 경우)
+        if (email != null && !email.endsWith("@github.local")) {
+            Optional<Member> emailMember = memberRepository.findByEmailAndProvider(email, provider);
+            if (emailMember.isPresent()) {
+                // 기존 회원의 providerId 업데이트
+                Member member = emailMember.get();
+                member.setProviderId(providerId);
+                log.info("기존 회원 providerId 업데이트: id={}, newProviderId={}", member.getId(), providerId);
+                return memberRepository.save(member);
+            }
+        }
 
-                        // 혹시 이메일 중복으로 실패했다면, 이메일로 기존 사용자 조회 시도
-                        return memberRepository.findByEmail(email)
-                                .orElseThrow(() -> new RuntimeException("사용자 생성 실패: " + e.getMessage()));
-                    }
-                });
+        // 3순위: 신규 회원 생성
+        try {
+            Member newMember = Member.builder()
+                    .email(email)
+                    .realName(name)
+                    .provider(provider)
+                    .providerId(providerId)
+                    .role(UserRole.USER)
+                    .build();
+
+            Member savedMember = memberRepository.save(newMember);
+            log.info("새 회원 생성 성공: id={}, email={}", savedMember.getId(), email);
+            return savedMember;
+
+        } catch (Exception e) {
+            log.error("새로운 OAuth2 사용자 생성 중 오류 발생", e);
+
+            // 동시성 문제 체크
+            Optional<Member> concurrentMember = memberRepository.findByProviderAndProviderId(provider, providerId);
+            if (concurrentMember.isPresent()) {
+                return concurrentMember.get();
+            }
+
+            return memberRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("사용자 생성 실패: " + e.getMessage()));
+        }
     }
+
 
 }
