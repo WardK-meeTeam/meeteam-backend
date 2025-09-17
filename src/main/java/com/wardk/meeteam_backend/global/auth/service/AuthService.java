@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.global.auth.service;
 
 
+import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
@@ -26,7 +27,8 @@ public class AuthService {
 
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private final FileUtil fileUtil;
+//    private final FileUtil fileUtil;
+    private final S3FileService s3FileService;
     private final SubCategoryRepository subCategoryRepository;
     private final MemberSubCategoryRepository memberSubCategoryRepository;
     private final MemberSkillRepository memberSkillRepository;
@@ -43,9 +45,8 @@ public class AuthService {
                 });
 
         String storeFileName = null;
-        MultipartFile file = filed;
-        if (file != null && !file.isEmpty()) {
-            storeFileName = fileUtil.storeFile(file).getStoreFileName();
+        if (filed != null && !filed.isEmpty()) {
+            storeFileName = s3FileService.uploadFile(filed, "images");
         }
 
         Member member = Member.builder()

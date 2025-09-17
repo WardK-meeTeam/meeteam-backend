@@ -5,9 +5,10 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
+import static com.wardk.meeteam_backend.domain.member.entity.QMember.member;
 
 
 @Component
@@ -15,6 +16,8 @@ import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
 public class MemberRepositoryCustomImpl implements MemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+
+
 
     @Override
     public Member getProfile(Long memberId) {

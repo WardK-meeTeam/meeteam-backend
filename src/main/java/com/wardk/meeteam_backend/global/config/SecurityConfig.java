@@ -7,6 +7,7 @@ import com.wardk.meeteam_backend.global.auth.filter.LoginFilter;
 import com.wardk.meeteam_backend.global.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +46,7 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
+    private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
 
     /**
      * Security Filter Chain 설정
@@ -84,18 +87,14 @@ public class SecurityConfig {
                 // OAuth 2.0 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oauth2SuccessHandler) // OAuth 성공 후 핸들러 설정
-                        .failureUrl("/api/auth/oauth2/failure") // OAuth 실패 후 리다이렉트 URL
+                        .failureUrl(oAuth2Properties.getRedirect().getFailureEndpoint()) // 설정에서 가져온 실패 URL
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
                         )
                 )
-//            .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/login", "/api/auth/join").permitAll() // 로그인, 회원가입은 누구나 접근 가능
-//                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // /api/admin/** 경로는 ROLE_ADMIN만 접근 가능
-//                        .anyRequest().authenticated()
-                // 세션 설정 STATELESS 에서 세션 설정 수정 - OAuth2 사용시 IF_REQUIRED 필요
+                // ★ 완전한 STATELESS (세션 사용하지 않음)
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .addFilterBefore(
                         new JwtFilter(jwtUtil, securityUrls),

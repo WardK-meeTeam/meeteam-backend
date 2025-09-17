@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.domain.project.service;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
+import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
@@ -24,10 +25,10 @@ import com.wardk.meeteam_backend.global.util.FileUtil;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
 import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -45,7 +46,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProjectServiceImpl implements ProjectService {
 
-    private final FileUtil fileUtil;
+//    private final FileUtil fileUtil;
+    private final S3FileService s3FileService;
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
     private final SubCategoryRepository subCategoryRepository;
@@ -63,7 +65,8 @@ public class ProjectServiceImpl implements ProjectService {
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        String storeFileName = getStoreFileName(file);
+        String storeFileName = getStoreFileName(file, creator.getId());
+        System.out.println("storeFileName = " + storeFileName);
 
         LocalDate endDate = projectPostRequest.getEndDate();
 
@@ -120,7 +123,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getProject(Long projectId) {
+    public ProjectResponse getProjectV1(Long projectId) {
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
@@ -129,13 +132,27 @@ public class ProjectServiceImpl implements ProjectService {
         return ProjectResponse.responseDto(project);
     }
 
+
+    @Override
+    public ProjectWithLikeDto getProjectV2(Long projectId) {
+
+        ProjectWithLikeDto projectWithLikeDto = projectRepository.findProjectWithLikeCount(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+
+        return projectWithLikeDto;
+    }
+
     @Override
     public ProjectUpdateResponse updateProject(Long projectId, ProjectUpdateRequest request, MultipartFile file, String requesterEmail) {
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+        Member creator = memberRepository.findOptionByEmail(requesterEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        if (!creator.getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
@@ -146,7 +163,10 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
         }
 
-        String storeFileName = getStoreFileName(file);
+        String storeFileName = getStoreFileName(file, creator.getId());
+        if (storeFileName == null) {
+            storeFileName = project.getImageUrl(); 
+        }
 
         project.updateProject(
                 request.getName(),
@@ -231,19 +251,15 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Slice<ProjectSearchResponse> searchProject(ProjectSearchCondition condition, Pageable pageable) {
+    public Slice<ProjectConditionRequest> searchProject(ProjectSearchCondition condition, Pageable pageable) {
 
-        Slice<ProjectSearchResponse> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
+        Slice<Project> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
 
-        content.forEach(
-                dto -> {
-                    Project project = projectRepository.findById(dto.getProjectId())
-                            .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-                    dto.settingSkills(project);
-                }
+        Slice<ProjectConditionRequest> map = content.map(
+                project -> new ProjectConditionRequest(project)
         );
 
-        return content;
+        return map;
 
     }
 
@@ -257,12 +273,20 @@ public class ProjectServiceImpl implements ProjectService {
                 .toList();
     }
 
-    private String getStoreFileName(MultipartFile file) {
+//    private String getStoreFileName(MultipartFile file) {
+//        String storeFileName = null;
+//        if (file != null && !file.isEmpty()) {
+//            storeFileName = fileUtil.storeFile(file).getStoreFileName();
+//        }
+//
+//        return storeFileName;
+//    }
+
+    private String getStoreFileName(MultipartFile file, Long uploaderId) {
         String storeFileName = null;
         if (file != null && !file.isEmpty()) {
-            storeFileName = fileUtil.storeFile(file).getStoreFileName();
+            storeFileName = s3FileService.uploadFile(file, "images", uploaderId);
         }
-
         return storeFileName;
     }
 
@@ -285,7 +309,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-  @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     @Override
     public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable) {
         if (bigCategoryId == null || bigCategoryId <= 0) {
