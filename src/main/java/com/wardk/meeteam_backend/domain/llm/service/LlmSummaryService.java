@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.llm.service;
 
 import com.wardk.meeteam_backend.domain.chat.entity.ChatMessage;
+import com.wardk.meeteam_backend.domain.chat.service.ChatService;
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewFinding;
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewJob;
 import com.wardk.meeteam_backend.domain.codereview.repository.PrReviewFindingRepository;
@@ -32,6 +33,7 @@ public class LlmSummaryService {
     private final ChatClient chatClient;
     private final LlmTaskResultRepository taskResultRepository;
     private final PrReviewFindingRepository findingRepository;
+    private final ChatService chatService;
 
     /**
      * PR에 대한 요약을 생성합니다.
@@ -65,13 +67,28 @@ public class LlmSummaryService {
                     .chatResponse();
             
             // 요약 내용 추출
-            String summaryContent = response.getResults().get(0).getOutput().getText();
+            String summaryContent = response.getResults() != null && !response.getResults().isEmpty()
+                ? response.getResults().get(0).getOutput().getText()
+                : "요약 생성 중 오류가 발생했습니다.";
             log.info("PR #{} 요약 생성 완료", reviewJob.getPrNumber());
             
             // 채팅 메시지로 저장
             ChatMessage chatMessage = null;
-            if (reviewJob.getChatThread() != null) {}
-            
+            if (reviewJob.getChatThread() != null) {
+                try {
+                    chatMessage = chatService.saveSystemMessage(
+                        reviewJob.getChatThread().getId(),
+                        summaryContent,
+                        "gpt-4", // 모델명 - 실제 사용한 모델명으로 수정 필요
+                        response.getMetadata().getUsage().getTotalTokens()
+                    );
+                    log.info("PR #{} 요약이 채팅방에 저장되었습니다. 메시지 ID: {}",
+                            reviewJob.getPrNumber(), chatMessage.getId());
+                } catch (Exception e) {
+                    log.error("PR #{} 요약을 채팅방에 저장하는 중 오류 발생", reviewJob.getPrNumber(), e);
+                }
+            }
+
             // 요약 결과 저장
             LlmTaskResult result = LlmTaskResult.builder()
                     .resultType("PR_SUMMARY")
@@ -103,8 +120,22 @@ public class LlmSummaryService {
         
         // 채팅 메시지로 저장
         ChatMessage chatMessage = null;
-        if (summaryTask.getPrReviewJob().getChatThread() != null) {}
-        
+        if (summaryTask.getPrReviewJob().getChatThread() != null) {
+            try {
+                chatMessage = chatService.saveSystemMessage(
+                    summaryTask.getPrReviewJob().getChatThread().getId(),
+                    emptyContent,
+                    null, // 모델명 없음
+                    null  // 토큰 사용량 없음
+                );
+                log.info("PR #{} 빈 요약이 채팅방에 저장되었습니다. 메시지 ID: {}",
+                        summaryTask.getPrReviewJob().getPrNumber(), chatMessage.getId());
+            } catch (Exception e) {
+                log.error("PR #{} 빈 요약을 채팅방에 저장하는 중 오류 발생",
+                         summaryTask.getPrReviewJob().getPrNumber(), e);
+            }
+        }
+
         // 요약 결과 저장
         LlmTaskResult result = LlmTaskResult.builder()
                 .resultType("PR_SUMMARY_EMPTY")
@@ -126,18 +157,6 @@ public class LlmSummaryService {
             당신은 코드 리뷰 분석가로, PR에 대한 여러 파일의 리뷰 결과를 종합하여 간결하고 유용한 요약을 제공합니다.
             다음 지침을 따라 요약을 작성하세요:
             
-            1. 전체적인 코드 품질과 주요 개선 사항을 요약합니다.
-            2. 반복되는 패턴이나 공통적인 문제점을 강조합니다.
-            3. 가장 중요한 발견 사항을 우선적으로 언급합니다.
-            4. 개발자가 코드를 개선하는 데 도움이 될 수 있는 실질적인 제안을 제공합니다.
-            5. 긍정적인 측면도 언급하여 균형 잡힌 피드백을 제공합니다.
-            
-            요약은 다음 섹션으로 구성하세요:
-            1. 전체 요약
-            2. 주요 발견 사항
-            3. 개선 제안
-            4. 긍정적인 측면
-            
             필요한 경우 마크다운 형식을 사용하여 구조화된 응답을 제공하세요.
             """;
         messages.add(new SystemMessage(systemPrompt));
@@ -150,12 +169,11 @@ public class LlmSummaryService {
         // 파일별 리뷰 결과 포맷팅
         for (PrReviewFinding finding : findings) {
             userPrompt.append(String.format("## 파일: %s\n", finding.getFilePath()));
-            userPrompt.append(String.format("심각도: %s\n", finding.getSeverity()));
             
             // 내용 요약 (너무 길면 잘라내기)
             String content = finding.getChatResponse();
             if (content != null) {
-                if (content.length() > 500) {
+                if (content.length() > 250) {
                     content = content.substring(0, 500) + "... (생략됨)";
                 }
                 userPrompt.append("\n```\n").append(content).append("\n```\n\n");
