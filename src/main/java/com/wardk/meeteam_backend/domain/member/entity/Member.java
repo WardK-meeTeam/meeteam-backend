@@ -20,13 +20,14 @@ import java.util.List;
 @Setter
 @Builder
 @NoArgsConstructor
+@Table(name = "member", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 public class Member extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String email;
 
     private Integer age;
