@@ -207,7 +207,7 @@ class ProjectServiceImplTest {
         when(projectRepository.findById(projectId)).thenReturn(Optional.of(project));
 
         // when
-        ProjectResponse response = projectService.getProject(projectId);
+        ProjectResponse response = projectService.getProjectV1(projectId);
 
         assertThat(response.getName()).isEqualTo("test");
         assertThat(response.getDescription()).isEqualTo("test description");
