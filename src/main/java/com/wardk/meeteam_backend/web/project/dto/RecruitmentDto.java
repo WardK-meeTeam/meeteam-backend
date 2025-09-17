@@ -8,6 +8,7 @@ import lombok.Getter;
 @Builder
 public class RecruitmentDto {
 
+    private String bigCategory;
     private String subCategory;
     private int recruitmentCount;
     private int currentCount;
@@ -15,6 +16,7 @@ public class RecruitmentDto {
 
     public static RecruitmentDto responseDto(ProjectCategoryApplication recruitment) {
         return RecruitmentDto.builder()
+                .bigCategory(recruitment.getSubCategory().getBigCategory().getName())
                 .subCategory(recruitment.getSubCategory().getName())
                 .recruitmentCount(recruitment.getRecruitmentCount())
                 .currentCount(recruitment.getCurrentCount())
