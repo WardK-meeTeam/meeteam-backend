@@ -101,19 +101,37 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         }
     }
 
+    /**
+     * Provider + ProviderId 기반으로 회원 조회 또는 생성
+     * 중복 이메일 문제를 해결하기 위해 Provider 정보를 우선으로 사용
+     */
     private Member findOrCreateMember(String email, String name, String providerId, String provider) {
-        return memberRepository.findByEmail(email)
-            .orElse(
-                memberRepository.save(
-                    Member.builder()
-                        .email(email)
-                        .realName(name)
-                        .provider(provider)
-                        .providerId(providerId)
-                        .role(UserRole.USER)
-                        .build()
-                )
-            );
+        // 1순위: Provider + ProviderId로 기존 회원 조회 (가장 정확)
+        return memberRepository.findByProviderAndProviderId(provider, providerId)
+                .orElseGet(() -> {
+                    // 2순위: 신규 회원 생성
+                    log.info("새로운 OAuth2 사용자 생성: email={}, provider={}, providerId={}", email, provider, providerId);
+
+                    try {
+                        Member newMember = Member.builder()
+                                .email(email)
+                                .realName(name)
+                                .provider(provider)
+                                .providerId(providerId)
+                                .role(UserRole.USER)
+                                .build();
+
+                        return memberRepository.save(newMember);
+
+                    } catch (Exception e) {
+                        log.error("새로운 OAuth2 사용자 생성 중 오류 발생: email={}, provider={}, providerId={}",
+                                email, provider, providerId, e);
+
+                        // 혹시 이메일 중복으로 실패했다면, 이메일로 기존 사용자 조회 시도
+                        return memberRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("사용자 생성 실패: " + e.getMessage()));
+                    }
+                });
     }
 
 }
