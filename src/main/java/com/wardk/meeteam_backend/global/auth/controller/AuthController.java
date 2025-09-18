@@ -47,7 +47,7 @@ public class AuthController {
      */
 
 
-    /*@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<RegisterResponse> response(
             @RequestPart("request") RegisterRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file
@@ -59,8 +59,7 @@ public class AuthController {
         return SuccessResponse.onSuccess(RegisterResponse.responseDto(name));
 
     }
-*/
-    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    /*@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<RegisterResponse> response(
             @RequestPart("request") String requestJson,
             @RequestPart(value = "file", required = false) MultipartFile file
@@ -72,7 +71,7 @@ public class AuthController {
 
         return SuccessResponse.onSuccess(RegisterResponse.responseDto(name));
 
-    }
+    }*/
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
