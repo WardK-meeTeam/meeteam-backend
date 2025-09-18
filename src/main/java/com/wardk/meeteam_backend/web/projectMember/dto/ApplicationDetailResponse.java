@@ -6,6 +6,8 @@ import com.wardk.meeteam_backend.domain.projectMember.entity.WeekDay;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class ApplicationDetailResponse {
@@ -19,7 +21,7 @@ public class ApplicationDetailResponse {
     private String applicantEmail;
     private String motivation;
     private int availableHoursPerWeek;
-    private WeekDay weekDay;
+    private List<WeekDay> weekDay;
     private boolean offlineAvailable;
 
     public static ApplicationDetailResponse responseDto(ProjectMemberApplication application) {
@@ -34,7 +36,7 @@ public class ApplicationDetailResponse {
                 .applicantEmail(application.getApplicant().getEmail())
                 .motivation(application.getMotivation())
                 .availableHoursPerWeek(application.getAvailableHoursPerWeek())
-                .weekDay(application.getWeekDay())
+                .weekDay(application.getWeekDays())
                 .offlineAvailable(application.isOfflineAvailable())
                 .build();
     }

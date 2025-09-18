@@ -30,6 +30,7 @@ public class LlmReviewService {
     private final ChatClient chatClient;
     private final PrReviewFindingRepository prReviewFindingRepository;
     private final LlmTaskResultRepository llmTaskResultRepository;
+    private final Object lock = new Object(); // 잠금을 위한 전용 객체
 
     /**
      * LLM을 사용하여 PR 파일에 대한 코드 리뷰를 수행합니다.
@@ -47,17 +48,23 @@ public class LlmReviewService {
         Prompt prompt = new Prompt(messages);
 
         // LLM 호출
-        
-        ChatResponse response = chatClient.prompt(prompt)
-                .call()
-                .chatResponse();
+        synchronized (lock) {
+            ChatResponse response = chatClient.prompt(prompt)
+                    .call()
+                    .chatResponse();
 
-        LlmTaskResult result = savePrReviewFindingAndLlmTaskResult(file, response, task);
 
-        log.info("pr번호: {}, fileName: {}, reviewFinding에 저장 완료", file.getPullRequest().getPrNumber(),
-                file.getFileName());
+            LlmTaskResult result = savePrReviewFindingAndLlmTaskResult(file, response, task);
+            log.info("pr번호: {}, fileName: {}, reviewFinding에 저장 완료", file.getPullRequest().getPrNumber(),
+                    file.getFileName());
 
-        return result;
+
+            return result;
+
+
+        }
+
+
     }
 
     /*
