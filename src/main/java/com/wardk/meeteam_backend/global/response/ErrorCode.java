@@ -132,7 +132,7 @@ public enum ErrorCode {
     UNSUPPORTED_TASK_TYPE(HttpStatus.BAD_REQUEST, "AI400", "지원하지 않는 태스크 유형입니다."),
 
     //DB
-    DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반");
+    DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반"), DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST,"EMAIL_400","이미 존재하는 이메일 입니다." );
 
 
     ErrorCode(HttpStatus status, String code, String message) {

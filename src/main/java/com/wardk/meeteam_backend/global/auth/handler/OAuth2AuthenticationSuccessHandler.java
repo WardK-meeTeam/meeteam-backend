@@ -109,7 +109,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             request.getSession().invalidate();
 
             // 설정에서 가져온 리다이렉트 URL 사용
-            String redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken);
+            String redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken) + "&memberId=" + member.getId();
             log.info("OAuth2 로그인 성공 후 리다이렉트: {}", redirectUrl);
             response.sendRedirect(redirectUrl);
 

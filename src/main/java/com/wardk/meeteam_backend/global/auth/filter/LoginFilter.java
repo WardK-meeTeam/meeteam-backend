@@ -94,10 +94,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     // 반환할 유저 정보
     LoginResponse loginResponse = LoginResponse.builder()
-            .username(customSecurityUserDetails.getUsername())
+            .name(customSecurityUserDetails.getUsername())
+            .memberId(customSecurityUserDetails.getMemberId())
             .build();
 
-    SuccessResponse<LoginResponse> apiResponse = SuccessResponse.of(SuccessCode._LOGIN_SUCCESS, null);
+    SuccessResponse<LoginResponse> apiResponse = SuccessResponse.of(SuccessCode._LOGIN_SUCCESS, loginResponse);
     response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
     response.setStatus(HttpServletResponse.SC_OK);
   }
