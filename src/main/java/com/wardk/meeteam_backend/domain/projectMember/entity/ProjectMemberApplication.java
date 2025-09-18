@@ -12,6 +12,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -44,8 +47,15 @@ public class ProjectMemberApplication extends BaseEntity { // 프로젝트 지�
     private int availableHoursPerWeek;
 
     //참가 가능한 요일
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "project_application_weekday",
+            joinColumns = @JoinColumn(name = "project_application_id")
+    )
     @Enumerated(EnumType.STRING)
-    private WeekDay weekDay;
+    @Column(name = "week_day")
+    @Builder.Default
+    private List<WeekDay> weekDays = new ArrayList<>();
 
     //오프라인/온라인 여부
     private boolean offlineAvailable;
@@ -57,26 +67,26 @@ public class ProjectMemberApplication extends BaseEntity { // 프로젝트 지�
 
     @Builder
     public ProjectMemberApplication(Project project, Member applicant, SubCategory subCategory, String motivation,
-                                    int availableHoursPerWeek, WeekDay weekDay, boolean offlineAvailable) {
+                                    int availableHoursPerWeek, List<WeekDay> weekDays, boolean offlineAvailable) {
         this.project = project;
         this.applicant = applicant;
         this.subCategory = subCategory;
         this.motivation = motivation;
         this.availableHoursPerWeek = availableHoursPerWeek;
-        this.weekDay = weekDay;
+        this.weekDays = weekDays;
         this.offlineAvailable = offlineAvailable;
     }
 
     public static ProjectMemberApplication createApplication(Project project, Member applicant, SubCategory subCategory,
-                                                              String motivation, int availableHoursPerWeek, WeekDay weekDay,
-                                                              boolean offlineAvailable) {
+                                                             String motivation, int availableHoursPerWeek, List<WeekDay> weekDays,
+                                                             boolean offlineAvailable) {
         return ProjectMemberApplication.builder()
                 .project(project)
                 .applicant(applicant)
                 .subCategory(subCategory)
                 .motivation(motivation)
                 .availableHoursPerWeek(availableHoursPerWeek)
-                .weekDay(weekDay)
+                .weekDays(weekDays)
                 .offlineAvailable(offlineAvailable)
                 .build();
     }
