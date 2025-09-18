@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -61,7 +62,10 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         SubCategory subCategory = subCategoryRepository.findByName(request.getSubCategory())
                 .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
-        WeekDay weekDay = WeekDay.valueOf(request.getAvailableDay().toUpperCase());
+        List<WeekDay> weekDays = Arrays.stream(request.getAvailableDays().split(","))
+                .map(String::trim)
+                .map(WeekDay::valueOf)
+                .toList();
 
         ProjectMemberApplication application = ProjectMemberApplication.createApplication
                         (project,
@@ -69,7 +73,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                         subCategory,
                         request.getMotivation(),
                         request.getAvailableHoursPerWeek(),
-                        weekDay,
+                        weekDays,
                         request.getOfflineAvailable());
 
         ProjectMemberApplication saved = applicationRepository.save(application);

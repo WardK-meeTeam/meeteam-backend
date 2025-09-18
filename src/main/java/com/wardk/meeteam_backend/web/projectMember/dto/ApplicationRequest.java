@@ -1,11 +1,14 @@
 package com.wardk.meeteam_backend.web.projectMember.dto;
 
+import com.wardk.meeteam_backend.domain.projectMember.entity.WeekDay;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -28,8 +31,8 @@ public class ApplicationRequest {
     private Integer availableHoursPerWeek;
 
     @NotEmpty
-    @Schema(description = "가능한 요일", example = "MONDAY")
-    private String availableDay;
+    @Schema(description = "가능한 요일", example = "MONDAY, WEDNESDAY, FRIDAY")
+    private String availableDays;
 
     @NotNull
     @Schema(description = "오프라인 참여 가능 여부", example = "true")
