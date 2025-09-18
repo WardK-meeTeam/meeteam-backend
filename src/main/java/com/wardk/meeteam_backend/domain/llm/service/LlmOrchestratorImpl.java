@@ -45,7 +45,6 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
      * 이 메서드는 비동기로 동작하며, 리뷰 작업 전체 오케스트레이션을 담당합니다.
      */
     @Override
-    @Async("asyncTaskExecutor")
     public CompletableFuture<Void> startPrReview(Long reviewJobId) {
         try {
             // PrReviewJob을 새로운 트랜잭션에서 조회
@@ -133,11 +132,11 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
         List<LlmTask> fileTasks = createFileReviewTasksWithTransaction(reviewJob, files);
 
         // 2. 파일 리뷰 태스크 병렬 실행
-        List<CompletableFuture<LlmTaskResult>> fileReviewFutures = new ArrayList<>();
+        List<LlmTaskResult> fileReviewFutures = new ArrayList<>();
 
         for (LlmTask fileTask : fileTasks) {
-            CompletableFuture<LlmTaskResult> future = executeFileReviewAsync(fileTask);
-            fileReviewFutures.add(future);
+            LlmTaskResult llmTaskResult = executeFileReview(fileTask);
+            fileReviewFutures.add(llmTaskResult);
         }
 
         // 3. 모든 파일 리뷰 완료 대기 및 결과 수집
@@ -251,6 +250,69 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
      * - 재시도 없음 - 즉시 실패
      * - 상태 저장 최소화
      */
+
+    // 비동기(Async) -> 동기(Sync) 방식으로 변경
+    public LlmTaskResult executeFileReview(LlmTask fileTask) {
+        // 1) 실행 상태로 전환 (별도 트랜잭션)
+        updateFileTaskStatus(fileTask.getId(), LlmTask.TaskStatus.RUNNING);
+
+        Exception last = null;
+
+        log.info("파일 리뷰 시작: PR #{}, 파일: {}",
+                fileTask.getPrReviewJob().getPrNumber(),
+                fileTask.getPullRequestFile().getFileName());
+
+        CompletableFuture<LlmTaskResult> call = null;
+        try {
+
+                // 3) LLM 호출에 가드 타임아웃 적용 (10초로 대폭 단축)
+                call = CompletableFuture.supplyAsync(
+                        () -> llmReviewService.reviewFile(fileTask),
+                        asyncTaskExecutor // 타임아웃 제어를 위해 별도 스레드 풀 사용은 유지
+                );
+
+                LlmTaskResult result = call.get(Duration.ofSeconds(10).toMillis(), TimeUnit.MILLISECONDS);
+
+                // 4) 성공 처리 (별도 트랜잭션)
+                updateFileTaskWithSuccess(fileTask.getId(), result);
+
+                log.info("파일 리뷰 완료: PR #{}, 파일: {}",
+                        fileTask.getPrReviewJob().getPrNumber(),
+                        fileTask.getPullRequestFile().getFileName());
+
+                // 성공 시 결과 바로 반환
+                return result;
+
+        } catch (TimeoutException te) {
+            last = te;
+            if (call != null) {
+                call.cancel(true); // 타임아웃 시 태스크 취소 시도
+            }
+            log.warn("파일 리뷰 가드 타임아웃(10s): PR #{}, 파일: {}",
+                    fileTask.getPrReviewJob().getPrNumber(),
+                    fileTask.getPullRequestFile().getFileName());
+
+        } catch (ExecutionException ee) {
+            last = (ee.getCause() instanceof Exception) ? (Exception) ee.getCause() : ee;
+            log.warn("파일 리뷰 중 예외: PR #{}, 파일: {}, 원인: {}",
+                    fileTask.getPrReviewJob().getPrNumber(),
+                    fileTask.getPullRequestFile().getFileName(),
+                    last.toString());
+
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            last = ie;
+        }
+
+        // 6) 즉시 실패 처리 (별도 트랜잭션)
+        String msg = "리뷰 실패 (타임아웃 또는 오류)" + (last != null ? ": " + last.getMessage() : "");
+        updateFileTaskWithError(fileTask.getId(), msg);
+
+        // 실패 시 CompletableFuture 대신 직접 예외 발생
+        throw new RuntimeException(msg, last);
+    }
+
+
     private CompletableFuture<LlmTaskResult> executeFileReviewAsync(LlmTask fileTask) {
         return CompletableFuture.supplyAsync(() -> {
             // 1) 실행 상태로 전환 (별도 트랜잭션)

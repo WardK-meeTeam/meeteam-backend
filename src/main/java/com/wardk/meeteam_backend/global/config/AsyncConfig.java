@@ -30,8 +30,8 @@ public class AsyncConfig implements AsyncConfigurer {
     public Executor asyncTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(0);
-        executor.setMaxPoolSize(500); // 10→15개로 증가
-        executor.setQueueCapacity(0); // 100→200으로 증가
+        executor.setMaxPoolSize(500);
+        executor.setQueueCapacity(0);
         executor.setThreadNamePrefix("LlmTask-");
         executor.setKeepAliveSeconds(60);
         executor.setWaitForTasksToCompleteOnShutdown(true);
