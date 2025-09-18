@@ -15,4 +15,5 @@ public class MeeteamBackendApplication {
 		SpringApplication.run(MeeteamBackendApplication.class, args);
 	}
 
+
 }
