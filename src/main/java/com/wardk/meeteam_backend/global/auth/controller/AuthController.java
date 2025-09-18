@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.global.auth.controller;
 
+
 import com.wardk.meeteam_backend.global.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.global.auth.dto.register.RegisterDescriptionRequest;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
@@ -25,23 +26,23 @@ public class AuthController {
     private final AuthService authService;
 
     /**
-     *  요청 형식
+     * 요청 형식
      * {
-     *   "name": "홍길동",
-     *   "age": 27,
-     *   "email": "meeteam@naver.com",
-     *   "gender": "MALE",
-     *   "password": "qwer1234",
-     *   "subCategories": [
-     *     { "subcategory": "웹서버" },
-     *     { "subcategory": "AI" },
-     *     { "subcategory": "DBA/빅데이터/DS" }
-     *   ],
-     *   "skills": [
-     *     { "skillName": "Java" },
-     *     { "skillName": "Spring Boot" },
-     *     { "skillName": "MySQL" }
-     *   ]
+     * "name": "홍길동",
+     * "age": 27,
+     * "email": "meeteam@naver.com",
+     * "gender": "MALE",
+     * "password": "qwer1234",
+     * "subCategories": [
+     * { "subcategory": "웹서버" },
+     * { "subcategory": "AI" },
+     * { "subcategory": "DBA/빅데이터/DS" }
+     * ],
+     * "skills": [
+     * { "skillName": "Java" },
+     * { "skillName": "Spring Boot" },
+     * { "skillName": "MySQL" }
+     * ]
      * }
      *
      * @param request
@@ -49,13 +50,14 @@ public class AuthController {
      * @return
      */
 
+
     @Operation(summary = "회원가입", description = "회원 정보를 입력받아 계정을 생성합니다.")
-    @PostMapping(value = "/register" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<RegisterResponse> response(
             @RequestPart("request") RegisterRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        log.info("회원가입={}",request.getName());
+        log.info("회원가입={}", request.getName());
 
         RegisterResponse register = authService.register(request, file);
 
@@ -71,6 +73,19 @@ public class AuthController {
         RegisterResponse registerResponse = authService.registDesciption(memberId, descriptionRequest);
         return SuccessResponse.onSuccess(registerResponse);
     }
+    /*@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SuccessResponse<RegisterResponse> response(
+            @RequestPart("request") String requestJson,
+            @RequestPart(value = "file", required = false) MultipartFile file
+    ) throws JsonProcessingException {
+        RegisterRequest request = new ObjectMapper().readValue(requestJson, RegisterRequest.class);
+        log.info("회원가입={}", request.getName());
+
+        String name = authService.register(request, file);
+
+        return SuccessResponse.onSuccess(RegisterResponse.responseDto(name));
+
+    }*/
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
