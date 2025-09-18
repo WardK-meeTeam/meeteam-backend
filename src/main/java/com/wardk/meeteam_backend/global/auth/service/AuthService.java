@@ -8,6 +8,9 @@ import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.MemberSkillRepository;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
+import com.wardk.meeteam_backend.global.auth.dto.EmailDuplicateResponse;
+import com.wardk.meeteam_backend.global.auth.dto.register.RegisterDescriptionRequest;
+import com.wardk.meeteam_backend.global.auth.dto.register.RegisterResponse;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.util.FileUtil;
@@ -36,7 +39,7 @@ public class AuthService {
 
 
     @Transactional
-    public String register(RegisterRequest registerRequest, MultipartFile filed) {
+    public RegisterResponse register(RegisterRequest registerRequest, MultipartFile filed) {
 
         // 이메일 중복 불가능
         memberRepository.findOptionByEmail(registerRequest.getEmail())
@@ -56,7 +59,6 @@ public class AuthService {
                 .email(registerRequest.getEmail())
                 .password(bCryptPasswordEncoder.encode(registerRequest.getPassword()))
                 .storeFileName(storeFileName)
-                .introduction(registerRequest.getIntroduce())
                 .isParticipating(true)
                 .role(UserRole.USER)
                 .build();
@@ -79,9 +81,28 @@ public class AuthService {
                     member.addMemberSkill(skill);
                 });
 
-        return registerRequest.getName();
+        return new RegisterResponse(registerRequest.getName(), member.getId());
 
     }
 
 
+    public EmailDuplicateResponse checkDuplicateEmail(String email) {
+
+        Boolean exists = memberRepository.existsByEmail(email);
+
+        String message = exists ? "이미 존재하는 이메일 입니다" : "사용 가능한 이메일 입니다.";
+
+        return new EmailDuplicateResponse(exists, message);
+    }
+
+    public RegisterResponse registDesciption(Long memberId, RegisterDescriptionRequest introduction) {
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+
+        member.setIntroduction(introduction.getIntroduce());
+
+        return new RegisterResponse(member.getRealName(), member.getId());
+    }
 }
