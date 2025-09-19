@@ -171,6 +171,8 @@ cors:
     - https://*.vercel.app                 # Vercel 서브도메인들
     - https://meeteam.alom-sejong.com     # Route53으로 설정한 프론트엔드 커스텀 도메인
     - https://api.meeteam.alom-sejong.com  # 백엔드 도메인 (Swagger 등)
+    - http://localhost:3000                  # 로컬 개발용
+    - http://localhost:3001                  # 추가 로컬 개발용
   allowed-methods:
     - GET
     - POST
