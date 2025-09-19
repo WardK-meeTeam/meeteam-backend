@@ -190,5 +190,3 @@ cors:
     - X-Total-Count
   allow-credentials: true
   max-age: 3600
-
-
