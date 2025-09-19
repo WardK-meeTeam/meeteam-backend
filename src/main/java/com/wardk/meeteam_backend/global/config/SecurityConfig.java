@@ -47,6 +47,7 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
     private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
+    private final CorsProperties corsProperties; // CORS 설정 주입
 
     /**
      * Security Filter Chain 설정
@@ -119,25 +120,20 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS 설정 소스 빈
+     * CORS 설정 소스 빈 - 환경별 설정 사용
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
+        // application.yml에서 설정한 값들 사용
+        configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
+        configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+        configuration.setAllowCredentials(corsProperties.isAllowCredentials());
+        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        configuration.setExposedHeaders(corsProperties.getExposedHeaders());
+        configuration.setMaxAge(corsProperties.getMaxAge());
 
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000",// React 프론트
-                "https://api.meeteam.alom-sejong.com" // Swagger UI
-        )); // 허용할 오리진 TODO: CORS 경로 설정 "http://localhost:3000"
-
-
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")); // 허용할 HTTP 메서드
-        configuration.setAllowCredentials(true); // 인증 정보 포함 여부
-        configuration.setAllowedHeaders(Collections.singletonList("*")); // 허용할 헤더
-        configuration.setMaxAge(3600L); // Preflight 캐싱 시간
-
-        // 모든 경로에 대해 CORS 설정 적용
         UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
         urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", configuration);
         return urlBasedCorsConfigurationSource;
