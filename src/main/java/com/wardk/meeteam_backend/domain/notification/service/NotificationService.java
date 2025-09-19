@@ -146,7 +146,7 @@ public class NotificationService {
                 yield new NewApplicantPayload(
                         applicantId, // 지원서Id -> 지원서 상세보기 API 를 호출용
                         project.getId(), // 프로젝트Id -> 지원서 상세보기 API 호출용
-                        receiver.getId(),
+                        receiver.getId(),// 팀장 Id
                         actor.getId(), // 지원자Id
                         actor.getRealName(), // 지원자이름
                         project.getName(), //프로젝트 이름
