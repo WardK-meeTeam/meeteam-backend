@@ -39,7 +39,7 @@ public class NotificationListener {
      *
      * 비동기(@Async)로 실행되며, 트랜잭션이 성공적으로 커밋된 이후(AFTER_COMMIT)에만 동작합니다.
      */
-//    @Async
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(NotificationEvent e) {
 
