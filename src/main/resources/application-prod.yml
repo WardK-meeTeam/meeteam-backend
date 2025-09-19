@@ -163,3 +163,26 @@ app:
         login-attribute: "login"
         email-attribute: "email"
         id-attribute: "id"
+
+# CORS 설정 추가
+cors:
+  allowed-origins:
+    - https://meeteam-front-test.vercel.app           # 실제 Vercel 도메인으로 변경 필요
+    - https://*.vercel.app                 # Vercel 서브도메인들
+    - https://meeteam.alom-sejong.com     # Route53으로 설정한 프론트엔드 커스텀 도메인
+    - https://api.meeteam.alom-sejong.com  # 백엔드 도메인 (Swagger 등)
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - PATCH
+    - OPTIONS
+  allowed-headers:
+    - "*"
+  exposed-headers:
+    - Authorization
+    - Set-Cookie
+    - X-Total-Count
+  allow-credentials: true
+  max-age: 3600
