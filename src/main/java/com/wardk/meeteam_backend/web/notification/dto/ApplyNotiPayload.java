@@ -11,8 +11,11 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class ApplyNotiPayload { // 지원시 응답 DTO
+public class ApplyNotiPayload {
 
+    /**
+     * 프로젝트 지원자가 지원을 완료하면 받는 본문내용
+     */
 
     private Long receiverId;
 
