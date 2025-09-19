@@ -173,6 +173,7 @@ cors:
     - https://api.meeteam.alom-sejong.com  # 백엔드 도메인 (Swagger 등)
     - http://localhost:3000                  # 로컬 개발용
     - http://localhost:3001                  # 추가 로컬 개발용
+
   allowed-methods:
     - GET
     - POST
