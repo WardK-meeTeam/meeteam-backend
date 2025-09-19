@@ -92,7 +92,7 @@ public class NotificationService {
      * 3) SSE를 통해 구독 중인 클라이언트에게 실시간 전송합니다.
      */
     @Transactional
-    public void notifyTo(Member receiver, NotificationType type, Project project, Long actorId) {
+    public void notifyTo(Member receiver, NotificationType type, Project project, Long actorId, Long applicantId) {
 
 
         // actorId 가 꼭 필요한데 null이면 예외
@@ -144,6 +144,8 @@ public class NotificationService {
             case PROJECT_APPLY -> { // 내 프로젝트에 누군가 지원 (팀장에게 알림)
                 if (actor == null) throw new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND);
                 yield new NewApplicantPayload(
+                        applicantId, // 지원서Id -> 지원서 상세보기 API 를 호출용
+                        project.getId(), // 프로젝트Id -> 지원서 상세보기 API 호출용
                         receiver.getId(),
                         actor.getId(), // 지원자Id
                         actor.getRealName(), // 지원자이름

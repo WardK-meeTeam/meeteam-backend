@@ -76,7 +76,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                         weekDays,
                         request.getOfflineAvailable());
 
-        ProjectMemberApplication saved = applicationRepository.save(application);
+        ProjectMemberApplication memberApplication = applicationRepository.save(application);
 
         Long receiverId = project.getCreator().getId();
         Long actorId = member.getId();
@@ -86,7 +86,8 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 receiverId,
                 project.getId(),
                 actorId,
-                NotificationType.PROJECT_APPLY
+                NotificationType.PROJECT_APPLY,
+                memberApplication.getId()
         ));
 
 
@@ -100,7 +101,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
 
 
-        return ApplicationResponse.responseDto(saved);
+        return ApplicationResponse.responseDto(memberApplication);
     }
 
 
