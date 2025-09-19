@@ -29,7 +29,7 @@ public class SecurityUrls {
             "/login/oauth2/code/**",
             "/api/auth/oauth2/**",
             "/api/webhooks/github",
-            "/api/v1/files/**"  // 파일 업로드 API 경로 추가
+            "/api/v1/files/**" // 파일 업로드 API 경로 추가
             ,"index.html"
     );
 
