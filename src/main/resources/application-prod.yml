@@ -124,10 +124,10 @@ logging:
   level:
     root: info
     p6spy: off
-    org.springframework.security: DEBUG
-    org.springframework.security.oauth2: DEBUG
-    com.wardk.meeteam_backend.global.loginRegister: DEBUG
-    com.wardk.meeteam_backend.global.filter: DEBUG
+    org.springframework.security: info
+    org.springframework.security.oauth2: info
+    com.wardk.meeteam_backend.global.loginRegister: info
+    com.wardk.meeteam_backend.global.filter: info
 
 decorator:
   datasource:

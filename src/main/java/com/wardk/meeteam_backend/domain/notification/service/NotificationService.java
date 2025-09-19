@@ -38,6 +38,7 @@ public class NotificationService {
     private final MemberRepository memberRepository;
 
     // ====== 구독 ======
+    // emitter 를 client 에게 반환 ( 서버로 부터 이벤트를 client 가 받을 수 있게 된다.)
     public SseEmitter subscribe(String email, String lastEventId) {
 
         Member member = memberRepository.findOptionByEmail(email)
@@ -50,6 +51,8 @@ public class NotificationService {
         // 저장 및 수명 관리
         String emitterId = makeEmitterId(memberId); // "{memberId}_{timestamp}"
         emitterRepository.save(emitterId, emitter); // 메모리에 emitter 등록
+
+        //즉시 실행이 아니라 미래에 발생할 이벤트에 대비한 예약 실행 (바로 실행되는게 아니라 미리 등록해 놓는것이다.)
         emitter.onCompletion(() -> emitterRepository.deleteById(emitterId)); // 정상 종료 시 정리
         emitter.onTimeout(() -> emitterRepository.deleteById(emitterId)); // 타임아웃 시 정리
         emitter.onError(e -> emitterRepository.deleteById(emitterId)); // 에러 시 정리
@@ -132,13 +135,13 @@ public class NotificationService {
 
         // 2) 타입별 payload 조립
         Object payload = switch (type) {
-            case PROJECT_MY_APPLY -> new ApplyNotiPayload(
+            case PROJECT_MY_APPLY -> new ApplyNotiPayload( //지원자에게 알림
                     receiver.getId(), // 지원한 사람 == 받는 사람
                     project.getName(),
                     finalMessage,
                     LocalDate.now()
             );
-            case PROJECT_APPLY -> { // 내 프로젝트에 누군가 지원
+            case PROJECT_APPLY -> { // 내 프로젝트에 누군가 지원 (팀장에게 알림)
                 if (actor == null) throw new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND);
                 yield new NewApplicantPayload(
                         receiver.getId(),
@@ -198,17 +201,6 @@ public class NotificationService {
         });
     }
 
-    // ====== 공용 전송 헬퍼 ======
-    private void sendToClient(SseEmitter emitter, String eventId, Object data) {
-        try {
-            emitter.send(SseEmitter.event()
-                    .id(eventId)
-                    .data(data)); // 공용(단순) 전송
-        } catch (IOException ex) {
-            // 전송 실패 시 emitter 제거
-            emitter.completeWithError(ex);
-        }
-    }
 
     private void sendReplay(SseEmitter emitter, String eventId, Object data) {
         try {
@@ -256,6 +248,8 @@ public class NotificationService {
         }
     }
 
+    // Event-Id 구조를 {memberId}_{timestamp} 구조로 만듬
+    // 앞부분 식별자용 , 뒷부분 이벤트 발생 시각
     private String makeEmitterId(Long memberId) {
         return memberId + "_" + System.currentTimeMillis();
     }
