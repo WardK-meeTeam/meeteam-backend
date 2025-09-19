@@ -61,7 +61,7 @@ public class NotificationListener {
                 );
 
         // actor 엔티티를 직접 조회하지 않고, id만 넘김
-        notificationService.notifyTo(receiver, e.getType(), project, e.getActorId());
+        notificationService.notifyTo(receiver, e.getType(), project, e.getActorId(), e.getApplicationId());
 
     }
 }
