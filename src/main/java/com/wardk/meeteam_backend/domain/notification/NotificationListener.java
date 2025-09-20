@@ -2,27 +2,24 @@ package com.wardk.meeteam_backend.domain.notification;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.notification.service.NotificationService;
+import com.wardk.meeteam_backend.domain.notification.service.SSENotificationService;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationListener {
 
-    private final NotificationService notificationService;
+    private final SSENotificationService notificationService;
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
 
