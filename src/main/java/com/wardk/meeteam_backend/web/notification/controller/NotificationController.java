@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.web.notification.controller;
 
 import com.wardk.meeteam_backend.domain.notification.service.NotificationService;
 import com.wardk.meeteam_backend.domain.notification.service.SSENotificationService;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.notification.dto.NotificationResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,12 +49,12 @@ public class NotificationController {
 
 
     @Operation(summary = "전체 알림 조회", description = "특정 회원의 전체 알림을 최신순으로 페이징 조회합니다.")
-    @GetMapping(value = "/api/notifications/{memberId}")
+    @GetMapping(value = "/api/notifications")
     public SuccessResponse<Slice<NotificationResponse>> getNotification(
-            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails,
             @ParameterObject Pageable pageable
     ) {
-        return SuccessResponse.onSuccess(notificationService.getNotifications(memberId, pageable));
+        return SuccessResponse.onSuccess(notificationService.getNotifications(userDetails.getMemberId(), pageable));
     }
 
 }

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,11 +18,14 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
+    @Transactional
     public Slice<NotificationResponse> getNotifications(Long memberId, Pageable pageable) {
 
         Slice<NotificationResponse> response = notificationRepository.findByMemberId
-                (memberId, pageable).
-                map(notification -> new NotificationResponse(notification));
+                (memberId, pageable)
+                .map(NotificationResponse::new);
+
+        notificationRepository.bulkIsRead(memberId);
 
         return response;
 
