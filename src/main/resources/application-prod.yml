@@ -100,6 +100,7 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
 server:
   servlet:
     context-path: /
@@ -189,3 +190,5 @@ cors:
     - X-Total-Count
   allow-credentials: true
   max-age: 3600
+
+
