@@ -22,12 +22,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     Slice<Notification> findByMemberId(Long memberId, Pageable pageable);
 
 
-
     @Modifying(clearAutomatically = true)
     @Query("update Notification n set n.isRead = true where n.receiver.id = :memberId")
     void bulkIsRead(@Param("memberId") Long memberId);
 
     // 추후에 복합 인덱스 고려 요소 !!
     @Query("select count(*) from Notification n where n.receiver.id = :memberId and n.isRead = false")
-    int findUnreadCount(Long memberId);
+    int findUnreadCount(@Param("memberId") Long memberId);
 }
