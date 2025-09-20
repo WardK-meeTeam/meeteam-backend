@@ -32,9 +32,9 @@ public class NotificationService {
     }
 
 
-    /*@Transactional
-    public void getUnreadCount(Long memberId) {
+    @Transactional
+    public int getUnreadCount(Long memberId) {
 
-        notificationRepository.findUnreadCount(memberId);
-    }*/
+        return notificationRepository.findUnreadCount(memberId);
+    }
 }
