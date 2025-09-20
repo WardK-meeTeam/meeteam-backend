@@ -24,6 +24,8 @@ public class Notification extends BaseEntity {
 
     private Long actorId;// 보낸사람ID (ex : 프로젝트 지원한 memberId)
 
+    private Long applicantionId; // 지원서ID
+
     // 알림 타입 (지원, 승인, 거절, 댓글 등)
     @Enumerated(EnumType.STRING)
     private NotificationType type;
@@ -48,12 +50,13 @@ public class Notification extends BaseEntity {
     private Project project;
 
     @Builder
-    public Notification(Member receiver, NotificationType type, String message, boolean isRead, Project project, Long actorId) {
+    public Notification(Member receiver, NotificationType type, String message, boolean isRead, Project project, Long actorId, Long applicationId) {
         this.receiver = receiver;
         this.type = type;
         this.message = message;
         this.isRead = isRead;
         this.project = project;
         this.actorId = actorId;
+        this.applicantionId = applicationId;
     }
 }
