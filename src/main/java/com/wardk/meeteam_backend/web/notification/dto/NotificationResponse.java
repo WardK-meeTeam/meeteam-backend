@@ -27,7 +27,7 @@ public class NotificationResponse {
     private String message;
     private boolean isRead;
     private LocalDate createdAt;
-    private Long applicationId;
+    private Long applicationId; // 지원서 자체 ID
 
     private NotificationPayLoad payload;
 
@@ -38,7 +38,7 @@ public class NotificationResponse {
         this.message = notification.getMessage();
         this.isRead = notification.isRead();
         this.createdAt = LocalDate.from(notification.getCreatedAt());
-        this.applicationId = notification.getActorId();
+        this.applicationId = notification.getApplicantionId();
         this.payload = new NotificationPayLoad(notification.getProject(), notification.getReceiver());
     }
 
