@@ -36,6 +36,13 @@ public class Notification extends BaseEntity {
     private boolean isRead;
 
 
+
+    public void readNotification() {
+        this.isRead = true;
+    }
+
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
     private Project project;
