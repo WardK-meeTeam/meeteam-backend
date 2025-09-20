@@ -58,12 +58,12 @@ public class NotificationController {
     }
 
 
-    @GetMapping(value = "/api/notifications/unread/count")
+    /*@GetMapping(value = "/api/notifications/unread/count")
     public SuccessResponse<NotificationCountResponse> getNotificationCount (
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
 
         notificationService.getUnreadCount(userDetails.getMemberId());
     }
-
+*/
 }
