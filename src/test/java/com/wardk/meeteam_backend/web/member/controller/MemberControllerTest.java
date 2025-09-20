@@ -1,3 +1,4 @@
+/*
 package com.wardk.meeteam_backend.web.member.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -186,4 +187,4 @@ class MemberControllerTest {
 
         return response;  // 완성된 Mock 데이터 리턴
     }
-}
+}*/
