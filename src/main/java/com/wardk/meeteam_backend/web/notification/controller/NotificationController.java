@@ -57,4 +57,13 @@ public class NotificationController {
         return SuccessResponse.onSuccess(notificationService.getNotifications(userDetails.getMemberId(), pageable));
     }
 
+
+    @GetMapping(value = "/api/notifications/unread/count")
+    public SuccessResponse<NotificationCountResponse> getNotificationCount (
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+
+        notificationService.getUnreadCount(userDetails.getMemberId());
+    }
+
 }
