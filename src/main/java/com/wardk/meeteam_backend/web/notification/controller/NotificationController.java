@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.domain.notification.service.SSENotificationServ
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.notification.dto.NotificationResponse;
+import com.wardk.meeteam_backend.web.notification.dto.NotificationUnreadCountResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -58,12 +59,11 @@ public class NotificationController {
     }
 
 
-    /*@GetMapping(value = "/api/notifications/unread/count")
-    public SuccessResponse<NotificationCountResponse> getNotificationCount (
+    @GetMapping(value = "/api/notifications/unread/count")
+    public SuccessResponse<NotificationUnreadCountResponse> getNotificationCount (
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-
-        notificationService.getUnreadCount(userDetails.getMemberId());
+        return SuccessResponse.onSuccess(new NotificationUnreadCountResponse
+                (notificationService.getUnreadCount(userDetails.getMemberId())));
     }
-*/
 }
