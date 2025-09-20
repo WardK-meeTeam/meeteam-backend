@@ -87,7 +87,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 project.getId(),
                 actorId,
                 NotificationType.PROJECT_APPLY,
-                memberApplication.getId()
+                memberApplication.getId() // 지원서 알림
         ));
 
 
