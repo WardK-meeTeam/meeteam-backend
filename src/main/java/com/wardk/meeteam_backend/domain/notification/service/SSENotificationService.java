@@ -129,6 +129,7 @@ public class SSENotificationService {
                         .message(finalMessage)
                         .project(project)
                         .isRead(false)
+                        .actorId(actorId)
                         .build()
         );
 
