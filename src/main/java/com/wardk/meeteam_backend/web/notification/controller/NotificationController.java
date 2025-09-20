@@ -1,16 +1,19 @@
 package com.wardk.meeteam_backend.web.notification.controller;
 
 import com.wardk.meeteam_backend.domain.notification.service.NotificationService;
+import com.wardk.meeteam_backend.domain.notification.service.SSENotificationService;
+import com.wardk.meeteam_backend.global.response.SuccessResponse;
+import com.wardk.meeteam_backend.web.notification.dto.NotificationResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -22,6 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationController {
 
 
+    private final SSENotificationService sseNotificationService;
     private final NotificationService notificationService;
 
     /**
@@ -38,6 +42,18 @@ public class NotificationController {
                                 // Last-Event-ID 헤더는 마지막으로 받은 이벤트부터 이벤트 스트리밍을 재개하는 데 사용됩니다.
                                 @RequestHeader(value = "Last-Event-ID", required = false, defaultValue = "")
                                 String lastEventId) {
-        return notificationService.subscribe(userDetails.getUsername(), lastEventId);
+        return sseNotificationService.subscribe(userDetails.getUsername(), lastEventId);
     }
+
+
+
+    @Operation(summary = "전체 알림 조회", description = "특정 회원의 전체 알림을 최신순으로 페이징 조회합니다.")
+    @GetMapping(value = "/api/notifications/{memberId}")
+    public SuccessResponse<Slice<NotificationResponse>> getNotification(
+            @PathVariable Long memberId,
+            @ParameterObject Pageable pageable
+    ) {
+        return SuccessResponse.onSuccess(notificationService.getNotifications(memberId, pageable));
+    }
+
 }
