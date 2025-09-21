@@ -71,7 +71,7 @@ public class Member extends BaseEntity {
     @Builder.Default
     List<ProjectMember> projectMembers = new ArrayList<>();
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String introduction;
 
 
