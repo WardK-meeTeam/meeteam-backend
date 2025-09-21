@@ -1,54 +1,81 @@
 services:
-  meeteam-server:
-    image: 079892728769.dkr.ecr.ap-northeast-2.amazonaws.com/meeteam-server:latest
-    ports:
-      - 8080:8080
-    env_file:
-      - .env   # 현재 docker-compose.yml 과 같은 경로의 .env 파일을 읽음
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-    depends_on:
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./files:/app/files
+    meeteam-server:
+        image: 079892728769.dkr.ecr.ap-northeast-2.amazonaws.com/meeteam-server:latest
+        ports:
+            - 8080:8080
+        env_file:
+            - .env   # 현재 docker-compose.yml 과 같은 경로의 .env 파일을 읽음
+        environment:
+            - SPRING_PROFILES_ACTIVE=prod
+        depends_on:
+            redis:
+                condition: service_healthy
+        volumes:
+            - ./files:/app/files
 
 
 
-  redis:
-    image: redis:7
-    command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - 6379:6379
-    volumes:
-      - ./redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping" ]
-      interval: 5s
-      retries: 20
+    redis:
+        image: redis:7
+        command: [ "redis-server", "--appendonly", "yes" ]
+        ports:
+            - 6379:6379
+        volumes:
+            - ./redis_data:/data
+        healthcheck:
+            test: [ "CMD", "redis-cli", "ping" ]
+            interval: 5s
+            retries: 20
 
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana-storage:/var/lib/grafana
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: prometheus
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        ports:
+            - "3000:3000"
+        depends_on:
+            - prometheus
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+        volumes:
+            - grafana-storage:/var/lib/grafana
+
+    # RabbitMQ 메시지 브로커 (WebSocket용)
+    rabbitmq:
+        image: rabbitmq:3.12-management
+        ports:
+            - "5672:5672"   # AMQP 포트
+            - "15672:15672" # 관리 UI 포트
+            - "61613:61613" # STOMP 포트
+        environment:
+            # 기본 관리자 계정 생성
+            - RABBITMQ_DEFAULT_USER=meeteam
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-meeteam123}
+            # 추가 보안 설정
+            - RABBITMQ_DEFAULT_VHOST=/
+            - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit log_levels [{connection,error},{default,error}]
+        volumes:
+            - rabbitmq_data:/var/lib/rabbitmq
+            - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+            - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+        networks:
+            - meeteam-network
+        restart: unless-stopped
+        healthcheck:
+            test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+            interval: 30s
+            timeout: 10s
+            retries: 5
 
 volumes:
-  grafana-storage:
+    grafana-storage:
