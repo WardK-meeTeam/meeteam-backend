@@ -42,6 +42,15 @@ public enum ErrorCode {
 
     // CHAT
     CHAT_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT404", "해당 쓰레드를 찾을 수 없습니다."),
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM404", "채팅방을 찾을 수 없습니다."),
+    CHAT_ROOM_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "CHAT_ROOM400", "이미 존재하는 채팅방입니다."),
+    CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CHAT_ROOM403", "채팅방 접근 권한이 없습니다."),
+    MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "MESSAGE404", "메시지를 찾을 수 없습니다."),
+    MESSAGE_EDIT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MESSAGE403", "메시지 수정 권한이 없습니다."),
+    MESSAGE_DELETE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MESSAGE403", "메시지 삭제 권한이 없습니다."),
+    MESSAGE_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "MESSAGE400", "이미 삭제된 메시지입니다."),
+    CANNOT_CHAT_WITH_YOURSELF(HttpStatus.BAD_REQUEST, "CHAT400", "자기 자신과는 채팅할 수 없습니다."),
+    PROJECT_ID_REQUIRED(HttpStatus.BAD_REQUEST, "CHAT401", "프로젝트 ID가 필요합니다."),
 
     NOT_THREAD_MEMBER(HttpStatus.FORBIDDEN, "CHAT403", "해당 쓰레드 멤버가 아닙니다."),
 
