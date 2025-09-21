@@ -13,7 +13,8 @@ MeeTeam은 개발자들이 팀을 구성하고 프로젝트를 협업할 수 있
 - **Spring Boot 3.4.5**
 - **Spring Data JPA**
 - **Spring Security**
-- **Spring WebSocket**
+- **Spring WebSocket** - 실시간 채팅 기능
+- **Spring Messaging** - STOMP 프로토콜 지원
 
 ### Database & Cache
 - **MySQL** - 메인 데이터베이스
@@ -127,9 +128,92 @@ AWS S3를 활용한 파일 업로드 및 관리 기능을 제공합니다.
 - **팀 매칭**: 개발자들의 기술 스택과 관심사를 기반으로 한 팀 매칭
 - **프로젝트 관리**: 프로젝트 생성, 관리, 진행 상황 추적
 - **실시간 채팅**: WebSocket 기반 실시간 커뮤니케이션
+  - 프로젝트 팀 채팅방 (프로젝트 생성 시 자동 생성)
+  - 1:1 개인 채팅 (프로젝트 지원 전 질문 등)
+  - 주제별 채팅방 생성
+  - 실시간 메시지 전송/수정/삭제
+  - 타이핑 상태 표시
+  - 멘션(@username) 기능
+  - 읽음/안읽음 상태 관리
+  - 실시간 알림 시스템
 - **코드 리뷰**: AI 기반 자동 코드 리뷰 및 피드백
 - **알림 시스템**: 실시간 알림 및 푸시 알림
 - **GitHub 연동**: Pull Request 및 웹훅 연동
+
+## 💬 실시간 채팅 시스템
+
+### WebSocket 연결
+```javascript
+// 클라이언트 연결 예시
+const socket = new SockJS('/ws');
+const stompClient = Stomp.over(socket);
+
+// 채팅방 구독
+stompClient.subscribe('/topic/chat/{chatRoomId}', (message) => {
+    // 메시지 처리
+});
+
+// 개인 멘션 알림 구독
+stompClient.subscribe('/user/queue/mention', (mention) => {
+    // 멘션 알림 처리
+});
+```
+
+### 채팅방 타입
+- **PROJECT**: 프로젝트 기본 팀 채팅방
+- **TOPIC**: 주제별 채팅방
+- **PRIVATE**: 1:1 개인 채팅방
+- **PR_REVIEW**: Pull Request 리뷰 채팅방
+
+### 메시지 기능
+- 실시간 메시지 전송/수신
+- 메시지 수정/삭제 (작성자 본인만)
+- 멘션 기능 (@username)
+- 타이핑 상태 실시간 표시
+- 읽음/안읽음 상태 추적
+- 이미지/파일 첨부 지원 예정
+
+## 👨‍💻 개발 규칙
+
+### Code Documentation
+- **Javadoc 적극 활용**: 모든 public 클래스, 메서드, 필드에 대해 Javadoc 작성 필수
+  ```java
+  /**
+   * 사용자 정보를 조회합니다.
+   * 
+   * @param userId 조회할 사용자 ID
+   * @return 사용자 정보 DTO
+   * @throws UserNotFoundException 사용자를 찾을 수 없을 때
+   */
+  public UserDto getUser(Long userId) {
+      // implementation
+  }
+  ```
+- **클래스 레벨 문서화**: 각 클래스의 역할과 책임을 명확히 기술
+- **API 문서화**: Controller 메서드에는 @Operation 어노테이션과 함께 상세한 설명 작성
+- **복잡한 비즈니스 로직**: 인라인 주석으로 로직 설명 추가
+
+### Naming Conventions
+- **클래스명**: PascalCase (예: UserService, ProjectController)
+- **메서드명**: camelCase (예: getUserInfo, createProject)
+- **상수**: UPPER_SNAKE_CASE (예: MAX_FILE_SIZE, DEFAULT_PAGE_SIZE)
+- **패키지명**: 소문자, 점으로 구분 (예: com.wardk.meeteam_backend.domain.member)
+
+### Code Structure
+- **Domain-Driven Design** 원칙 적용
+- **계층형 아키텍처**: Controller → Service → Repository
+- **단일 책임 원칙** 준수
+- **의존성 주입**을 통한 느슨한 결합
+
+### Error Handling
+- **CustomException** 및 **ErrorCode** enum 활용
+- **GlobalExceptionHandler**를 통한 중앙 집중식 예외 처리
+- 사용자 친화적인 에러 메시지 제공
+
+### Testing
+- **단위 테스트** 작성 권장
+- **통합 테스트**로 API 동작 검증
+- **테스트 커버리지** 80% 이상 유지 목표
 
 ## 📞 연락처
 
