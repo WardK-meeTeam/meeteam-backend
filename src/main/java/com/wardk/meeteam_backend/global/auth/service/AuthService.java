@@ -86,6 +86,7 @@ public class AuthService {
     }
 
 
+    @Transactional
     public EmailDuplicateResponse checkDuplicateEmail(String email) {
 
         Boolean exists = memberRepository.existsByEmail(email);
@@ -95,6 +96,7 @@ public class AuthService {
         return new EmailDuplicateResponse(exists, message);
     }
 
+    @Transactional
     public RegisterResponse registDesciption(Long memberId, RegisterDescriptionRequest introduction) {
 
         Member member = memberRepository.findById(memberId)
