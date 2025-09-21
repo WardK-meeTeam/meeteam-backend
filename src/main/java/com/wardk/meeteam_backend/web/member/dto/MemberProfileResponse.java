@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.review.entity.Review;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,6 +41,12 @@ public class MemberProfileResponse {
 
     private List<ReviewResponse> reviewList;
 
+    @Schema(description = "프로필 이미지 URL")
+    private String profileImageUrl;
+
+    @Schema(description = "프로필 이미지 파일명")
+    private String profileImageName;
+
 
     private List<ProjectResponse> projectList;
 
@@ -62,14 +69,13 @@ public class MemberProfileResponse {
                 .toList();
         this.isParticipating = member.getIsParticipating();
         this.projectCount = member.getProjectMembers().size();
-//        this.reviewCount
         this.introduce = member.getIntroduction();
-//        this.reviewList = reviewList;
         this.projectList = member.getProjectMembers().stream()
                 .map(projectMember -> {
                     Project project = projectMember.getProject();
-                    return new ProjectResponse(project.getEndDate(),project.getName(), project.getStatus());
+                    return new ProjectResponse(project.getEndDate(), project.getName(), project.getStatus());
                 })
                 .toList();
+        // profileImageUrl과 profileImageName은 Service에서 별도로 설정됨
     }
 }
