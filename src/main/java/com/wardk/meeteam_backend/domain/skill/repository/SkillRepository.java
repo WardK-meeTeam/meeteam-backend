@@ -16,4 +16,6 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
 
     @Query(value = "SELECT * FROM skill ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<Skill> findRandomSkills(@Param("limit") int limit);
+
+    List<Skill> findBySkillNameIn(List<String> skillNames);
 }
