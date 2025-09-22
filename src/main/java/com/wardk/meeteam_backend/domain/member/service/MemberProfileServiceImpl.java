@@ -63,6 +63,8 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             log.debug("프로필 사진 없음 - 회원 ID: {}", memberId);
         }
 
+
+
         return memberProfileResponse;
     }
 
