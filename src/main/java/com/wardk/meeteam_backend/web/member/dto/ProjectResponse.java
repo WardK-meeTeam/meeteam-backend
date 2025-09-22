@@ -17,6 +17,8 @@ public class ProjectResponse {
 
     private String title;
 
+    private String imageUrl;
+
     private ProjectStatus status;
 
 }
