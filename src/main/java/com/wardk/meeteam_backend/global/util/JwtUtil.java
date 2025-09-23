@@ -261,6 +261,7 @@ public class JwtUtil {
             .claim("category", ACCESS_CATEGORY)
             .claim("username", member.getEmail())
             .claim("role", member.getRole().name())
+            .claim("id", member.getId())
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + accessTokenExpTime))
             .signWith(getSignKey())
