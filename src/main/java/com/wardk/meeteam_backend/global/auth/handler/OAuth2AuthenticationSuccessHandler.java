@@ -100,6 +100,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             // JWT 토큰 생성 (이메일 기반)
             String accessToken;
             if (member != null) {
+
                 accessToken = jwtUtil.createAccessTokenForOAuth2(member);
             } else {
                 accessToken = jwtUtil.createAccessTokenForOAuth2Email(email, name);

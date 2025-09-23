@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -35,8 +36,10 @@ public class NotificationListener {
      * 3) 조회된 엔티티와 이벤트 정보를 기반으로 NotificationService를 호출하여 알림을 생성/전송합니다.
      *
      * 비동기(@Async)로 실행되며, 트랜잭션이 성공적으로 커밋된 이후(AFTER_COMMIT)에만 동작합니다.
+     * 전체 알림 처리 과정이 하나의 트랜잭션으로 관리됩니다.
      */
     @Async
+    @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(NotificationEvent e) {
 
