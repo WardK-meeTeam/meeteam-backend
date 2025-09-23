@@ -93,6 +93,7 @@ public class SSENotificationService {
      *
      * 이 메서드는 트랜잭션 없이 실행되며, 호출하는 쪽에서 트랜잭션을 관리합니다.
      */
+    @Transactional
     public void notifyTo(Member receiver, NotificationType type, Project project, Long actorId, Long applicationId) {
 
 
