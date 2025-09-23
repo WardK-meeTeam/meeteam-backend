@@ -16,6 +16,9 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Cookie;
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -66,7 +69,7 @@ public class AuthController {
 
     @Operation(summary = "자기소개 등록", description = "회원가입 후 자기소개.")
     @PostMapping(value = "/register/{memberId}")
-    public SuccessResponse<RegisterResponse> register (
+    public SuccessResponse<RegisterResponse> register(
             @RequestBody RegisterDescriptionRequest descriptionRequest,
             @PathVariable Long memberId
     ) {
@@ -100,7 +103,10 @@ public class AuthController {
         return SuccessResponse.onSuccess(authService.checkDuplicateEmail(email));
     }
 
-
-
+    @Operation(summary = "토큰 재발급", description = "Refresh Token을 이용하여 새로운 Access Token을 발급받습니다.")
+    @PostMapping("/refresh")
+    public SuccessResponse<String> refreshToken(HttpServletRequest request) {
+        return SuccessResponse.onSuccess(authService.refreshAccessToken(request));
+    }
 
 }

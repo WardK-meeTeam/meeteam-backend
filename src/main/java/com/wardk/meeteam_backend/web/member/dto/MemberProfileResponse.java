@@ -73,7 +73,7 @@ public class MemberProfileResponse {
         this.projectList = member.getProjectMembers().stream()
                 .map(projectMember -> {
                     Project project = projectMember.getProject();
-                    return new ProjectResponse(project.getId(), project.getEndDate(), project.getName(), project.getStatus());
+                    return new ProjectResponse(project.getId(), project.getEndDate(), project.getName(), project.getImageUrl(), project.getStatus());
                 })
                 .toList();
         // profileImageUrl과 profileImageName은 Service에서 별도로 설정됨

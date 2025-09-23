@@ -65,8 +65,8 @@ public class ProjectServiceImpl implements ProjectService {
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        String storeFileName = getStoreFileName(file, creator.getId());
-        System.out.println("storeFileName = " + storeFileName);
+        String storeFileUrl = getStoreFileName(file, creator.getId());
+        System.out.println("storeFileUrl = " + storeFileUrl);
 
         LocalDate endDate = projectPostRequest.getEndDate();
 
@@ -80,7 +80,7 @@ public class ProjectServiceImpl implements ProjectService {
                 projectPostRequest.getDescription(),
                 projectPostRequest.getProjectCategory(),
                 projectPostRequest.getPlatformCategory(),
-                storeFileName,
+                storeFileUrl,
                 projectPostRequest.getOfflineRequired(),
                 endDate
         );
