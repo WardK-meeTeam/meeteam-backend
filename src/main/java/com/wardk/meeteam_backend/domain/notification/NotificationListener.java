@@ -39,7 +39,6 @@ public class NotificationListener {
      * 전체 알림 처리 과정이 하나의 트랜잭션으로 관리됩니다.
      */
     @Async
-    @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(NotificationEvent e) {
 

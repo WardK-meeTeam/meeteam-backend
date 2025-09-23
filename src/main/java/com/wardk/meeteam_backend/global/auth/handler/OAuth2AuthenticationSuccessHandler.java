@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.global.auth.handler;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.global.auth.dto.CustomOauth2UserDetails;
+import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.global.config.OAuth2Properties;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
@@ -11,7 +12,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -100,6 +103,11 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             // JWT 토큰 생성 (이메일 기반)
             String accessToken;
             if (member != null) {
+                // CustomSecurityUserDetails 생성 및 SecurityContext 등록
+                CustomSecurityUserDetails userDetails = new CustomSecurityUserDetails(member);
+                UsernamePasswordAuthenticationToken authenticationToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
                 accessToken = jwtUtil.createAccessTokenForOAuth2(member);
             } else {
