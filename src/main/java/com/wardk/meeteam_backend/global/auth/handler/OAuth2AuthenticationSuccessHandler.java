@@ -108,8 +108,20 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             // 세션 무효화
             request.getSession().invalidate();
 
-            // 설정에서 가져온 리다이렉트 URL 사용
-            String redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken) + "&memberId=" + member.getId();
+            // 신규 회원 여부 판단 (방금 생성된 회원인지 체크)
+            boolean isNewMember = isNewMemberCreated; // findOrCreateMember에서 반환된 플래그 사용
+
+            String redirectUrl;
+            if (isNewMember) {
+                // 신규 가입자 -> type=register
+                redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken)
+                        + "&memberId=" + member.getId() + "&type=register";
+            } else {
+                // 기존 회원 -> type=login
+                redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken)
+                        + "&memberId=" + member.getId() + "&type=login";
+            }
+
             log.info("OAuth2 로그인 성공 후 리다이렉트: {}", redirectUrl);
             response.sendRedirect(redirectUrl);
 
@@ -125,6 +137,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
      * Provider + ProviderId 기반으로 회원 조회 또는 생성
      * 중복 이메일 문제를 해결하기 위해 Provider 정보를 우선으로 사용
      */
+    private boolean isNewMemberCreated = false;
+
     private Member findOrCreateMember(String email, String name, String providerId, String provider) {
         log.info("회원 조회/생성 시작: provider={}, providerId={}, email={}", provider, providerId, email);
 
@@ -137,6 +151,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         Optional<Member> existingMember = memberRepository.findByProviderAndProviderId(provider, providerId);
         if (existingMember.isPresent()) {
             log.info("기존 회원 조회 성공: id={}, email={}", existingMember.get().getId(), existingMember.get().getEmail());
+            isNewMemberCreated = false; // 기존 회원
             return existingMember.get();
         }
 
@@ -148,6 +163,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 Member member = emailMember.get();
                 member.setProviderId(providerId);
                 log.info("기존 회원 providerId 업데이트: id={}, newProviderId={}", member.getId(), providerId);
+                isNewMemberCreated = false; // 기존 회원
                 return memberRepository.save(member);
             }
         }
@@ -164,6 +180,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
             Member savedMember = memberRepository.save(newMember);
             log.info("새 회원 생성 성공: id={}, email={}", savedMember.getId(), email);
+            isNewMemberCreated = true; // 신규 회원
             return savedMember;
 
         } catch (Exception e) {
@@ -172,8 +189,11 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             // 동시성 문제 체크
             Optional<Member> concurrentMember = memberRepository.findByProviderAndProviderId(provider, providerId);
             if (concurrentMember.isPresent()) {
+                isNewMemberCreated = false; // 기존 회원
                 return concurrentMember.get();
             }
+
+            isNewMemberCreated = false; // 기존 회원
 
             return memberRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("사용자 생성 실패: " + e.getMessage()));
