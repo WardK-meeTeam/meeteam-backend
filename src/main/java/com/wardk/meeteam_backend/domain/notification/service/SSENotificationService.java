@@ -90,8 +90,9 @@ public class SSENotificationService {
      * 1) 알림 메시지를 생성하고 DB에 저장합니다.
      * 2) 알림 유형에 따라 payload 객체를 생성합니다.
      * 3) SSE를 통해 구독 중인 클라이언트에게 실시간 전송합니다.
+     *
+     * 이 메서드는 트랜잭션 없이 실행되며, 호출하는 쪽에서 트랜잭션을 관리합니다.
      */
-    @Transactional
     public void notifyTo(Member receiver, NotificationType type, Project project, Long actorId, Long applicationId) {
 
 
