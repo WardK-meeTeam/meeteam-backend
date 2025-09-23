@@ -20,6 +20,9 @@ public enum ErrorCode {
     // LOGIN
     DUPLICATE_MEMBER(HttpStatus.BAD_REQUEST, "MEMBER400", "이미 존재하는 회원입니다."),
     DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "MEMBER400", "다시 로그인하세요"),
+    REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN401", "리프레시 토큰이 없습니다"),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN402", "리프레시 토큰이 만료되었습니다"),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN403", "유효하지 않은 리프레시 토큰입니다"),
 
     // OAUTH2
     OAUTH2_ATTRIBUTES_EMPTY(HttpStatus.BAD_REQUEST, "OAUTH400", "OAuth2 사용자 정보가 비어있습니다."),
