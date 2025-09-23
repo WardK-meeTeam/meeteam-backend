@@ -35,6 +35,10 @@ public class CustomOauth2UserDetails implements UserDetails, OAuth2User {
         return member.getEmail(); // 또는 member.getProviderId()
     }
 
+    public Long getMemberId() {
+        return member.getId();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> collection = new ArrayList<>();
