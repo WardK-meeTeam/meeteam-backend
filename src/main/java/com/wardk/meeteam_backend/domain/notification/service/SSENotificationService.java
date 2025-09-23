@@ -158,6 +158,7 @@ public class SSENotificationService {
                         LocalDate.now()
                 );
             }
+
             case PROJECT_APPROVE -> new SimpleMessagePayload(
                     receiver.getId(),
                     project.getId(),
