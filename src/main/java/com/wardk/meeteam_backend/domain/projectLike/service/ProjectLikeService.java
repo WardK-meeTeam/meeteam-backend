@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeReposi
 import com.wardk.meeteam_backend.global.aop.Retry;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.web.projectLike.dto.LikeStatusResponse;
 import com.wardk.meeteam_backend.web.projectLike.dto.ToggleLikeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,6 +25,14 @@ public class ProjectLikeService {
     private final ProjectRepository projectRepository;
     private final ProjectLikeRepository projectLikeRepository;
     private final MemberRepository memberRepository;
+
+    @Transactional
+    public LikeStatusResponse status(Long memberId, Long projectId) {
+
+        boolean status = projectLikeRepository.existsByMemberIdAndProjectId(memberId, projectId);
+
+        return new LikeStatusResponse(status);
+    }
 
 
 
