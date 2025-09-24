@@ -4,9 +4,11 @@ import com.wardk.meeteam_backend.domain.projectLike.service.ProjectLikeService;
 import com.wardk.meeteam_backend.global.aop.aspect.OptimisticLockRetryAspect;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
+import com.wardk.meeteam_backend.web.projectLike.dto.LikeStatusResponse;
 import com.wardk.meeteam_backend.web.projectLike.dto.ToggleLikeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,7 +61,15 @@ public class ProjectLikeController {
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-
         return SuccessResponse.onSuccess(projectLikeService.toggleWithPessimistic(projectId, userDetails.getUsername()));
+    }
+
+
+    @GetMapping("api/project/like/{projectId}")
+    public SuccessResponse<LikeStatusResponse> likeStatus(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        return SuccessResponse.onSuccess(projectLikeService.status(userDetails.getMemberId(), projectId));
     }
 }
