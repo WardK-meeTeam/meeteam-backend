@@ -21,7 +21,6 @@ import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.global.util.FileUtil;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
 import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
@@ -65,8 +64,7 @@ public class ProjectServiceImpl implements ProjectService {
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        String storeFileUrl = getStoreFileName(file, creator.getId());
-        System.out.println("storeFileUrl = " + storeFileUrl);
+        String imageUrl = getImageUrl(file, creator.getId());
 
         LocalDate endDate = projectPostRequest.getEndDate();
 
@@ -80,7 +78,7 @@ public class ProjectServiceImpl implements ProjectService {
                 projectPostRequest.getDescription(),
                 projectPostRequest.getProjectCategory(),
                 projectPostRequest.getPlatformCategory(),
-                storeFileUrl,
+                imageUrl,
                 projectPostRequest.getOfflineRequired(),
                 endDate
         );
@@ -163,9 +161,9 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
         }
 
-        String storeFileName = getStoreFileName(file, creator.getId());
-        if (storeFileName == null) {
-            storeFileName = project.getImageUrl(); 
+        String imageUrl = getImageUrl(file, creator.getId());
+        if (imageUrl == null) {
+            imageUrl = project.getImageUrl();
         }
 
         project.updateProject(
@@ -173,7 +171,7 @@ public class ProjectServiceImpl implements ProjectService {
                 request.getDescription(),
                 request.getProjectCategory(),
                 request.getPlatformCategory(),
-                storeFileName,
+                imageUrl,
                 request.getOfflineRequired(),
                 request.getStatus(),
                 startDate,
@@ -282,12 +280,12 @@ public class ProjectServiceImpl implements ProjectService {
 //        return storeFileName;
 //    }
 
-    private String getStoreFileName(MultipartFile file, Long uploaderId) {
-        String storeFileName = null;
+    private String getImageUrl(MultipartFile file, Long uploaderId) {
+        String imageUrl = null;
         if (file != null && !file.isEmpty()) {
-            storeFileName = s3FileService.uploadFile(file, "images", uploaderId);
+            imageUrl = s3FileService.uploadFile(file, "images", uploaderId);
         }
-        return storeFileName;
+        return imageUrl;
     }
 
     private String extractRepoFullName(String url) {
