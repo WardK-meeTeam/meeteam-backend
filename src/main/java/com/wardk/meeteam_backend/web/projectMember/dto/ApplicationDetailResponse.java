@@ -15,7 +15,8 @@ public class ApplicationDetailResponse {
     private Long applicationId;
     private Long applicantId;
     private String applicantName;
-    private String subCategoryName; // 피그마엔 대분류 같긴 한데...
+    private String subCategoryName;
+    private String imageUrl;
     private Integer age;
     private Gender gender;
     private String applicantEmail;
@@ -31,6 +32,7 @@ public class ApplicationDetailResponse {
                 .applicantId(application.getApplicant().getId())
                 .applicantName(application.getApplicant().getRealName())
                 .subCategoryName(application.getSubCategory().getName())
+                .imageUrl(application.getApplicant().getStoreFileName())
                 .age(application.getApplicant().getAge())
                 .gender(application.getApplicant().getGender())
                 .applicantEmail(application.getApplicant().getEmail())
