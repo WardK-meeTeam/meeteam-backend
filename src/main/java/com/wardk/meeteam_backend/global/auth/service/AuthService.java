@@ -43,7 +43,7 @@ public class AuthService {
 
 
     @Transactional
-    public RegisterResponse register(RegisterRequest registerRequest, MultipartFile filed) {
+    public RegisterResponse register(RegisterRequest registerRequest, MultipartFile file) {
 
         // 이메일 중복 불가능
         memberRepository.findOptionByEmail(registerRequest.getEmail())
@@ -51,9 +51,9 @@ public class AuthService {
                     throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
                 });
 
-        String storeFileName = null;
-        if (filed != null && !filed.isEmpty()) {
-            storeFileName = s3FileService.uploadFile(filed, "images");
+        String imageUrl = null;
+        if (file != null && !file.isEmpty()) {
+            imageUrl = s3FileService.uploadFile(file, "images");
         }
 
         Member member = Member.builder()
@@ -62,7 +62,7 @@ public class AuthService {
                 .gender(registerRequest.getGender())
                 .email(registerRequest.getEmail())
                 .password(bCryptPasswordEncoder.encode(registerRequest.getPassword()))
-                .storeFileName(storeFileName)
+                .storeFileName(imageUrl)
                 .isParticipating(true)
                 .role(UserRole.USER)
                 .build();
