@@ -9,9 +9,11 @@ import java.util.Optional;
 
 public interface ProjectLikeRepository extends JpaRepository<ProjectLike, Long> {
 
-    Optional<ProjectLike> findByMemberIdAndProjectId(Long memberId, Long projectId);
     long deleteByMemberIdAndProjectId(Long memberId, Long projectId);
 
     Integer countByProjectId(Long projectId);
     Optional<ProjectLike> findByMemberAndProject(Member member, Project project);
+
+    boolean existsByMemberIdAndProjectId(Long memberId, Long projectId);
+
 }
