@@ -5,6 +5,7 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import static com.wardk.meeteam_backend.domain.applicant.entity.QProjectCategoryApplication.*;
@@ -24,9 +25,9 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         this.queryFactory = queryFactory;
     }
 
-    public Slice<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
+    public Page<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
-        Slice<Project> projects = applySlicing(pageable, qf ->
+        Page<Project> projects = applyPagination(pageable, qf ->
                 qf.select(project)
                         .from(project)
                         .join(project.creator, member).fetchJoin()

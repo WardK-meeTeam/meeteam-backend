@@ -30,7 +30,8 @@ public class SecurityUrls {
             "/api/auth/oauth2/**",
             "/api/webhooks/github",
             "/api/v1/files/**" // 파일 업로드 API 경로 추가
-            ,"index.html"
+            ,"index.html",
+            "/api/projects/condition"// 프로젝트 필터링 조회 경로 추가
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
