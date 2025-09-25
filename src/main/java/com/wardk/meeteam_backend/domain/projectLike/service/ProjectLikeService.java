@@ -35,7 +35,6 @@ public class ProjectLikeService {
     }
 
 
-
     @Transactional
     public ToggleLikeResponse toggleWithPessimistic(Long projectId, String email) {
         Project project = projectRepository.findByIdForUpdate(projectId)
