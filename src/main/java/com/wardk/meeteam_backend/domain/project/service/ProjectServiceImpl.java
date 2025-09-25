@@ -12,6 +12,7 @@ import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
@@ -28,6 +29,7 @@ import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -55,6 +57,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepoRepository projectRepoRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final GithubAppAuthService githubAppAuthService;
+    private final ProjectLikeRepository projectLikeRepository;
 
 
     @Counted("post.project")
@@ -249,16 +252,25 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Slice<ProjectConditionRequest> searchProject(ProjectSearchCondition condition, Pageable pageable) {
+    @Transactional
+    public Page<ProjectConditionRequest> searchProject(
+            ProjectSearchCondition condition, Pageable pageable,
+            CustomSecurityUserDetails userDetails) {
 
-        Slice<Project> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
+        Page<Project> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
 
-        Slice<ProjectConditionRequest> map = content.map(
-                project -> new ProjectConditionRequest(project)
+        // 비로그인 -> isLiked 여부 항상 false;
+        Page<ProjectConditionRequest> map = content.map(
+                project ->  {
+                    boolean isLiked = false; // 비로그인인 경우 isLiked 무조건 false;
+                    if (userDetails != null) { // 로그인이 경우
+                        isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
+                    }
+                    return new ProjectConditionRequest(project, isLiked);
+                }
         );
 
         return map;
-
     }
 
     @Override
