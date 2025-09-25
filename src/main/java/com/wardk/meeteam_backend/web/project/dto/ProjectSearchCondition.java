@@ -10,7 +10,6 @@ import lombok.Data;
 @Data
 public class ProjectSearchCondition {
 
-
     private ProjectCategory projectCategory;
 
     private Recruitment recruitment;

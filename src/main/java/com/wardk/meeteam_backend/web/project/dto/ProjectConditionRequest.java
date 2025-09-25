@@ -24,11 +24,14 @@ public class ProjectConditionRequest {
     private String projectName;
     private String creatorName;
     private LocalDate localDate;
+    // 좋아요 관련 필드
+    private boolean isLiked;
+    private int likeCount;
 
 
 
 
-    public ProjectConditionRequest(Project project) {
+    public ProjectConditionRequest(Project project, boolean isLiked) {
         this.projectId = project.getId();
         this.projectCategory = project.getProjectCategory();
         this.platformCategory = project.getPlatformCategory();
@@ -39,6 +42,8 @@ public class ProjectConditionRequest {
         this.projectName = project.getName();
         this.creatorName = project.getCreator().getRealName();
         this.localDate = LocalDate.from(project.getCreatedAt());
+        this.isLiked = isLiked;
+        this.likeCount = project.getLikeCount();
     }
 
 }
