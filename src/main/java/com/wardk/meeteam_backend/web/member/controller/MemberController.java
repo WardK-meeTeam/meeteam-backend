@@ -28,6 +28,9 @@ public class MemberController {
 
     private final MemberProfileService memberProfileService;
 
+    /**
+     * 나의 프로필보기에서 나의 memberId;
+     */
 
     @Operation(summary = "나의 프로필 보기", description = "로그인한 사용자의 프로필 정보를 조회합니다.")
     @GetMapping("api/members")
@@ -54,9 +57,6 @@ public class MemberController {
         );
         return SuccessResponse.onSuccess(response);
     }
-
-
-
 
 
 
