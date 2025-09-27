@@ -19,6 +19,9 @@ public class MemberProfileResponse {
 
 
     private String name;
+
+    private Long memberId;
+
     private int age;
 
     private Gender gender;
@@ -51,7 +54,8 @@ public class MemberProfileResponse {
     private List<ProjectResponse> projectList;
 
 
-    public MemberProfileResponse(Member member) {
+    public MemberProfileResponse(Member member, Long memberId) {
+        this.memberId = memberId;
         this.name = member.getRealName();
         this.age = member.getAge();
         this.gender = member.getGender();
