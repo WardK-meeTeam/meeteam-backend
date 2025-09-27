@@ -20,10 +20,4 @@ public class ProjectSearchCondition {
 
     private TechStack techStack;
 
-
-
-
-
-
-
 }
