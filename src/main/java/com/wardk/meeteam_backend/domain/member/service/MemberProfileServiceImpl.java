@@ -46,7 +46,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        MemberProfileResponse memberProfileResponse = new MemberProfileResponse(member);
+        MemberProfileResponse memberProfileResponse = new MemberProfileResponse(member, memberId);
 
         List<ReviewResponse> reviewResponses = reviewRepositoryCustom.getReview(member.getId());
         memberProfileResponse.setReviewList(reviewResponses);
