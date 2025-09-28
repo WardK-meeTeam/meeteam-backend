@@ -42,6 +42,8 @@ public enum ErrorCode {
     // PROJECT
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT404", "프로젝트를 찾을 수 없습니다."),
     INVALID_PROJECT_DATE(HttpStatus.BAD_REQUEST, "PROJECT400", "종료일은 시작일 이후여야 합니다."),
+    RECRUITMENT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "이미 모집이 완료된 프로젝트입니다."),
+    INVALID_RECRUITMENT_COUNT(HttpStatus.BAD_REQUEST, "PROJECT400", "모집 인원은 0 이상이어야 합니다."),
 
     // CHAT
     CHAT_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT404", "해당 쓰레드를 찾을 수 없습니다."),
