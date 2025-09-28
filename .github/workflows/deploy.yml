@@ -57,3 +57,5 @@ jobs:
             docker rm meeteam-server || true
             docker compose pull meeteam-server
             docker compose up -d meeteam-server
+
+
