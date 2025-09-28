@@ -20,30 +20,28 @@ import java.util.Optional;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> , ProjectRepositoryCustom{
 
+    @Query("SELECT p FROM Project p " +
+            "WHERE p.id = :id AND p.isDeleted = false")
+    Optional<Project> findActiveById(Long id);
+
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN FETCH p.recruitments r " +
             "JOIN FETCH r.subCategory " +
-            "WHERE p.id = :projectId")
+            "WHERE p.id = :projectId AND p.isDeleted = false")
     Optional<Project> findByIdWithRecruitment(Long projectId);
 
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN FETCH p.creator " +
             "LEFT JOIN FETCH p.projectSkills ps " +
-            "LEFT JOIN FETCH ps.skill")
+            "LEFT JOIN FETCH ps.skill " +
+            "WHERE p.isDeleted = false")
     List<Project> findAllWithCreatorAndSkills();
 
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN FETCH p.members pm " +
             "JOIN FETCH pm.member m " +
-            "WHERE p.id = :projectId")
+            "WHERE p.id = :projectId AND p.isDeleted = false")
     Optional<Project> findByIdWithMembers(Long projectId);
-
-    @Query("SELECT ps FROM ProjectSkill ps JOIN FETCH ps.skill WHERE ps.project.id = :projectId")
-    List<ProjectSkill> findSkillsByProjectId(Long projectId);
-
-    @Query("SELECT r FROM ProjectCategoryApplication r JOIN FETCH r.subCategory WHERE r.project.id = :projectId")
-    List<ProjectCategoryApplication> findRecruitmentsByProjectId(Long projectId);
-
 
     // 특정 대분류들을 모집하고 있는 프로젝트 조회 (Slice) - 메인페이지용, recruitmentStatus 파라미터 추가
 
@@ -65,14 +63,14 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
     @Query("SELECT p FROM Project p " +
             "JOIN FETCH p.projectSkills ps " +
             "JOIN FETCH ps.skill " +
-            "WHERE p IN :projects")
+            "WHERE p IN :projects AND p.isDeleted = false")
     List<Project> findProjectsWithSkills(@Param("projects") List<Project> projects);
 
     @Query("""
        SELECT new com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto(p, COUNT(pl))
        FROM Project p
        LEFT JOIN p.projectLikes pl
-       WHERE p.id = :projectId
+       WHERE p.id = :projectId AND p.isDeleted = false 
        GROUP BY p
        """)
     Optional<ProjectWithLikeDto> findProjectWithLikeCount(@Param("projectId") Long projectId);
@@ -89,6 +87,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
 
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select p from Project p where p.id = :id")
+    @Query("select p from Project p where p.id = :id AND p.isDeleted = false")
     Optional<Project> findByIdForUpdate(@Param("id") Long id);
 }

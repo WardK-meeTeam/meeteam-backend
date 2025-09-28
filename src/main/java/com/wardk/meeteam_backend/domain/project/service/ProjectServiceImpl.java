@@ -123,15 +123,15 @@ public class ProjectServiceImpl implements ProjectService {
                 .toList();
     }
 
-    @Override
-    public ProjectResponse getProjectV1(Long projectId) {
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-
-
-        return ProjectResponse.responseDto(project);
-    }
+//    @Override
+//    public ProjectResponse getProjectV1(Long projectId) {
+//
+//        Project project = projectRepository.findById(projectId)
+//                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+//
+//
+//        return ProjectResponse.responseDto(project);
+//    }
 
 
     @Override
@@ -147,7 +147,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectUpdateResponse updateProject(Long projectId, ProjectUpdateRequest request, MultipartFile file, String requesterEmail) {
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
@@ -206,14 +206,14 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectDeleteResponse deleteProject(Long projectId, String requesterEmail) {
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         if (!project.getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        projectRepository.delete(project);
+        project.delete();
 
         return ProjectDeleteResponse.responseDto(projectId, project.getName());
     }
@@ -221,7 +221,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail) {
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         if (!project.getCreator().getEmail().equals(requesterEmail)) {

@@ -16,19 +16,19 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectMembe
     @Query("SELECT a FROM ProjectMemberApplication a " +
             "JOIN FETCH a.applicant " +
             "JOIN FETCH a.subCategory " +
-            "WHERE a.project.id = :projectId")
+            "WHERE a.project.id = :projectId AND a.project.isDeleted = false")
     List<ProjectMemberApplication> findByProjectId(Long projectId);
 
     @Query("SELECT a FROM ProjectMemberApplication a " +
             "JOIN FETCH a.project p " +
             "JOIN FETCH a.subCategory " +
-            "WHERE a.applicant.id = :applicantId")
+            "WHERE a.applicant.id = :applicantId AND p.isDeleted = false")
     List<ProjectMemberApplication> findAllByApplicantId(Long applicantId);
 
     @Query("SELECT a FROM ProjectMemberApplication a " +
             "JOIN FETCH a.applicant " +
             "JOIN FETCH a.subCategory " +
             "JOIN FETCH a.weekDays " +
-            "WHERE a.project.id = :projectId AND a.id = :applicationId")
+            "WHERE a.project.id = :projectId AND a.id = :applicationId AND a.project.isDeleted = false")
     Optional<ProjectMemberApplication> findByIdWithApplicantAndSubCategory(Long projectId, Long applicationId);
 }

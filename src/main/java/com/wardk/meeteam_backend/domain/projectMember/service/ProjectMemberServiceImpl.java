@@ -30,7 +30,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     @Override
     public void addCreator(Long projectId, Long memberId, SubCategory subCategory) {
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Member member = memberRepository.findById(memberId)
@@ -96,7 +96,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     @Override
     public DeleteResponse deleteProjectMember(DeleteRequest request, String requesterEmail) {
 
-        Project project = projectRepository.findById(request.getProjectId())
+        Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Member creator = project.getCreator();
@@ -124,7 +124,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     @Override
     public WithdrawResponse withdraw(WithdrawRequest request, String requesterEmail) {
 
-        Project project = projectRepository.findById(request.getProjectId())
+        Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Member member = memberRepository.findOptionByEmail(requesterEmail)
