@@ -75,10 +75,15 @@ public class MemberProfileResponse {
         this.projectCount = member.getProjectMembers().size();
         this.introduce = member.getIntroduction();
         this.projectList = member.getProjectMembers().stream()
-                .map(projectMember -> {
-                    Project project = projectMember.getProject();
-                    return new ProjectResponse(project.getId(), project.getEndDate(), project.getName(), project.getImageUrl(), project.getStatus());
-                })
+                .map(projectMember -> projectMember.getProject())
+                .filter(project -> !project.isDeleted())
+                .map(project -> new ProjectResponse(
+                        project.getId(),
+                        project.getEndDate(),
+                        project.getName(),
+                        project.getImageUrl(),
+                        project.getStatus()
+                ))
                 .toList();
         // profileImageUrl과 profileImageName은 Service에서 별도로 설정됨
     }
