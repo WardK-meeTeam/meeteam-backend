@@ -45,7 +45,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Override
     public ApplicationResponse apply(ApplicationRequest request, String applicantEmail) {
 
-        Project project = projectRepository.findById(request.getProjectId())
+        Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Member member = memberRepository.findOptionByEmail(applicantEmail)
@@ -109,7 +109,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Override
     public List<ProjectApplicationListResponse> getApplicationList(Long projectId, String requesterEmail) {
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         if (!project.getCreator().getEmail().equals(requesterEmail)) {
@@ -125,7 +125,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Override
     public ApplicationDetailResponse getApplicationDetail(Long projectId, Long applicationId, String requesterEmail) {
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         if (!project.getCreator().getEmail().equals(requesterEmail)) {

@@ -32,7 +32,7 @@ public interface ProjectService {
     Page<ProjectConditionRequest> searchProject(ProjectSearchCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails);
 
 
-    ProjectResponse getProjectV1(Long projectId);
+//    ProjectResponse getProjectV1(Long projectId);
     ProjectWithLikeDto getProjectV2(Long projectId);
 }
 
