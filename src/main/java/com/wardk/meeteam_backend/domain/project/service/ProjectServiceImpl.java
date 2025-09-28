@@ -273,8 +273,8 @@ public class ProjectServiceImpl implements ProjectService {
                     ProjectCounts totalCountsByProject = projectCategoryApplicationRepository.findTotalCountsByProject(project);
                     List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
 
-                    Long currentCount = totalCountsByProject.getTotalRecruitmentCount();
-                    Long recruitmentCount = totalCountsByProject.getTotalCount();
+                    Long currentCount = totalCountsByProject.getCurrentCount();
+                    Long recruitmentCount = totalCountsByProject.getRecruitmentCount();
 
                     boolean isLiked = false; // 비로그인인 경우 isLiked 무조건 false;
                     if (userDetails != null) { // 로그인이 경우
