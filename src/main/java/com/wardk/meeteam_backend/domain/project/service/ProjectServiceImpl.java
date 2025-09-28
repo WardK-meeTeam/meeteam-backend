@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
+import com.wardk.meeteam_backend.domain.applicant.repository.ProjectCategoryApplicationRepository;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -16,6 +17,7 @@ import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeReposi
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
+import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberServiceImpl;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
@@ -25,7 +27,9 @@ import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
 import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
+import com.wardk.meeteam_backend.web.projectCategoryApplication.dto.ProjectCounts;
 import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
+import com.wardk.meeteam_backend.web.projectMember.dto.ProjectMemberListResponse;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +62,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final GithubAppAuthService githubAppAuthService;
     private final ProjectLikeRepository projectLikeRepository;
+    private final ProjectCategoryApplicationRepository projectCategoryApplicationRepository;
+    private final ProjectMemberServiceImpl projectMemberServiceImpl;
 
 
     @Counted("post.project")
@@ -259,14 +265,22 @@ public class ProjectServiceImpl implements ProjectService {
 
         Page<Project> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
 
+
         // 비로그인 -> isLiked 여부 항상 false;
         Page<ProjectConditionRequest> map = content.map(
                 project ->  {
+
+                    ProjectCounts totalCountsByProject = projectCategoryApplicationRepository.findTotalCountsByProject(project);
+                    List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
+
+                    Long currentCount = totalCountsByProject.getTotalRecruitmentCount();
+                    Long recruitmentCount = totalCountsByProject.getTotalCount();
+
                     boolean isLiked = false; // 비로그인인 경우 isLiked 무조건 false;
                     if (userDetails != null) { // 로그인이 경우
                         isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
                     }
-                    return new ProjectConditionRequest(project, isLiked);
+                    return new ProjectConditionRequest(project, isLiked, currentCount, recruitmentCount, projectMembers);
                 }
         );
 
