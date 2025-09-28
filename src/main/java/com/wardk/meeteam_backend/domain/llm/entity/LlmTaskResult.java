@@ -25,7 +25,7 @@ public class LlmTaskResult extends BaseEntity {
     
     @Column(name = "content", columnDefinition = "LONGTEXT")
     private String content;
-    
+
     @Column(name = "token_usage")
     private Integer tokenUsage;
     
