@@ -87,17 +87,37 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 email = member.getEmail();
                 name = member.getRealName();
                 log.info("Custom OAuth2 User 로그인 성공: {}", email);
+
+                // GitHub는 이미 Member가 있으므로 바로 JWT 생성하고 리다이렉트
+                String accessToken = jwtUtil.createAccessTokenForOAuth2(member);
+                request.getSession().invalidate();
+
+                boolean isNewMember = false; // 임시로 false
+                String redirectUrl;
+                if (isNewMember) {
+                    redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken)
+                            + "&memberId=" + member.getId() + "&type=register";
+                } else {
+                    redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken)
+                            + "&memberId=" + member.getId() + "&type=login";
+                }
+
+                log.info("GitHub OAuth2 로그인 성공 후 리다이렉트: {}", redirectUrl);
+                response.sendRedirect(redirectUrl);
+                return; // 여기서 종료
+
             } else {
                 throw new IllegalArgumentException("지원하지 않는 Principal 타입: " + principal.getClass());
             }
 
             // 사용자 조회 또는 생성 (GitHub의 경우)
+            // member null 체크
             Member member = null;
             if (provider != null) {
                 member = findOrCreateMember(email, name, providerId, provider);
             }
 
-            // JWT 토큰 생성 (이메일 기반)
+            // JWT 토큰 생성
             String accessToken;
             if (member != null) {
                 accessToken = jwtUtil.createAccessTokenForOAuth2(member);
@@ -108,16 +128,13 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             // 세션 무효화
             request.getSession().invalidate();
 
-            // 신규 회원 여부 판단 (방금 생성된 회원인지 체크)
-            boolean isNewMember = isNewMemberCreated; // findOrCreateMember에서 반환된 플래그 사용
-
+            // 리다이렉트 처리 (신규 회원 판단은 임시로 false)
+            boolean isNewMember = isNewMemberCreated;
             String redirectUrl;
             if (isNewMember) {
-                // 신규 가입자 -> type=register
                 redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken)
                         + "&memberId=" + member.getId() + "&type=register";
             } else {
-                // 기존 회원 -> type=login
                 redirectUrl = oAuth2Properties.getRedirect().getSuccessUrlWithToken(accessToken)
                         + "&memberId=" + member.getId() + "&type=login";
             }
