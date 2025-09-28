@@ -10,6 +10,16 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PullRequestRepository extends JpaRepository<PullRequest, Long> {
+
+  @Query(
+          """
+            SELECT pr
+            FROM PullRequest pr
+            JOIN FETCH pr.projectRepo repo
+            LEFT JOIN FETCH pr.files
+            WHERE repo.id = :projectRepoId AND pr.prNumber = :prNumber
+          """
+  )
   Optional<PullRequest> findByProjectRepoIdAndPrNumber(Long projectRepoId, int prNumber);
 
   @Query("SELECT pr FROM PullRequest pr JOIN FETCH pr.projectRepo repo LEFT JOIN FETCH pr.files WHERE repo.repoFullName = :repoFullName AND pr.prNumber = :prNumber")

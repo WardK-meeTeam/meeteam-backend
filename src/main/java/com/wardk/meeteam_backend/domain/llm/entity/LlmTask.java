@@ -47,9 +47,12 @@ public class LlmTask extends BaseEntity {
     @JoinColumn(name = "pr_review_job_id")
     private PrReviewJob prReviewJob;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "pull_request_file_id")
-    private PullRequestFile pullRequestFile;
+    /* 대상 파일 ID (FILE_REVIEW 타입일 때만 사용) */
+    @Column(name = "pull_request_file_id")
+    private Long pullRequestFileId;
+
+    @Column(name = "pull_request_file_name")
+    private String pullRequestFileName;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "llm_task_result_id", unique = false) // unique 제약조건 제거
@@ -110,5 +113,19 @@ public class LlmTask extends BaseEntity {
 
     public boolean isCompleted() {
         return this.status == TaskStatus.COMPLETED || this.status == TaskStatus.FAILED;
+    }
+
+    /**
+     * 대상 파일을 조회합니다 (FILE_REVIEW 타입일 때만 유효)
+     */
+    public PullRequestFile getPullRequestFile() {
+        if (pullRequestFileId == null || prReviewJob == null) {
+            return null;
+        }
+
+        return prReviewJob.getPullRequest().getFiles().stream()
+                .filter(file -> file.getId().equals(pullRequestFileId))
+                .findFirst()
+                .orElse(null);
     }
 }

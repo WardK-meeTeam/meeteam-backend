@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.domain.codereview.entity;
 
+import com.wardk.meeteam_backend.domain.chat.entity.ChatRoom;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,7 +35,7 @@ import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 @AllArgsConstructor
 @Builder
 @Table(name = "pr_review_job", 
-       uniqueConstraints = @UniqueConstraint(columnNames = {"project_repo_id", "pull_request_id", "head_sha"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"pull_request_id", "head_sha"}))
 public class PrReviewJob extends BaseEntity {
 
     /**
@@ -67,19 +68,10 @@ public class PrReviewJob extends BaseEntity {
     @JoinColumn(name = "pull_request_id", nullable = false)
     private PullRequest pullRequest;
 
-    /** 이 작업과 연결된 채팅 스레드 ID */
+    /** 이 작업과 연결된 채팅방 */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_thread_id")
-    private ChatThread chatThread;
-
-    /** GitHub 저장소 ID */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_repo_id", nullable = false)
-    private ProjectRepo projectRepo;
-
-    /** PR 번호 */
-    @Column(name = "pr_number", nullable = false)
-    private Integer prNumber;
+    private ChatRoom chatRoom;
 
     /** PR의 HEAD SHA */
     @Column(name = "head_sha", nullable = false)
@@ -127,5 +119,19 @@ public class PrReviewJob extends BaseEntity {
      */
     public void recordError(String message) {
         this.errorMessage = message;
+    }
+
+    /**
+     * PR 번호를 PullRequest를 통해 조회
+     */
+    public Integer getPrNumber() {
+        return pullRequest != null ? pullRequest.getPrNumber() : null;
+    }
+
+    /**
+     * ProjectRepo를 PullRequest를 통해 조회
+     */
+    public ProjectRepo getProjectRepo() {
+        return pullRequest != null ? pullRequest.getProjectRepo() : null;
     }
 }
