@@ -26,7 +26,7 @@ public interface PrReviewJobRepository extends JpaRepository<PrReviewJob, Long> 
         SELECT j 
         FROM PrReviewJob j 
         JOIN FETCH j.pullRequest pr
-        JOIN FETCH j.projectRepo repo
+        JOIN FETCH pr.projectRepo repo
         JOIN FETCH pr.files
         WHERE j.id = :id
         """)
@@ -38,8 +38,10 @@ public interface PrReviewJobRepository extends JpaRepository<PrReviewJob, Long> 
     @Query("""
         SELECT j 
         FROM PrReviewJob j 
-        WHERE j.projectRepo.id = :repoId 
-        AND j.prNumber = :prNumber 
+        JOIN FETCH j.pullRequest pr
+        JOIN FETCH pr.projectRepo repo
+        WHERE pr.projectRepo.id = :repoId 
+        AND pr.prNumber = :prNumber 
         AND j.headSha = :headSha
         """)
     Optional<PrReviewJob> findByProjectRepoIdAndPrNumberAndHeadSha(
@@ -58,8 +60,9 @@ public interface PrReviewJobRepository extends JpaRepository<PrReviewJob, Long> 
     @Query("""
         SELECT j 
         FROM PrReviewJob j 
-        WHERE j.projectRepo.id = :repoId 
-        AND j.prNumber = :prNumber
+        JOIN j.pullRequest pr
+        WHERE pr.projectRepo.id = :repoId 
+        AND pr.prNumber = :prNumber
         ORDER BY j.createdAt DESC
         """)
     Optional<PrReviewJob> findLatestByRepoAndPrNumber(

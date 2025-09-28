@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LlmConcurrencyLimiter {
-    private final Semaphore semaphore = new Semaphore(5); // 3개→5개로 증가하여 더 많은 병렬 처리
+    // 동시 실행 수를 3개로 제한 - LLM API 부하 방지 및 안정성 확보
+    private final Semaphore semaphore = new Semaphore(5);
 
     public void acquire() throws InterruptedException {
         semaphore.acquire();

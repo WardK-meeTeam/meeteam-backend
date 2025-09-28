@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -53,31 +54,30 @@ public class LlmReviewService {
                     .call()
                     .chatResponse();
 
-
             LlmTaskResult result = savePrReviewFindingAndLlmTaskResult(file, response, task);
             log.info("pr번호: {}, fileName: {}, reviewFinding에 저장 완료", file.getPullRequest().getPrNumber(),
                     file.getFileName());
 
-
             return result;
-
-
         }
-
-
     }
 
     /*
      * PR 리뷰 발견 항목을 저장합니다.
      * 
      * @param file 리뷰할 Pull Request 파일
-     * 
-     * @param job 리뷰 작업
-     * 
      * @param chatResponse LLM의 응답
+     * @param task LLM 태스크
      */
     private LlmTaskResult savePrReviewFindingAndLlmTaskResult(PullRequestFile file, ChatResponse chatResponse,
             LlmTask task) {
+
+        // 필요한 텍스트만 때서 저장
+        String reviewText = chatResponse.getResults().stream()
+                .map(g -> g.getOutput().getText())
+                .filter(s -> s != null && !s.isBlank())
+                .collect(Collectors.joining("\n\n"));
+
 
         PrReviewFinding finding = PrReviewFinding.builder()
                 .prReviewJob(task.getPrReviewJob())
@@ -85,14 +85,14 @@ public class LlmReviewService {
                 .filePath(file.getFileName())
                 .severity(PrReviewFinding.Severity.NOTICE)
                 .title("리뷰: " + file.getFileName())
-                .chatResponse(chatResponse.getResults().toString())
+                .chatResponse(reviewText) // 전체 내용은 Finding에 저장
                 .status(PrReviewFinding.Status.OPEN)
                 .build();
         prReviewFindingRepository.save(finding);
 
         LlmTaskResult llmTaskResult = LlmTaskResult.builder()
                 .resultType("FILE_REVIEW")
-                .content(chatResponse.getResults().toString())
+                .content(reviewText) // 파싱된 요약 내용만 저장
                 .tokenUsage(chatResponse.getMetadata().getUsage().getTotalTokens())
                 .prReviewFinding(finding)
                 .build();

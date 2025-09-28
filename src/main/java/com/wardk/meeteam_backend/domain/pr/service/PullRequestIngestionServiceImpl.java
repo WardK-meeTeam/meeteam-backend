@@ -65,16 +65,17 @@ public class PullRequestIngestionServiceImpl implements PullRequestIngestionServ
         }
 
         pullRequestRepository.save(pr);
-        if (isActualTransactionActive()) {
-            registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    prReviewService.createReviewJob(pr);
-                }
-            });
-        } else {
-            prReviewService.createReviewJob(pr);
-        }
+
+//        if (isActualTransactionActive()) {
+//            registerSynchronization(new TransactionSynchronization() {
+//                @Override
+//                public void afterCommit() {
+//                    prReviewService.createReviewJob(pr);
+//                }
+//            });
+//        } else {
+//            prReviewService.createReviewJob(pr);
+//        }
 
 
         log.info("PR 저장 완료: id={}, repo={}, prNumber={}", pr.getId(), repoFullName, prNumber);
