@@ -33,7 +33,7 @@ public interface ProjectService {
     Slice<ProjectConditionRequest> searchProject(ProjectSearchCondition condition, Pageable pageable);
 
 
-    ProjectResponse getProjectV1(Long projectId);
+//    ProjectResponse getProjectV1(Long projectId);
     ProjectWithLikeDto getProjectV2(Long projectId);
 }
 
