@@ -15,6 +15,9 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
 
     void deleteByProjectIdAndMemberId(Long projectId, Long memberId);
 
-    @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.project p JOIN FETCH pm.subCategory s WHERE pm.member.id = :memberId")
+    @Query("SELECT pm FROM ProjectMember pm " +
+            "JOIN FETCH pm.project p " +
+            "JOIN FETCH pm.subCategory s " +
+            "WHERE pm.member.id = :memberId AND p.isDeleted = false")
     List<ProjectMember> findAllByMemberId(Long memberId);
 }

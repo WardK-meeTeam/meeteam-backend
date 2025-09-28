@@ -48,13 +48,13 @@ public class ProjectController {
         return SuccessResponse.onSuccess(projectList);
     }
 
-    @Operation(summary = "프로젝트 상세 조회")
-    @GetMapping("V1/{projectId}")
-    public SuccessResponse<ProjectResponse> getProjectV1(@PathVariable Long projectId) {
-
-        ProjectResponse projectResponse = projectService.getProjectV1(projectId);
-        return SuccessResponse.onSuccess(projectResponse);
-    }
+//    @Operation(summary = "프로젝트 상세 조회")
+//    @GetMapping("V1/{projectId}")
+//    public SuccessResponse<ProjectResponse> getProjectV1(@PathVariable Long projectId) {
+//
+//        ProjectResponse projectResponse = projectService.getProjectV1(projectId);
+//        return SuccessResponse.onSuccess(projectResponse);
+//    }
 
     @Operation(summary = "프로젝트 상세 조회")
     @GetMapping("V2/{projectId}")
