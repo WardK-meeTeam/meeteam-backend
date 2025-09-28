@@ -16,7 +16,7 @@ public interface ProjectCategoryApplicationRepository extends JpaRepository<Proj
     dto.ProjectCounts(sum(pc.currentCount), sum(pc.recruitmentCount)
     )
     from ProjectCategoryApplication pc
-    where pc.project =: project
+    where pc.project = :project
     group by pc.project
     """)
     ProjectCounts findTotalCountsByProject(@Param("project") Project project);
