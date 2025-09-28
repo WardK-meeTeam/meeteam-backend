@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Where;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -193,5 +194,9 @@ public class Project extends BaseEntity {
         for (ProjectSkill projectSkill : projectSkills) {
             this.addProjectSkill(projectSkill);
         }
+    }
+
+    public void delete() {
+        this.isDeleted = true;
     }
 }
