@@ -7,12 +7,12 @@ import lombok.Getter;
 @Getter
 public class ProjectCounts {
 
-    private Long totalCount;
-    private Long totalRecruitmentCount;
+    private Long currentCount;
+    private Long recruitmentCount;
 
 
-    public ProjectCounts(Long totalCount, Long totalRecruitmentCount) {
-        this.totalCount = totalCount;
-        this.totalRecruitmentCount = totalRecruitmentCount;
+    public ProjectCounts(Long currentCount, Long recruitmentCount) {
+        this.currentCount = currentCount;
+        this.recruitmentCount = recruitmentCount;
     }
 }
