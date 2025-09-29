@@ -51,7 +51,7 @@ spring:
         hibernate:
             ddl-auto: create
         show-sql: true
-        defer-datasource-initialization: true
+        defer-datasource-initialization: true # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
         properties:
             hibernate:
                 format_sql: true
@@ -59,7 +59,7 @@ spring:
         open-in-view: false
     sql:
         init:
-            mode: never
+            mode: always
     data:
         redis:
             host: redis
@@ -185,6 +185,7 @@ cors:
         - https://api.meeteam.alom-sejong.com  # 백엔드 도메인 (Swagger 등)
         - http://localhost:3000                  # 로컬 개발용
         - http://localhost:3001                  # 추가 로컬 개발용
+        - https://localhost:3000                 # 로컬 개발용 (HTTPS)
 
     allowed-methods:
         - GET
