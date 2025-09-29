@@ -109,4 +109,12 @@ public class ProjectController {
 
         return SuccessResponse.onSuccess(myProjects);
     }
+
+    // 프로젝트의 연결된 레포 목록 조회
+    @Operation(summary = "프로젝트의 연결된 레포 목록 조회")
+    @GetMapping("/{projectId}/repos")
+    public SuccessResponse<List<ProjectRepoResponse>> getProjectRepos(@PathVariable Long projectId) {
+        List<ProjectRepoResponse> responses = projectService.getProjectRepos(projectId);
+        return SuccessResponse.onSuccess(responses);
+    }
 }
