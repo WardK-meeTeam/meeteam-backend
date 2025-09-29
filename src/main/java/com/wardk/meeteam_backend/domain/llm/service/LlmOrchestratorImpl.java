@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.domain.llm.service;
 
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewJob;
 import com.wardk.meeteam_backend.domain.codereview.repository.PrReviewJobRepository;
+import com.wardk.meeteam_backend.domain.codereview.service.CodeReviewChatService;
 import com.wardk.meeteam_backend.domain.llm.LlmConcurrencyLimiter;
 import com.wardk.meeteam_backend.domain.llm.entity.LlmTask;
 import com.wardk.meeteam_backend.domain.llm.entity.LlmTaskResult;
@@ -12,20 +13,14 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,6 +32,7 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
     private final PrReviewJobRepository prReviewJobRepository;
     private final LlmReviewService llmReviewService;
     private final LlmSummaryService llmSummaryService;
+    private final CodeReviewChatService codeReviewChatService;
     private final Executor asyncTaskExecutor;
     private final LlmConcurrencyLimiter limiter;
 
@@ -131,17 +127,17 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
         // 1. 각 파일에 대한 LLM 태스크 생성 및 저장 (별도 트랜잭션)
         List<LlmTask> fileTasks = createFileReviewTasksWithTransaction(reviewJob, files);
 
-        // 2. 파일 리뷰 태스크 병렬 실행
-        List<LlmTaskResult> fileReviewFutures = new ArrayList<>();
+        // 2. 파일 리뷰 태스크 병렬 실행 - CompletableFuture 리스트로 변경
+        List<CompletableFuture<LlmTaskResult>> fileReviewFutures = new ArrayList<>();
 
         for (LlmTask fileTask : fileTasks) {
-            LlmTaskResult llmTaskResult = executeFileReview(fileTask);
-            fileReviewFutures.add(llmTaskResult);
+            CompletableFuture<LlmTaskResult> future = executeFileReviewAsync(fileTask);
+            fileReviewFutures.add(future);
         }
 
-        // 3. 모든 파일 리뷰 완료 대기 및 결과 수집
+        // 3. 모든 파일 리뷰 완료 대기 및 결과 수집 - 타입 안전한 배열 생성
         CompletableFuture<Void> allFileReviewsCompleted = CompletableFuture.allOf(
-                fileReviewFutures.toArray(new CompletableFuture[0]));
+                fileReviewFutures.toArray(new CompletableFuture[fileReviewFutures.size()]));
 
         // 4. 모든 파일 리뷰 완료 후 요약 태스크 생성 및 실행
         CompletableFuture<LlmTaskResult> summaryFuture = allFileReviewsCompleted
@@ -236,110 +232,30 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
     public LlmTask createFileReviewTask(PrReviewJob reviewJob, PullRequestFile file) {
         return LlmTask.builder()
                 .prReviewJob(reviewJob)
-                .pullRequestFile(file)
+                .pullRequestFileId(file.getId())
+                .pullRequestFileName(file.getFileName())
                 .taskType(LlmTask.TaskType.FILE_REVIEW)
                 .status(LlmTask.TaskStatus.CREATED)
                 .priority(LlmTask.Priority.NORMAL)
                 .build();
     }
 
-    /**
-     * 파일 리뷰를 비동기적으로 실행한다.
-     * - 동시성 제한(세마포어) + 지연 분산(jitter)
-     * - per-call 가드 타임아웃(10s로 대폭 단축)
-     * - 재시도 없음 - 즉시 실패
-     * - 상태 저장 최소화
-     */
-
-    // 비동기(Async) -> 동기(Sync) 방식으로 변경
-    public LlmTaskResult executeFileReview(LlmTask fileTask) {
-        // 1) 실행 상태로 전환 (별도 트랜잭션)
-        updateFileTaskStatus(fileTask.getId(), LlmTask.TaskStatus.RUNNING);
-
-        Exception last = null;
-
-        log.info("파일 리뷰 시작: PR #{}, 파일: {}",
-                fileTask.getPrReviewJob().getPrNumber(),
-                fileTask.getPullRequestFile().getFileName());
-
-        CompletableFuture<LlmTaskResult> call = null;
-        try {
-
-                // 3) LLM 호출에 가드 타임아웃 적용 (10초로 대폭 단축)
-                call = CompletableFuture.supplyAsync(
-                        () -> llmReviewService.reviewFile(fileTask),
-                        asyncTaskExecutor // 타임아웃 제어를 위해 별도 스레드 풀 사용은 유지
-                );
-
-                LlmTaskResult result = call.get(Duration.ofSeconds(10).toMillis(), TimeUnit.MILLISECONDS);
-
-                // 4) 성공 처리 (별도 트랜잭션)
-                updateFileTaskWithSuccess(fileTask.getId(), result);
-
-                log.info("파일 리뷰 완료: PR #{}, 파일: {}",
-                        fileTask.getPrReviewJob().getPrNumber(),
-                        fileTask.getPullRequestFile().getFileName());
-
-                // 성공 시 결과 바로 반환
-                return result;
-
-        } catch (TimeoutException te) {
-            last = te;
-            if (call != null) {
-                call.cancel(true); // 타임아웃 시 태스크 취소 시도
-            }
-            log.warn("파일 리뷰 가드 타임아웃(10s): PR #{}, 파일: {}",
-                    fileTask.getPrReviewJob().getPrNumber(),
-                    fileTask.getPullRequestFile().getFileName());
-
-        } catch (ExecutionException ee) {
-            last = (ee.getCause() instanceof Exception) ? (Exception) ee.getCause() : ee;
-            log.warn("파일 리뷰 중 예외: PR #{}, 파일: {}, 원인: {}",
-                    fileTask.getPrReviewJob().getPrNumber(),
-                    fileTask.getPullRequestFile().getFileName(),
-                    last.toString());
-
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            last = ie;
-        }
-
-        // 6) 즉시 실패 처리 (별도 트랜잭션)
-        String msg = "리뷰 실패 (타임아웃 또는 오류)" + (last != null ? ": " + last.getMessage() : "");
-        updateFileTaskWithError(fileTask.getId(), msg);
-
-        // 실패 시 CompletableFuture 대신 직접 예외 발생
-        throw new RuntimeException(msg, last);
-    }
-
-
     private CompletableFuture<LlmTaskResult> executeFileReviewAsync(LlmTask fileTask) {
         return CompletableFuture.supplyAsync(() -> {
-            // 1) 실행 상태로 전환 (별도 트랜잭션)
-            updateFileTaskStatus(fileTask.getId(), LlmTask.TaskStatus.RUNNING);
-
-            Exception last = null;
-
-            // 재시도 없음 - 즉시 실패로 빠른 처리
-            log.info("파일 리뷰 시작: PR #{}, 파일: {}",
-                    fileTask.getPrReviewJob().getPrNumber(),
-                    fileTask.getPullRequestFile().getFileName());
-
-            CompletableFuture<LlmTaskResult> call = null;
             try {
-                // 2) 동시성 제한 + 최소 지연
+                // 1) 동시성 제한
                 limiter.acquire();
+
                 try {
-                    // 지연 시간 최소화 (10-30ms)
-                    Thread.sleep(ThreadLocalRandom.current().nextInt(10, 31));
+                    // 2) 실행 상태로 전환 (별도 트랜잭션)
+                    updateFileTaskStatus(fileTask.getId(), LlmTask.TaskStatus.RUNNING);
 
-                    // 3) LLM 호출에 가드 타임아웃 적용 (10초로 대폭 단축)
-                    call = CompletableFuture.supplyAsync(
-                            () -> llmReviewService.reviewFile(fileTask),
-                            asyncTaskExecutor // 전용 풀 사용
-                    );
+                    log.info("파일 리뷰 시작: PR #{}, 파일: {}",
+                            fileTask.getPrReviewJob().getPrNumber(),
+                            fileTask.getPullRequestFile().getFileName());
 
-                    LlmTaskResult result = call.get(Duration.ofSeconds(10).toMillis(), TimeUnit.MILLISECONDS);
+                    // 3) LLM 호출 - 직접 호출로 단순화
+                    LlmTaskResult result = llmReviewService.reviewFile(fileTask);
 
                     // 4) 성공 처리 (별도 트랜잭션)
                     updateFileTaskWithSuccess(fileTask.getId(), result);
@@ -354,32 +270,23 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
                     limiter.release(); // ★ 반드시 해제
                 }
 
-            } catch (TimeoutException te) {
-                last = te;
-                if (call != null) {
-                    call.cancel(true); // 타임아웃 시 태스크 취소 시도
-                }
-                log.warn("파일 리뷰 가드 타임아웃(10s): PR #{}, 파일: {}",
-                        fileTask.getPrReviewJob().getPrNumber(),
-                        fileTask.getPullRequestFile().getFileName());
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                String msg = "리뷰 중단됨: " + ie.getMessage();
+                updateFileTaskWithError(fileTask.getId(), msg);
+                throw new RuntimeException(msg, ie);
 
-            } catch (ExecutionException ee) {
-                last = (ee.getCause() instanceof Exception) ? (Exception) ee.getCause() : ee;
+            } catch (Exception e) {
+                String msg = "리뷰 실패: " + e.getMessage();
+                updateFileTaskWithError(fileTask.getId(), msg);
+
                 log.warn("파일 리뷰 중 예외: PR #{}, 파일: {}, 원인: {}",
                         fileTask.getPrReviewJob().getPrNumber(),
                         fileTask.getPullRequestFile().getFileName(),
-                        last.toString());
+                        e.toString());
 
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                last = ie;
+                throw new RuntimeException(msg, e);
             }
-
-            // 6) 즉시 실패 처리 (별도 트랜잭션)
-            String msg = "리뷰 실패 (타임아웃 또는 오류)" + (last != null ? ": " + last.getMessage() : "");
-            updateFileTaskWithError(fileTask.getId(), msg);
-
-            throw new RuntimeException(msg, last);
         }, asyncTaskExecutor);
     }
 
@@ -404,17 +311,52 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
         if (task != null) {
             task.completeWithSuccess(result);
             llmTaskRepository.save(task);
+
+            // 파일 리뷰 완료 시 채팅방에 메시지 추가
+            addFileReviewMessageToChat(task, result);
+        }
+    }
+
+    /**
+     * 파일 리뷰 결과를 채팅방에 메시지로 추가합니다.
+     */
+    private void addFileReviewMessageToChat(LlmTask task, LlmTaskResult result) {
+        try {
+            PrReviewJob reviewJob = task.getPrReviewJob();
+            if (reviewJob.getChatRoom() != null) {
+                String reviewContent = result.getContent();
+
+                log.info("파일 리뷰 메시지 채팅방 저장 시도 - 파일: {}, 채팅방 ID: {}",
+                        task.getPullRequestFileName(), reviewJob.getChatRoom().getId());
+
+                codeReviewChatService.addFileReviewMessage(
+                    reviewJob.getChatRoom().getId(),
+                    task.getPullRequestFileName(),
+                    reviewContent
+                );
+
+                log.info("파일 리뷰 메시지 채팅방 저장 완료 - 파일: {}", task.getPullRequestFileName());
+            } else {
+                log.warn("채팅방이 없어서 파일 리뷰 메시지를 저장할 수 없음 - 파일: {}, PR Job ID: {}",
+                        task.getPullRequestFile().getFileName(), reviewJob.getId());
+            }
+        } catch (Exception e) {
+            log.error("파일 리뷰 메시지 채팅방 저장 실패 - 파일: {}, 오류: {}",
+                    task.getPullRequestFile().getFileName(), e.getMessage(), e);
+            // 메시지 저장 실패해도 리뷰 프로세스는 계속 진행
         }
     }
 
     /**
      * 트랜잭션 내에서 파일 태스크 실패 처리
      */
+
     @Transactional
     protected void updateFileTaskWithError(Long taskId, String errorMessage) {
         LlmTask task = llmTaskRepository.findById(taskId).orElse(null);
         if (task != null) {
             task.completeWithError(errorMessage);
+            llmTaskRepository.save(task);
             llmTaskRepository.save(task);
         }
     }

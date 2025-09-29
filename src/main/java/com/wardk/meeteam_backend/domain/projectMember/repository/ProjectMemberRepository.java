@@ -20,4 +20,10 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
             "JOIN FETCH pm.subCategory s " +
             "WHERE pm.member.id = :memberId AND p.isDeleted = false")
     List<ProjectMember> findAllByMemberId(Long memberId);
+
+    /**
+     * 프로젝트의 모든 멤버를 조회합니다 (Member 정보 포함)
+     */
+    @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.member m WHERE pm.project.id = :projectId")
+    List<ProjectMember> findAllByProjectIdWithMember(Long projectId);
 }
