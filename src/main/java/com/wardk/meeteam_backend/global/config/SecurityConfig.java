@@ -81,7 +81,7 @@ public class SecurityConfig {
                 )
                 // 인증 필요 없는(화이트리스트) 경로 한 곳에서 관리
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers(SecurityUrls.WHITELIST.toArray(String[]::new)).permitAll()
+                        .requestMatchers(securityUrls.getWhitelist().toArray(String[]::new)).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated() // 나머지는 인증이 된 사용자만 가능
                 )
@@ -135,6 +135,9 @@ public class SecurityConfig {
         configuration.setMaxAge(corsProperties.getMaxAge());
 
         UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
+        /**
+         * "/**" -> 모든 API 사용가능 ( 추후에 admin API 를 따로 만들면 cors도 분리해서 설정가능)
+         */
         urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", configuration);
         return urlBasedCorsConfigurationSource;
     }
