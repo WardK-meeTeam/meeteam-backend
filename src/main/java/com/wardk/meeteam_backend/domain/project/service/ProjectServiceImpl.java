@@ -159,7 +159,7 @@ public class ProjectServiceImpl implements ProjectService {
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        if (!creator.getEmail().equals(requesterEmail)) {
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
