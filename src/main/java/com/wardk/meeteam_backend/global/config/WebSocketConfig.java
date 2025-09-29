@@ -58,7 +58,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // 클라이언트→서버 메시지 prefix
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
-
+        
         // RabbitMQ에서 사용할 destination prefix 추가 설정
         config.setPreservePublishOrder(true);
     }

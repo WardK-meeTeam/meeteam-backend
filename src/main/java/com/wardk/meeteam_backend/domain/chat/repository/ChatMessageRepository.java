@@ -36,9 +36,9 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 채팅방의 메시지를 최신순으로 페이징 조회 (최적화된 버전)
      * 필요한 컬럼만 선택하여 성능을 개선합니다.
-     *
+     * 
      * @param roomId 채팅방 ID
-     * @param pageable 페이징 정보
+     * @param pageable 페이징 정보  
      * @return Object[] 배열 형태의 메시지 데이터 (id, senderId, senderName, content, messageType, sentAt, isRead)
      */
     @Query("""
@@ -54,7 +54,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 채팅방 메시지 조회 (가장 빠른 버전 - ID와 기본 정보만)
      * 단순 메시지 목록이나 카운트가 필요할 때 사용
-     *
+     * 
      * @param roomId 채팅방 ID
      * @param pageable 페이징 정보
      * @return Object[] 배열 (id, content, sentAt)
@@ -70,7 +70,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 채팅방 메시지 ID 목록만 조회 (초고속)
      * 메시지 존재 여부 확인이나 간단한 처리용
-     *
+     * 
      * @param roomId 채팅방 ID
      * @param pageable 페이징 정보
      * @return 메시지 ID 목록
@@ -81,7 +81,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 특정 시간 이후 메시지 조회 (최적화된 버전)
      * 실시간 채팅에서 새 메시지 확인용
-     *
+     * 
      * @param roomId 채팅방 ID
      * @param afterTime 기준 시간
      * @param limit 최대 조회 개수
@@ -96,7 +96,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
         ORDER BY cm.sentAt ASC
         LIMIT :limit
         """)
-    List<Object[]> findRecentMessagesByRoomId(@Param("roomId") Long roomId,
+    List<Object[]> findRecentMessagesByRoomId(@Param("roomId") Long roomId, 
                                              @Param("afterTime") LocalDateTime afterTime,
                                              @Param("limit") int limit);
 

@@ -49,9 +49,9 @@ spring:
 
     jpa:
         hibernate:
-            ddl-auto: create
+            ddl-auto: update
         show-sql: true
-        defer-datasource-initialization: true
+        defer-datasource-initialization: false
         properties:
             hibernate:
                 format_sql: true
@@ -185,6 +185,7 @@ cors:
         - https://api.meeteam.alom-sejong.com  # 백엔드 도메인 (Swagger 등)
         - http://localhost:3000                  # 로컬 개발용
         - http://localhost:3001                  # 추가 로컬 개발용
+        - https://localhost:3000                 # 로컬 개발용 (HTTPS)
 
     allowed-methods:
         - GET
