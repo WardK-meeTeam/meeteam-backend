@@ -8,12 +8,12 @@ import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
 import com.wardk.meeteam_backend.domain.review.entity.Review;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
+import com.wardk.meeteam_backend.global.exception.CustomException;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.BatchSize;
-import org.hibernate.annotations.Where;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -175,18 +175,34 @@ public class Project extends BaseEntity {
         Map<Long, ProjectCategoryApplication> current = this.recruitments.stream()
                 .collect(Collectors.toMap(r -> r.getSubCategory().getId(), r -> r));
 
-        this.recruitments.clear();
+        for (ProjectCategoryApplication newPca : recruitments) {
+            ProjectCategoryApplication existing = current.get(newPca.getSubCategory().getId());
 
-        for (ProjectCategoryApplication pca : recruitments) {
-            ProjectCategoryApplication existing = current.get(pca.getSubCategory().getId());
+            if(existing != null) {
+                int oldCurrentCount = existing.getCurrentCount();
+                int oldRecruitmentCount = existing.getRecruitmentCount();
+                int newRecruitmentCount = newPca.getRecruitmentCount();
 
-            if (existing != null) { // 기존에 존재하면
-                pca.updateCurrentCount(existing.getCurrentCount());
-                this.addRecruitment(pca);
+                // 기존 모집에 참여자가 있었던 경우
+                if (oldCurrentCount > 0) {
+                    // 모집이 완료된 경우는 인원을 늘리는 것만 허용
+                    if (oldCurrentCount == oldRecruitmentCount && newRecruitmentCount < oldRecruitmentCount) {
+                        throw new CustomException(ErrorCode.RECRUITMENT_ALREADY_COMPLETED);
+                    }
+
+                    existing.updateRecruitmentCount(newRecruitmentCount);
+                }
+
             } else {
-                this.addRecruitment(ProjectCategoryApplication.createProjectCategoryApplication(pca.getSubCategory(), pca.getRecruitmentCount()));
+                this.addRecruitment(newPca);
             }
         }
+
+        this.recruitments.removeIf(existing -> recruitments.stream()
+                .noneMatch(n -> n.getSubCategory().getId().equals(existing.getSubCategory().getId())
+                )
+                && existing.getCurrentCount() == 0
+        );
     }
 
     public void updateProjectSkills(List<ProjectSkill> projectSkills) {

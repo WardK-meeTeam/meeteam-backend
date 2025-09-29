@@ -57,6 +57,18 @@ public class ProjectCategoryApplication {//project_대분류_모집
         this.currentCount = currentCount;
     }
 
+    public void updateRecruitmentCount(Integer newRecruitmentCount) {
+        if (newRecruitmentCount < 0) {
+            throw new CustomException(ErrorCode.INVALID_RECRUITMENT_COUNT);
+        }
+
+        if (newRecruitmentCount < this.currentCount) {
+            throw new CustomException(ErrorCode.INVALID_RECRUITMENT_COUNT);
+        }
+
+        this.recruitmentCount = newRecruitmentCount;
+    }
+
     @Builder
     public ProjectCategoryApplication(SubCategory subCategory, Integer recruitmentCount) {
         this.subCategory = subCategory;
