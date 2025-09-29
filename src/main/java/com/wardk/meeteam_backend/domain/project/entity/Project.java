@@ -185,6 +185,7 @@ public class Project extends BaseEntity {
 
                 // 기존 모집에 참여자가 있었던 경우
                 if (oldCurrentCount > 0) {
+                    // 모집이 완료된 경우는 인원을 늘리는 것만 허용
                     if (oldCurrentCount == oldRecruitmentCount && newRecruitmentCount < oldRecruitmentCount) {
                         throw new CustomException(ErrorCode.RECRUITMENT_ALREADY_COMPLETED);
                     }
