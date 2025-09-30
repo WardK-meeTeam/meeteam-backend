@@ -32,11 +32,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // 인증 생략 경로
         String uri = request.getRequestURI();
-        log.debug("JWT 필터 처리 중인 URI: {}", uri);
+        String method = request.getMethod();
+        log.debug("JWT 필터 처리 중인 URI: {}, Method: {}", uri, method);
 
         // 화이트리스트 경로는 JWT 인증을 건너뛰고 바로 다음 필터로 진행
-        if (securityUrls.isWhitelisted(uri)) {
-            log.debug("화이트리스트 경로로 인증 생략: {}", uri);
+        if (securityUrls.isWhitelisted(uri, method)) {
+            log.debug("화이트리스트 경로로 인증 생략: {} {}", method, uri);
             filterChain.doFilter(request, response);
             return;
         }

@@ -205,26 +205,55 @@ cors:
 
 security:
     whitelist:
-        - /webjars/**
-        - /swagger-resources/**
-        - /v3/api-docs/**
-        - /swagger-ui/**
-        - /swagger-ui.html
-        - /actuator/**
-        - /docs/**
-        - /default-ui.css
-        - /favicon.ico
-        - /api/login
-        - /api/auth/**
-        - /
-        - /uploads/**
-        - /api/register
-        - /api/project/register
-        - /oauth2/**
-        - /login/oauth2/**
-        - /login/oauth2/code/**
-        - /api/auth/oauth2/**
-        - /api/webhooks/github
-        - /api/v1/files/**
-        - index.html
-        - /api/projects/condition
+        - method: "*"
+          uri: /webjars/**
+        - method: "*"
+          uri: /swagger-resources/**
+        - method: "*"
+          uri: /v3/api-docs/**
+        - method: "*"
+          uri: /swagger-ui/**
+        - method: "*"
+          uri: /swagger-ui.html
+        - method: "*"
+          uri: /actuator/**
+        - method: "*"
+          uri: /docs/**
+        - method: "*"
+          uri: /default-ui.css
+        - method: "*"
+          uri: /favicon.ico
+        - method: "*"
+          uri: /api/login
+        - method: "*"
+          uri: /api/auth/**
+        - method: "*"
+          uri: /
+        - method: "*"
+          uri: /uploads/**
+        - method: "*"
+          uri: /api/register
+        - method: "*"
+          uri: /api/project/register
+        - method: "*"
+          uri: /oauth2/**
+        - method: "*"
+          uri: /login/oauth2/**
+        - method: "*"
+          uri: /login/oauth2/code/**
+        - method: "*"
+          uri: /api/auth/oauth2/**
+        - method: "*"
+          uri: /api/webhooks/github
+        - method: "*"
+          uri: /api/v1/files/**
+        - method: "*"
+          uri: index.html
+        - method: GET
+          uri: /api/projects/condition # 프로젝트 전체 조회
+        - method: GET
+          uri: /api/projects/* # 특정 사용자 프로필 보기
+        - method: GET
+          uri: /api/projects/V2/* # 프로젝트 상세 조회
+
+
