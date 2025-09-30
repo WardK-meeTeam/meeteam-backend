@@ -412,4 +412,23 @@ public class ProjectServiceImpl implements ProjectService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public ProjectEndResponse endProject(Long projectId, String requesterEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if(!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        if (project.getStatus() == ProjectStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+
+        project.endProject();
+
+        return ProjectEndResponse.responseDto(project.getId(), project.getStatus());
+    }
+
 }
