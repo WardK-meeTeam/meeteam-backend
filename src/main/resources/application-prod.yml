@@ -203,7 +203,6 @@ cors:
     allow-credentials: true
     max-age: 3600
 
-
 security:
     whitelist:
         - /webjars/**
