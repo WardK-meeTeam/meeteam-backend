@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
 import com.wardk.meeteam_backend.domain.applicant.repository.ProjectCategoryApplicationRepository;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
@@ -33,19 +34,23 @@ import com.wardk.meeteam_backend.web.projectMember.dto.ProjectMemberListResponse
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -64,6 +69,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectLikeRepository projectLikeRepository;
     private final ProjectCategoryApplicationRepository projectCategoryApplicationRepository;
     private final ProjectMemberServiceImpl projectMemberServiceImpl;
+    private final WebClient.Builder webClientBuilder;
 
 
     @Counted("post.project")
@@ -246,7 +252,36 @@ public class ProjectServiceImpl implements ProjectService {
             String[] parts = repoFullName.split("/");
             Long installationId = githubAppAuthService.fetchInstallationId(parts[0], parts[1]);
 
-            ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName, installationId);
+            String owner = parts[0];
+            String repo = parts[1];
+
+            // 설치 토큰 발급
+            if (installationId == null) {
+                throw new CustomException(ErrorCode.GITHUB_APP_NOT_INSTALLED);
+            }
+            String installationToken = githubAppAuthService.getInstallationToken(installationId);
+
+            // 레포 정보 조회
+            JsonNode repoInfo = webClientBuilder.baseUrl("https://api.github.com").build()
+                    .get()
+                    .uri("/repos/{owner}/{repo}", owner, repo)
+                    .headers(h -> h.setBearerAuth(installationToken))
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+
+            String description = repoInfo.get("description").asText();
+            Long starCount = repoInfo.get("stargazers_count").asLong();
+            Long watcherCount = repoInfo.get("watchers_count").asLong();
+            LocalDateTime pushedAt = LocalDateTime.parse(repoInfo.get("pushed_at").asText().replace("Z", ""));
+            String language = repoInfo.get("language").asText();
+
+            //로그
+            log.info("description={}, starCount={}, watcherCount={}, pushedAt={}, language={}",
+                    description, starCount, watcherCount, pushedAt, language);
+
+            ProjectRepo projectRepo = ProjectRepo.create(project, repoFullName, installationId, description, starCount, watcherCount, pushedAt, language);
             project.addRepo(projectRepo);
 
             projectRepoRepository.save(projectRepo);
@@ -353,6 +388,19 @@ public class ProjectServiceImpl implements ProjectService {
                 .collect(Collectors.toList());
 
         return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<ProjectRepoResponse> getProjectRepos(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        List<ProjectRepo> repos = projectRepoRepository.findAllByProjectId(projectId);
+
+        return repos.stream()
+                .map(ProjectRepoResponse::responseDto)
+                .collect(Collectors.toList());
     }
 
 }

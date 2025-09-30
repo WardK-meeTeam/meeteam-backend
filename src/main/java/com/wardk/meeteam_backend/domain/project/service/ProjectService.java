@@ -34,5 +34,8 @@ public interface ProjectService {
 
 //    ProjectResponse getProjectV1(Long projectId);
     ProjectWithLikeDto getProjectV2(Long projectId);
+
+    // 프로젝트 레포지토리 조회
+    List<ProjectRepoResponse> getProjectRepos(Long projectId);
 }
 

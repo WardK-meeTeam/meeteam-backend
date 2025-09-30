@@ -8,4 +8,5 @@ public interface PullRequestService {
 
     PullRequestResponse getPullRequest(String repoFullName, Integer prNumber);
     List<PullRequestResponse> getAllPullRequests(Long projectId);
+    List<PullRequestResponse> getAllPullRequestsInRepo(String repoFullName);
 }

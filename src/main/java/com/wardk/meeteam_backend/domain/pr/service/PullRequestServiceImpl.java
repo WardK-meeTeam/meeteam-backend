@@ -33,4 +33,10 @@ public class PullRequestServiceImpl implements PullRequestService {
 
         return PullRequestResponse.createList(prs);
     }
+
+    @Override
+    public List<PullRequestResponse> getAllPullRequestsInRepo(String repoFullName) {
+        List<PullRequest> prs = pullRequestRepository.findAllByRepoFullNameWithFiles(repoFullName);
+        return PullRequestResponse.createList(prs);
+    }
 }

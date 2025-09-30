@@ -49,9 +49,9 @@ spring:
 
     jpa:
         hibernate:
-            ddl-auto: create
+            ddl-auto: update
         show-sql: true
-        defer-datasource-initialization: true # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
+        defer-datasource-initialization: false # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
         properties:
             hibernate:
                 format_sql: true
@@ -59,7 +59,7 @@ spring:
         open-in-view: false
     sql:
         init:
-            mode: always
+            mode: never
     data:
         redis:
             host: redis
@@ -202,3 +202,29 @@ cors:
         - X-Total-Count
     allow-credentials: true
     max-age: 3600
+
+security:
+    whitelist:
+        - /webjars/**
+        - /swagger-resources/**
+        - /v3/api-docs/**
+        - /swagger-ui/**
+        - /swagger-ui.html
+        - /actuator/**
+        - /docs/**
+        - /default-ui.css
+        - /favicon.ico
+        - /api/login
+        - /api/auth/**
+        - /
+        - /uploads/**
+        - /api/register
+        - /api/project/register
+        - /oauth2/**
+        - /login/oauth2/**
+        - /login/oauth2/code/**
+        - /api/auth/oauth2/**
+        - /api/webhooks/github
+        - /api/v1/files/**
+        - index.html
+        - /api/projects/condition
