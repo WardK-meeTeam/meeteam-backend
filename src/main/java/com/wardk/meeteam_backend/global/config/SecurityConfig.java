@@ -81,7 +81,7 @@ public class SecurityConfig {
                 )
                 // 인증 필요 없는(화이트리스트) 경로 한 곳에서 관리
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers(securityUrls.getWhitelist().toArray(String[]::new)).permitAll()
+                        .requestMatchers(securityUrls.getRequestMatchers()).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated() // 나머지는 인증이 된 사용자만 가능
                 )
