@@ -45,6 +45,7 @@ public enum ErrorCode {
     RECRUITMENT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "완료된 모집은 인원을 줄일 수 없습니다."),
     INVALID_RECRUITMENT_COUNT(HttpStatus.BAD_REQUEST, "PROJECT400", "잘못된 모집 인원 입력입니다."),
     PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "이미 종료된 프로젝트입니다."),
+    PROJECT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "아직 종료되지 않은 프로젝트입니다."),
 
     // CHAT
     CHAT_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT404", "해당 쓰레드를 찾을 수 없습니다."),
@@ -78,6 +79,8 @@ public enum ErrorCode {
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND, "SKILL404", "해당 기술스택이 존재하지 않습니다."),
     SUBCATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBCATEGORY404", "해당 직무는 존재하지 않습니다."),
 
+    // REVIEW
+    ALREADY_REVIEWED(HttpStatus.BAD_REQUEST, "REVIEW400", "이미 리뷰를 작성한 프로젝트입니다."),
 
     //NOTIFICATION
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION404", "알림을 찾을 수 없습니다."),
