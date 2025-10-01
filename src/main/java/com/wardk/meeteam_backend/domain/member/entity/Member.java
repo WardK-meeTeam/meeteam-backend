@@ -53,6 +53,9 @@ public class Member extends BaseEntity {
     @Builder.Default
     private double temperature = 36.5;
 
+    @Version
+    private Long version;
+
     public void increaseRecommendCount() {
         this.recommendCount++;
         this.temperature = 36.5 + recommendCount * 0.1;
