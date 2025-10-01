@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.project.repository;
 
 import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchResponse;
 import org.springframework.data.domain.Page;
@@ -11,4 +12,7 @@ public interface ProjectRepositoryCustom {
 
 
     Page<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable);
+
+
+    Page<Project> findProjectsFromMainPageCondition(CategoryCondition condition, Pageable pageable);
 }

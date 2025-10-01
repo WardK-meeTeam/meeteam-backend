@@ -109,6 +109,11 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 
+
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'org.ehcache:ehcache:3.10.8'   // 최신 버전
+
+
 }
 
 dependencyManagement {
