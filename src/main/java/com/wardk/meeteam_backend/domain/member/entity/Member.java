@@ -46,6 +46,22 @@ public class Member extends BaseEntity {
 
     private Boolean isParticipating;
 
+    // 추천 받은 횟수
+    @Builder.Default
+    private int recommendCount = 0;
+
+    @Builder.Default
+    private double temperature = 36.5;
+
+    @Version
+    private Long version;
+
+    public void increaseRecommendCount() {
+        this.recommendCount++;
+        this.temperature = 36.5 + recommendCount * 0.1;
+    }
+
+
     //사용자가 회원가입 할때 넣은 소분류 항목들..
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
