@@ -26,8 +26,8 @@ import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.web.mainpage.dto.MainPageProjectDto;
-import com.wardk.meeteam_backend.web.mainpage.dto.SliceResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
+import com.wardk.meeteam_backend.web.mainpage.dto.ProjectConditionMainPageResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
 import com.wardk.meeteam_backend.web.projectCategoryApplication.dto.ProjectCounts;
 import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
@@ -38,7 +38,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -312,14 +311,14 @@ public class ProjectServiceImpl implements ProjectService {
 
         // 비로그인 -> isLiked 여부 항상 false;
         Page<ProjectConditionRequest> map = content.map(
-                project ->  {
+                project -> {
 
                     ProjectCounts totalCountsByProject = projectCategoryApplicationRepository.findTotalCountsByProject(project);
                     List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
 
                     Long currentCount = totalCountsByProject.getCurrentCount();
                     Long recruitmentCount = totalCountsByProject.getRecruitmentCount();
-
+                    log.info("userDetails={}",userDetails);
                     boolean isLiked = false; // 비로그인인 경우 isLiked 무조건 false;
                     if (userDetails != null) { // 로그인이 경우
                         isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
@@ -330,6 +329,31 @@ public class ProjectServiceImpl implements ProjectService {
 
         return map;
     }
+
+    @Override
+    public Page<ProjectConditionMainPageResponse> searchMainPageProject(CategoryCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails) {
+        Page<Project> content = projectRepository.findProjectsFromMainPageCondition(condition, pageable);
+
+        Page<ProjectConditionMainPageResponse> map = content.map(
+                project -> {
+                    ProjectCounts totalCountsByProject = projectCategoryApplicationRepository.findTotalCountsByProject(project);
+                    List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
+
+                    Long currentCount = totalCountsByProject.getCurrentCount();
+                    Long recruitmentCount = totalCountsByProject.getRecruitmentCount();
+
+                    boolean isLiked = false;
+                    if (userDetails != null) {
+                        isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
+                    }
+
+                    return new ProjectConditionMainPageResponse(project, isLiked, currentCount, recruitmentCount, projectMembers);
+                }
+        );
+
+        return map;
+    }
+
 
     @Override
     public List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails) {
@@ -377,27 +401,27 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
 
-    @Transactional(readOnly = true)
-    @Override
-    public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable) {
-        if (bigCategoryId == null || bigCategoryId <= 0) {
-            throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
-        }
-
-        // 대분류별 + 모집중 상태 프로젝트 조회
-        Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategory(
-                bigCategoryId,
-                Recruitment.RECRUITING,
-                pageable
-        );
-
-        // DTO 변환
-        List<MainPageProjectDto> dtoList = projectSlice.getContent().stream()
-                .map(MainPageProjectDto::responseDto)
-                .collect(Collectors.toList());
-
-        return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
-    }
+//    @Transactional(readOnly = true)
+//    @Override
+//    public SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable) {
+//        if (bigCategoryId == null || bigCategoryId <= 0) {
+//            throw new CustomException(ErrorCode.MAIN_PAGE_CATEGORY_NOT_FOUND);
+//        }
+//
+//        // 대분류별 + 모집중 상태 프로젝트 조회
+//        Slice<Project> projectSlice = projectRepository.findRecruitingProjectsByBigCategory(
+//                bigCategoryId,
+//                Recruitment.RECRUITING,
+//                pageable
+//        );
+//
+//        // DTO 변환
+//        List<MainPageProjectDto> dtoList = projectSlice.getContent().stream()
+//                .map(MainPageProjectDto::responseDto)
+//                .collect(Collectors.toList());
+//
+//        return SliceResponse.of(dtoList, projectSlice.hasNext(), projectSlice.getNumber());
+//    }
 
     @Transactional(readOnly = true)
     @Override
@@ -429,6 +453,14 @@ public class ProjectServiceImpl implements ProjectService {
         project.endProject();
 
         return ProjectEndResponse.responseDto(project.getId(), project.getStatus());
+    }
+
+    @Override
+    public void getProjects(Pageable pageable, CategoryCondition condition) {
+
+
+
+
     }
 
 }
