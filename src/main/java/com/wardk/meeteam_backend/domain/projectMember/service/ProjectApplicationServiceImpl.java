@@ -6,6 +6,8 @@ import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
+import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ApplicationStatus;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
@@ -47,6 +49,10 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (project.getStatus() == ProjectStatus.COMPLETED || project.getRecruitmentStatus() == Recruitment.CLOSED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
 
         Member member = memberRepository.findOptionByEmail(applicantEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -143,6 +149,10 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
         ProjectMemberApplication application = applicationRepository.findById(request.getApplicationId())
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
+
+        if (application.getProject().getStatus() == ProjectStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
 
         if(!application.getProject().getCreator().getEmail().equals(requesterEmail)){
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);

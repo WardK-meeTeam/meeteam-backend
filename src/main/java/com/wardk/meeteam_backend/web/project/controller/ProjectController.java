@@ -117,4 +117,13 @@ public class ProjectController {
         List<ProjectRepoResponse> responses = projectService.getProjectRepos(projectId);
         return SuccessResponse.onSuccess(responses);
     }
+
+    @Operation(summary = "프로젝트 종료")
+    @PostMapping("/{projectId}/complete")
+    public SuccessResponse<ProjectEndResponse> endProject(@PathVariable Long projectId,
+                                                          @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        ProjectEndResponse response = projectService.endProject(projectId, userDetails.getUsername());
+        return SuccessResponse.onSuccess(response);
+    }
 }

@@ -12,6 +12,7 @@ import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
+import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
@@ -162,6 +163,10 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
+        if (project.getStatus() == ProjectStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -235,6 +240,10 @@ public class ProjectServiceImpl implements ProjectService {
 
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (project.getStatus() == ProjectStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
 
         if (!project.getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
@@ -401,6 +410,25 @@ public class ProjectServiceImpl implements ProjectService {
         return repos.stream()
                 .map(ProjectRepoResponse::responseDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public ProjectEndResponse endProject(Long projectId, String requesterEmail) {
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if(!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        if (project.getStatus() == ProjectStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+
+        project.endProject();
+
+        return ProjectEndResponse.responseDto(project.getId(), project.getStatus());
     }
 
 }
