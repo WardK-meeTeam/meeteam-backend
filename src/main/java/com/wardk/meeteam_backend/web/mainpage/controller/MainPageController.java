@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,17 +34,18 @@ public class MainPageController {
     @GetMapping("/projects")
     public SuccessResponse<Page<ProjectConditionMainPageResponse>> getProjects(
             @ParameterObject CategoryCondition condition,
-            @ParameterObject Pageable pageable,
+            @ParameterObject @PageableDefault(
+                    page = 0,
+                    size = 20,
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
         return SuccessResponse.onSuccess(projectService.searchMainPageProject(condition, pageable, userDetails));
 
     }
 
-
-
-
-
-
+    // ...existing code...
 
 }

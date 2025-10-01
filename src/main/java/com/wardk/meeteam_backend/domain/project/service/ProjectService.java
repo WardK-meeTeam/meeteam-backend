@@ -22,10 +22,6 @@ public interface ProjectService {
     ProjectDeleteResponse deleteProject(Long projectId, String requesterEmail);
     List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail);
 
-    // 메인 페이지용 메서드
-    @Transactional(readOnly = true)
-//    SliceResponse<MainPageProjectDto> getRecruitingProjectsByCategory(Long bigCategoryId, Pageable pageable);
-
 
     // 참여중, 종료된 프로젝트 조회
     List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails);
@@ -44,6 +40,6 @@ public interface ProjectService {
     // 프로젝트 종료
     ProjectEndResponse endProject(Long projectId, String requesterEmail);
 
-    void getProjects(Pageable pageable, CategoryCondition condition);
+
 }
 

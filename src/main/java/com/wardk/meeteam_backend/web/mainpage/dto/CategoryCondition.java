@@ -8,5 +8,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class CategoryCondition {
 
-    private ProjectCategory projectCategory;
+    public ProjectCategory projectCategory;
 }
