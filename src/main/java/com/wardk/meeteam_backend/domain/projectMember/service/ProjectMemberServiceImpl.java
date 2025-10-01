@@ -4,6 +4,7 @@ import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplicat
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
@@ -99,6 +100,10 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
+        if (project.getStatus() == ProjectStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+
         Member creator = project.getCreator();
 
         if (!creator.getEmail().equals(requesterEmail)) {
@@ -126,6 +131,10 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (project.getStatus() == ProjectStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
 
         Member member = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
