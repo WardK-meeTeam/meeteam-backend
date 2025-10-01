@@ -6,6 +6,7 @@ import com.wardk.meeteam_backend.domain.category.entity.QSubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.QMember;
 import com.wardk.meeteam_backend.domain.member.entity.QMemberSubCategory;
 import com.wardk.meeteam_backend.domain.review.entity.QReview;
+import com.wardk.meeteam_backend.domain.review.entity.QReviewRecommendation;
 import com.wardk.meeteam_backend.web.member.dto.QReviewResponse;
 import com.wardk.meeteam_backend.web.member.dto.ReviewResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
 
         QReview review = QReview.review;
         QMember reviewer = QMember.member;
+        QReviewRecommendation reviewRecommendation = QReviewRecommendation.reviewRecommendation;
         // Removed unused Q*Category variables
 
         return queryFactory
@@ -33,8 +35,10 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                 ))
                 .from(review)
                 // reviewerId ↔ member 조인
-                .join(reviewer).on(review.reviewerId.eq(reviewer.id))
-                .where(review.revieweeId.eq(memberId))
+                .join(reviewer).on(review.reviewer.id.eq(reviewer.id))
+                // reviewId ↔ reviewRecommendation 조인 (left join)
+                .leftJoin(reviewRecommendation).on(review.id.eq(reviewRecommendation.review.id))
+                .where(reviewRecommendation.reviewee.id.eq(memberId))
                 .fetch();
 
     }
