@@ -268,6 +268,34 @@ public class JwtUtil {
             .compact();
   }
 
+  /**
+   * OAuth2 사용자를 위한 RefreshToken 생성 (Member 객체 기반)
+   */
+  public String createRefreshTokenForOAuth2(Member member) {
+    if (member == null) {
+      throw new IllegalArgumentException("Member cannot be null");
+    }
+    if (member.getEmail() == null || member.getEmail().isEmpty()) {
+      throw new IllegalArgumentException("Member email cannot be null or empty");
+    }
+    if (member.getRole() == null) {
+      throw new IllegalArgumentException("Member role cannot be null");
+    }
+
+    log.info("OAuth2 리프레시 토큰 생성 중: 회원: {}", member.getEmail());
+
+    return Jwts.builder()
+            .subject(member.getEmail())
+            .claim("category", REFRESH_CATEGORY)
+            .claim("username", member.getEmail())
+            .claim("role", member.getRole().name())
+            .claim("id", member.getId())
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + refreshTokenExpTime))
+            .signWith(getSignKey())
+            .compact();
+  }
+
   public String createAccessTokenForOAuth2Email(String email, String name) {
     if (email == null || email.isEmpty()) {
       throw new IllegalArgumentException("Email cannot be null or empty");
@@ -284,6 +312,41 @@ public class JwtUtil {
             .expiration(new Date(System.currentTimeMillis() + accessTokenExpTime))
             .signWith(getSignKey())
             .compact();
+  }
+
+  /**
+   * OAuth2 사용자를 위한 RefreshToken 생성 (이메일 기반)
+   */
+  public String createRefreshTokenForOAuth2Email(String email, String name) {
+    if (email == null || email.isEmpty()) {
+      throw new IllegalArgumentException("Email cannot be null or empty");
+    }
+
+    log.info("OAuth2 리프레시 토큰 생성 중: 이메일: {}", email);
+
+    return Jwts.builder()
+            .subject(email)
+            .claim("category", REFRESH_CATEGORY)
+            .claim("username", email)
+            .claim("role", "USER") // 기본 역할 설정
+            .issuedAt(new Date(System.currentTimeMillis()))
+            .expiration(new Date(System.currentTimeMillis() + refreshTokenExpTime))
+            .signWith(getSignKey())
+            .compact();
+  }
+
+  /**
+   * Refresh Token 검증 (OAuth2용)
+   */
+  public boolean validateRefreshToken(String token) {
+    try {
+      Claims claims = getClaims(token);
+      String category = claims.get("category", String.class);
+      return REFRESH_CATEGORY.equals(category) && !isExpired(token);
+    } catch (Exception e) {
+      log.warn("Refresh Token 검증 실패: {}", e.getMessage());
+      return false;
+    }
   }
 
 }
