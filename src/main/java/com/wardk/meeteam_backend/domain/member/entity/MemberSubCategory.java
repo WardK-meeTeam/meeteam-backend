@@ -17,12 +17,12 @@ public class MemberSubCategory extends BaseEntity { // 중간테이블
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //소분류이름
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
 
+    //소분류이름
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_category_id")
     private SubCategory subCategory;

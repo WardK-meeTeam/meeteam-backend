@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.web.member.controller;
 
+import com.wardk.meeteam_backend.web.member.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 
 
@@ -7,18 +8,20 @@ import io.swagger.v3.oas.annotations.Operation;
 import com.wardk.meeteam_backend.domain.member.service.MemberProfileService;
 import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileResponse;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateRequest;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -71,7 +74,22 @@ public class MemberController {
         return SuccessResponse.onSuccess(profile);
     }
 
+    @Operation(summary = "메인 페이지 사용자 카드 조회 " , description = "메인 페이지에서 팀을 구해요 에서 전체 사용자의 프로필 정보를 조회합니다.")
+    @GetMapping("api/members/all")
+    public SuccessResponse<List<MemberCardResponse>> getAllMembers() {
+        List<MemberCardResponse> cards = memberProfileService.getAllMemberCards();
+
+        return SuccessResponse.onSuccess(cards);
+    }
 
 
-
+    @Operation(summary = "사용자 조건 검색", description = "사용자 이름, 플랫폼, 분야, 기술 스택 등 다양한 조건으로 사용자를 검색합니다.")
+    @GetMapping("api/members/search")
+    public SuccessResponse<List<MemberCardResponse>> searchMembers(
+            @ParameterObject MemberSearchRequest searchRequest,
+            @ParameterObject Pageable pageable
+            ) {
+        List<MemberCardResponse> searchResults = memberProfileService.searchMembers(searchRequest, pageable);
+        return SuccessResponse.onSuccess(searchResults);
+    }
 }
