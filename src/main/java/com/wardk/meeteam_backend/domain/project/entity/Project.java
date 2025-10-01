@@ -215,4 +215,10 @@ public class Project extends BaseEntity {
     public void delete() {
         this.isDeleted = true;
     }
+
+    public void endProject() {
+        this.status = ProjectStatus.COMPLETED;
+        this.recruitmentStatus = Recruitment.CLOSED;
+        this.endDate = LocalDate.now();
+    }
 }

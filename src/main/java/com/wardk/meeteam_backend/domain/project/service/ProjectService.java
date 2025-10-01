@@ -37,5 +37,8 @@ public interface ProjectService {
 
     // 프로젝트 레포지토리 조회
     List<ProjectRepoResponse> getProjectRepos(Long projectId);
+
+    // 프로젝트 종료
+    ProjectEndResponse endProject(Long projectId, String requesterEmail);
 }
 

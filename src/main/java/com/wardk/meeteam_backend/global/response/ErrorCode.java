@@ -44,6 +44,7 @@ public enum ErrorCode {
     INVALID_PROJECT_DATE(HttpStatus.BAD_REQUEST, "PROJECT400", "종료일은 시작일 이후여야 합니다."),
     RECRUITMENT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "완료된 모집은 인원을 줄일 수 없습니다."),
     INVALID_RECRUITMENT_COUNT(HttpStatus.BAD_REQUEST, "PROJECT400", "잘못된 모집 인원 입력입니다."),
+    PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "이미 종료된 프로젝트입니다."),
 
     // CHAT
     CHAT_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT404", "해당 쓰레드를 찾을 수 없습니다."),
