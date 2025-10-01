@@ -13,3 +13,4 @@ public interface MemberRepositoryCustom {
     Member getProfile(Long memberId);
 
 }
+

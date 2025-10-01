@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -64,6 +65,7 @@ public class Member extends BaseEntity {
 
     //사용자가 회원가입 할때 넣은 소분류 항목들..
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 500) // N+1 문제 해결을 위한 배치 로딩
     @Builder.Default
     List<MemberSubCategory> subCategories = new ArrayList<>();
 
@@ -74,6 +76,7 @@ public class Member extends BaseEntity {
 
     //사용자 기술 스택
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 500) // N+1 문제 해결을 위한 배치 로딩
     @Builder.Default
     List<MemberSkill> memberSkills = new ArrayList<>();
 
@@ -84,6 +87,7 @@ public class Member extends BaseEntity {
 
 
     @OneToMany(mappedBy = "member")
+    @BatchSize(size = 500) // N+1 문제 해결을 위한 배치 로딩
     @Builder.Default
     List<ProjectMember> projectMembers = new ArrayList<>();
 

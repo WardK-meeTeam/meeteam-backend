@@ -42,6 +42,10 @@ public class MemberProfileResponse {
 
     private String introduce;
 
+    private int recommendCount;
+
+    private double temperature;
+
     private List<ReviewResponse> reviewList;
 
     @Schema(description = "프로필 이미지 URL")
@@ -74,6 +78,8 @@ public class MemberProfileResponse {
         this.isParticipating = member.getIsParticipating();
         this.projectCount = member.getProjectMembers().size();
         this.introduce = member.getIntroduction();
+        this.recommendCount = member.getRecommendCount();
+        this.temperature = member.getTemperature();
         this.projectList = member.getProjectMembers().stream()
                 .map(projectMember -> projectMember.getProject())
                 .filter(project -> !project.isDeleted())
