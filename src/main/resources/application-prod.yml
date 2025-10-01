@@ -255,5 +255,7 @@ security:
           uri: /api/projects/* # 특정 사용자 프로필 보기
         - method: GET
           uri: /api/projects/V2/* # 프로젝트 상세 조회
+        - method: GET
+          uri: /api/main/projects
 
 

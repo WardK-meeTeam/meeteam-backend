@@ -1,12 +1,15 @@
 package com.wardk.meeteam_backend.web.projectMember.dto;
 
-import com.wardk.meeteam_backend.domain.member.entity.JobType;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
+
 @Getter
 @Builder
-public class ProjectMemberListResponse {
+public class ProjectMemberListResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long memberId;
     private String name;
