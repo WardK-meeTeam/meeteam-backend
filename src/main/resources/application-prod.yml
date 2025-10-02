@@ -242,6 +242,8 @@ security:
         - method: "*"
           uri: /login/oauth2/code/**
         - method: "*"
+          uri: /index.html
+        - method: "*"
           uri: /api/auth/oauth2/**
         - method: "*"
           uri: /api/webhooks/github
@@ -255,5 +257,7 @@ security:
           uri: /api/projects/* # 특정 사용자 프로필 보기
         - method: GET
           uri: /api/projects/V2/* # 프로젝트 상세 조회
+        - method: GET
+          uri: /api/main/projects
 
 

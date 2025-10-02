@@ -4,6 +4,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.wardk.meeteam_backend.domain.project.entity.*;
+import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,19 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
 
         return projects;
     }
+
+    @Override
+    public Page<Project> findProjectsFromMainPageCondition(CategoryCondition condition, Pageable pageable) {
+        return applyPagination(pageable,qf ->
+                qf.select(project)
+                        .from(project)
+                        .join(project.creator, member).fetchJoin()
+                        .where(
+                                notDeleted(),
+                                projectCategoryEq(condition.getProjectCategory())
+                        ));
+    }
+
 
     private BooleanExpression projectTechNameExists(TechStack techStack) {
         if (techStack == null) return null;

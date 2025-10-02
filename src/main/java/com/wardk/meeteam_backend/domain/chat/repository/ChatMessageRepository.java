@@ -22,23 +22,23 @@ import java.util.List;
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
     /**
-     * 채팅방의 메시지를 최신순으로 페이징 조회합니다. (기존 방식 - 호환성 유지)
+     * 채팅방의 메시지를 페이징 조회합니다. (기존 방식 - 호환성 유지)
+     * Sort는 Pageable에서 처리됩니다.
      *
      * @param roomId 채팅방 ID
-     * @param pageable 페이징 정보
+     * @param pageable 페이징 정보 (Sort 포함)
      * @return 페이징된 채팅 메시지 목록
      */
-    @Query("SELECT cm FROM ChatMessage cm " +
-           "WHERE cm.chatRoom.id = :roomId " +
-           "ORDER BY cm.sentAt DESC")
+    @Query("SELECT cm FROM ChatMessage cm WHERE cm.chatRoom.id = :roomId")
     Page<ChatMessage> findByChatRoomIdOrderBySentAtDesc(@Param("roomId") Long roomId, Pageable pageable);
 
     /**
-     * 채팅방의 메시지를 최신순으로 페이징 조회 (최적화된 버전)
+     * 채팅방의 메시지를 페이징 조회 (최적화된 버전)
      * 필요한 컬럼만 선택하여 성능을 개선합니다.
-     * 
+     * Sort는 Pageable에서 처리됩니다.
+     *
      * @param roomId 채팅방 ID
-     * @param pageable 페이징 정보  
+     * @param pageable 페이징 정보 (Sort 포함)
      * @return Object[] 배열 형태의 메시지 데이터 (id, senderId, senderName, content, messageType, sentAt, isRead)
      */
     @Query("""
@@ -54,28 +54,29 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 채팅방 메시지 조회 (가장 빠른 버전 - ID와 기본 정보만)
      * 단순 메시지 목록이나 카운트가 필요할 때 사용
-     * 
+     * Sort는 Pageable에서 처리됩니다.
+     *
      * @param roomId 채팅방 ID
-     * @param pageable 페이징 정보
+     * @param pageable 페이징 정보 (Sort 포함)
      * @return Object[] 배열 (id, content, sentAt)
      */
     @Query("""
         SELECT cm.id, cm.content, cm.sentAt
         FROM ChatMessage cm
         WHERE cm.chatRoom.id = :roomId
-        ORDER BY cm.sentAt DESC
         """)
     Page<Object[]> findBasicMessagesByRoomId(@Param("roomId") Long roomId, Pageable pageable);
 
     /**
      * 채팅방 메시지 ID 목록만 조회 (초고속)
      * 메시지 존재 여부 확인이나 간단한 처리용
-     * 
+     * Sort는 Pageable에서 처리됩니다.
+     *
      * @param roomId 채팅방 ID
-     * @param pageable 페이징 정보
+     * @param pageable 페이징 정보 (Sort 포함)
      * @return 메시지 ID 목록
      */
-    @Query("SELECT cm.id FROM ChatMessage cm WHERE cm.chatRoom.id = :roomId ORDER BY cm.sentAt DESC")
+    @Query("SELECT cm.id FROM ChatMessage cm WHERE cm.chatRoom.id = :roomId")
     Page<Long> findMessageIdsByRoomId(@Param("roomId") Long roomId, Pageable pageable);
 
     /**

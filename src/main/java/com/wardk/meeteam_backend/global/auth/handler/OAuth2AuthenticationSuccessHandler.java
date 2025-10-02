@@ -8,6 +8,7 @@ import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.global.config.OAuth2Properties;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -93,6 +94,10 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
                 // GitHub는 이미 Member가 있으므로 바로 JWT 생성하고 리다이렉트
                 String accessToken = jwtUtil.createAccessTokenForOAuth2(member);
+                String refreshToken = jwtUtil.createRefreshTokenForOAuth2(member);
+
+                setRefreshTokenCookie(response, refreshToken);
+
                 request.getSession().invalidate();
 
                 boolean isNewMember = false; // 임시로 false
@@ -122,6 +127,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
             // JWT 토큰 생성
             String accessToken;
+            String refreshToken;
             if (member != null) {
                 // CustomSecurityUserDetails 생성 및 SecurityContext 등록
                 CustomSecurityUserDetails userDetails = new CustomSecurityUserDetails(member);
@@ -130,9 +136,13 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
                 accessToken = jwtUtil.createAccessTokenForOAuth2(member);
+                refreshToken = jwtUtil.createRefreshTokenForOAuth2(member);
             } else {
                 accessToken = jwtUtil.createAccessTokenForOAuth2Email(email, name);
+                refreshToken = jwtUtil.createRefreshTokenForOAuth2(member);
             }
+
+            setRefreshTokenCookie(response, refreshToken);
 
             // 세션 무효화
             request.getSession().invalidate();
@@ -157,6 +167,20 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             String errorRedirectUrl = oAuth2Properties.getRedirect().getFailureUrlWithError("oauth2_success_handler_error");
             response.sendRedirect(errorRedirectUrl);
         }
+    }
+
+    /**
+     * Refresh Token 쿠키 설정 메서드
+     */
+    private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);  // JS 접근 불가
+        refreshTokenCookie.setSecure(false);   // 개발환경에서는 false (배포시 true)
+        refreshTokenCookie.setPath("/");       // 모든 경로에서 유효
+        refreshTokenCookie.setMaxAge((int) (jwtUtil.getRefreshExpirationTime() / 1000)); // 30일
+
+        response.addCookie(refreshTokenCookie);
+        log.info("Refresh Token 쿠키 설정 완료");
     }
 
     /**

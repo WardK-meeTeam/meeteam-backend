@@ -35,9 +35,13 @@ public class JwtFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         log.debug("JWT 필터 처리 중인 URI: {}, Method: {}", uri, method);
 
-        // 화이트리스트 경로는 JWT 인증을 건너뛰고 바로 다음 필터로 진행
+        // 화이트리스트 경로는 JWT 인증을 건너뛰지만, 토큰이 있으면 사용자 정보를 설정
         if (securityUrls.isWhitelisted(uri, method)) {
             log.debug("화이트리스트 경로로 인증 생략: {} {}", method, uri);
+
+            // 화이트리스트 경로에서도 토큰이 있으면 사용자 정보를 SecurityContext에 설정
+            setUserDetailsIfTokenExists(request);
+
             filterChain.doFilter(request, response);
             return;
         }
@@ -49,7 +53,6 @@ public class JwtFilter extends OncePerRequestFilter {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             log.error("토큰이 존재하지 않습니다.");
             filterChain.doFilter(request, response);
-
             return;
         }
 
@@ -58,34 +61,72 @@ public class JwtFilter extends OncePerRequestFilter {
         // Bearer 부분 제거 후 순수 토큰만 획득
         String token = authorization.split(" ")[1];
 
-        //토큰 소멸 시간 검증
-        if (jwtUtil.isExpired(token)) {
-
-            System.out.println("token expired");
+        // 토큰 처리 및 사용자 정보 설정
+        if (processTokenAndSetUserDetails(token)) {
             filterChain.doFilter(request, response);
-
-            //조건이 해당되면 메소드 종료 (필수)
-            return;
+        } else {
+            filterChain.doFilter(request, response);
         }
+    }
 
-        //토큰에서 username과 role 획득
-        String email = jwtUtil.getUsername(token);
-        Long memberId = jwtUtil.getMemberId(token);
+    /**
+     * 화이트리스트 경로에서 토큰이 있으면 사용자 정보를 설정
+     */
+    private void setUserDetailsIfTokenExists(HttpServletRequest request) {
+        try {
+            String authorization = request.getHeader("Authorization");
+            if (authorization != null && authorization.startsWith("Bearer ")) {
+                String token = authorization.split(" ")[1];
 
-        //user를 생성하여 값 set
-        Member member = Member.builder()
-                .email(email)
-                .id(memberId)
-                .build();
+                // 토큰이 유효하면 사용자 정보 설정
+                if (!jwtUtil.isExpired(token)) {
+                    processTokenAndSetUserDetails(token);
+                    log.debug("화이트리스트 경로에서 토큰 기반 사용자 정보 설정 완료");
+                }
+            }
+        } catch (Exception e) {
+            // 화이트리스트 경로에서는 토큰 파싱 실패해도 계속 진행
+            log.debug("화이트리스트 경로에서 토큰 파싱 실패, 익명 사용자로 진행: {}", e.getMessage());
+        }
+    }
 
-        //UserDetails에 회원 정보 객체 담기
-        CustomSecurityUserDetails customSecurityUserDetails = new CustomSecurityUserDetails(member);
+    /**
+     * 토큰을 처리하고 사용자 정보를 SecurityContext에 설정
+     */
+    private boolean processTokenAndSetUserDetails(String token) {
+        try {
+            // 토큰 소멸 시간 검증
+            if (jwtUtil.isExpired(token)) {
+                log.debug("토큰이 만료됨");
+                return false;
+            }
 
-        //스프링 시큐리티 인증 토큰 생성
-        Authentication authToken = new UsernamePasswordAuthenticationToken(customSecurityUserDetails, null, customSecurityUserDetails.getAuthorities());
-        //세션에 사용자 등록
-        SecurityContextHolder.getContext().setAuthentication(authToken);
+            // 토큰에서 username과 memberId 획득
+            String email = jwtUtil.getUsername(token);
+            Long memberId = jwtUtil.getMemberId(token);
 
-        filterChain.doFilter(request, response);
+            // Member 객체 생성
+            Member member = Member.builder()
+                    .email(email)
+                    .id(memberId)
+                    .build();
+
+            // UserDetails에 회원 정보 객체 담기
+            CustomSecurityUserDetails customSecurityUserDetails = new CustomSecurityUserDetails(member);
+
+            // 스프링 시큐리티 인증 토큰 생성
+            Authentication authToken = new UsernamePasswordAuthenticationToken(
+                    customSecurityUserDetails, null, customSecurityUserDetails.getAuthorities());
+
+            // 세션에 사용자 등록
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            log.debug("사용자 정보 SecurityContext에 설정 완료: {}", email);
+            return true;
+
+        } catch (Exception e) {
+            log.error("토큰 처리 중 오류 발생: {}", e.getMessage());
+            return false;
+        }
     }
 }
