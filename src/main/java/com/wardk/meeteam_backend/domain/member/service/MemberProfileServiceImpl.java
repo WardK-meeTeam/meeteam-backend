@@ -12,12 +12,11 @@ import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileResponse;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateRequest;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateResponse;
-import com.wardk.meeteam_backend.web.member.dto.ReviewResponse;
+import com.wardk.meeteam_backend.web.member.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -119,6 +118,42 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         return new MemberProfileUpdateResponse(savedMember);
     }
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberCardResponse> getAllMemberCards() {
+
+        List<Member> members = memberRepository.findAll();
+
+        if (members.isEmpty()) {
+            log.info("=== 조회된 회원이 없습니다. ===");
+            return List.of();
+        }
+
+        return members.stream()
+                .map(MemberCardResponse::responseToDto)
+                .toList();
+    }
+
+    /**
+     * 회원 검색 (SQL Repository에서 필터링/정렬/페이징 수행)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
+
+        Page<Member> memberPage = memberRepository.searchMembers(
+                searchRequest.getSubCategory(),
+                searchRequest.getIsParticipating(),
+                pageable
+        );
+
+        List<Member> members = memberPage.getContent();
+
+        return members.stream()
+                .map(MemberCardResponse::responseToDto)
+                .toList();
+    }
     /**
      * 회원 관심 분야 업데이트
      */
@@ -152,4 +187,6 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             member.addMemberSkill(skill);
         }
     }
+
+
 }
