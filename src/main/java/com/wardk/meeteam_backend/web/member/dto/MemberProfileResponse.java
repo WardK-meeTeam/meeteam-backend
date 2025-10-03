@@ -38,7 +38,7 @@ public class MemberProfileResponse {
 
     private int projectCount;
 
-    private int reviewCount;
+    //private int reviewCount;
 
     private String introduce;
 
@@ -46,7 +46,7 @@ public class MemberProfileResponse {
 
     private double temperature;
 
-    private List<ReviewResponse> reviewList;
+    //private List<ReviewResponse> reviewList;
 
     @Schema(description = "프로필 이미지 URL")
     private String profileImageUrl;

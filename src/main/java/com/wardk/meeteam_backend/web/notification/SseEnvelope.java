@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.web.notification.dto;
+package com.wardk.meeteam_backend.web.notification;
 
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import lombok.*;

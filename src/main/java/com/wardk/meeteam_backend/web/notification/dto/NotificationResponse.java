@@ -4,9 +4,8 @@ package com.wardk.meeteam_backend.web.notification.dto;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
-import lombok.AllArgsConstructor;
+import com.wardk.meeteam_backend.web.notification.payload.NotificationPayload;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
@@ -28,18 +27,16 @@ public class NotificationResponse {
     private boolean isRead;
     private LocalDate createdAt;
     private Long applicationId; // 지원서 자체 ID
-
-    private NotificationPayLoad payload;
+    private NotificationPayload payload;
 
 
     public NotificationResponse(Notification notification) {
         this.id = notification.getId();
         this.type = notification.getType();
-        this.message = notification.getMessage();
         this.isRead = notification.isRead();
         this.createdAt = LocalDate.from(notification.getCreatedAt());
         this.applicationId = notification.getApplicationId();
-        this.payload = new NotificationPayLoad(notification.getProject(), notification.getReceiver());
+        this.payload = new NotificationPayload(notification.getProject(), notification.getReceiver());
     }
 
 }

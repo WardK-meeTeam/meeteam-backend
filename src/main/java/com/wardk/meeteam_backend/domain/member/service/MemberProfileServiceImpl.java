@@ -4,10 +4,7 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.member.repository.MemberRepositoryCustom;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
-import com.wardk.meeteam_backend.domain.review.repository.ReviewRepository;
-import com.wardk.meeteam_backend.domain.review.repository.ReviewRepositoryCustom;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -29,9 +26,6 @@ import java.util.List;
 public class MemberProfileServiceImpl implements MemberProfileService {
 
     private final MemberRepository memberRepository;
-    private final MemberRepositoryCustom memberRepositoryCustom;
-    private final ReviewRepository reviewRepository;
-    private final ReviewRepositoryCustom reviewRepositoryCustom;
     private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
     private final S3FileService s3FileService;
@@ -47,9 +41,9 @@ public class MemberProfileServiceImpl implements MemberProfileService {
 
         MemberProfileResponse memberProfileResponse = new MemberProfileResponse(member, memberId);
 
-        List<ReviewResponse> reviewResponses = reviewRepositoryCustom.getReview(member.getId());
-        memberProfileResponse.setReviewList(reviewResponses);
-        memberProfileResponse.setReviewCount(reviewResponses.size());
+//        List<ReviewResponse> reviewResponses = reviewRepositoryCustom.getReview(member.getId());
+//        memberProfileResponse.setReviewList(reviewResponses);
+//        memberProfileResponse.setReviewCount(reviewResponses.size());
 
         // 프로필 사진 처리
         if (member.getStoreFileName() != null && !member.getStoreFileName().trim().isEmpty()) {

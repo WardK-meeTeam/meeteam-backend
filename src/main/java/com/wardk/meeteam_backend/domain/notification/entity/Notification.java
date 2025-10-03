@@ -30,9 +30,6 @@ public class Notification extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-    // 알림 내용 (리스트에 출력될 메시지)
-    @Column(nullable = false)
-    private String message;
 
     // 읽음 여부
     private boolean isRead;
@@ -50,10 +47,9 @@ public class Notification extends BaseEntity {
     private Project project;
 
     @Builder
-    public Notification(Member receiver, NotificationType type, String message, boolean isRead, Project project, Long actorId, Long applicationId) {
+    public Notification(Member receiver, NotificationType type,boolean isRead, Project project, Long actorId, Long applicationId) {
         this.receiver = receiver;
         this.type = type;
-        this.message = message;
         this.isRead = isRead;
         this.project = project;
         this.actorId = actorId;
