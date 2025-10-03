@@ -3,13 +3,15 @@ package com.wardk.meeteam_backend.web.member.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Schema(description = "회원 검색 요청 DTO")
 public class MemberSearchRequest {
 
-    @Schema(description = "서브카테고리 이름", example = "안드로이드")
-    private String subCategory;
+    @Schema(description = "대분류 분야", example = "백엔드, 프론트엔드, 디자인, 기획, 기타")
+    private List<String> bigCategories;
 
-    @Schema(description = "참여 가능 여부", example = "true")
-    private Boolean isParticipating;
+    @Schema(description = "기술 스택", example = "Java, Spring, ...")
+    private List<String> skillList;
 }

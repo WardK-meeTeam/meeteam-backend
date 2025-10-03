@@ -25,28 +25,72 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Boolean existsByEmail(String email);
 
     /**
-     * 동적 조건으로 회원 검색 (페이징, 정렬 포함)
-     * 회원이 여러 서브카테고리를 가질 수 있으므로 포함 여부로 검색
-     *
-     * @param subCategory     서브카테고리 이름 (회원의 서브카테고리 중 하나라도 일치하면 포함)
-     * @param isParticipating 참여 가능 여부
-     * @param pageable        페이징 및 정렬 정보
-     * @return 검색된 회원 목록
+     * 대분류와 기술스택으로 회원 검색 (조건이 있을 때만)
      */
-    @Query("""
-            SELECT DISTINCT m
-            FROM Member m
-            WHERE (:subCategory IS NULL 
-                   OR EXISTS (
-                       SELECT 1 FROM MemberSubCategory msc 
-                       WHERE msc.member = m 
-                       AND msc.subCategory.name = :subCategory
-                   ))
-            AND (:isParticipating IS NULL OR m.isParticipating = :isParticipating)
-            """)
-    Page<Member> searchMembers(
-            @Param("subCategory") String subCategory,
-            @Param("isParticipating") Boolean isParticipating,
+    @Query(value = """
+            SELECT DISTINCT m.*
+            FROM member m
+            WHERE  EXISTS (
+                SELECT 1 
+                FROM member_sub_category ms
+                JOIN sub_category sc ON sc.sub_category_id = ms.sub_category_id
+                JOIN big_category bc ON bc.big_category_id = sc.big_category_id
+                WHERE ms.member_id = m.member_id 
+                  AND bc.big_category IN (:bigCategories)
+            )
+            AND EXISTS (
+                SELECT 1 
+                FROM member_skill msk
+                JOIN skill s ON s.skill_id = msk.skill_id
+                WHERE msk.member_id = m.member_id 
+                  AND s.skill_name IN (:skillList)
+            )
+            ORDER BY m.temperature DESC
+            """,
+            nativeQuery = true)
+    Page<Member> findByBigCategoriesAndSkills(
+            @Param("bigCategories") List<String> bigCategories,
+            @Param("skillList") List<String> skillList,
             Pageable pageable);
 
+    /**
+     * 대분류로만 회원 검색
+     */
+    @Query(value = """
+            SELECT DISTINCT m.*
+            FROM member m
+            WHERE EXISTS (
+                SELECT 1 
+                FROM member_sub_category ms
+                JOIN sub_category sc ON sc.sub_category_id = ms.sub_category_id
+                JOIN big_category bc ON bc.big_category_id = sc.big_category_id
+                WHERE ms.member_id = m.member_id 
+                  AND bc.big_category IN (:bigCategories)
+            )
+            ORDER BY m.temperature DESC
+            """,
+            nativeQuery = true)
+    Page<Member> findByBigCategories(
+            @Param("bigCategories") List<String> bigCategories,
+            Pageable pageable);
+
+    /**
+     * 기술스택으로만 회원 검색
+     */
+    @Query(value = """
+            SELECT DISTINCT m.*
+            FROM member m
+            WHERE EXISTS (
+                SELECT 1 
+                FROM member_skill msk
+                JOIN skill s ON s.skill_id = msk.skill_id
+                WHERE msk.member_id = m.member_id 
+                  AND s.skill_name IN (:skillList)
+            )
+            ORDER BY m.temperature DESC
+            """,
+            nativeQuery = true)
+    Page<Member> findBySkills(
+            @Param("skillList") List<String> skillList,
+            Pageable pageable);
 }

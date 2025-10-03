@@ -130,19 +130,47 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     }
 
     /**
-     * 회원 검색 (SQL Repository에서 필터링/정렬/페이징 수행)
+     * 회원 검색 (조건에 따라 적절한 쿼리 선택)
      */
     @Override
     @Transactional(readOnly = true)
     public List<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
 
-        Page<Member> memberPage = memberRepository.searchMembers(
-                searchRequest.getSubCategory(),
-                searchRequest.getIsParticipating(),
-                pageable
-        );
+        Page<Member> memberPage;
+
+        // 조건에 따라 적절한 쿼리 선택
+        boolean hasBigCategories = searchRequest.getBigCategories() != null && !searchRequest.getBigCategories().isEmpty();
+        boolean hasSkills = searchRequest.getSkillList() != null && !searchRequest.getSkillList().isEmpty();
+
+        if (hasBigCategories && hasSkills) {
+            log.info("대분류와 기술스택 모두로 검색");
+            memberPage = memberRepository.findByBigCategoriesAndSkills(
+                    searchRequest.getBigCategories(),
+                    searchRequest.getSkillList(),
+                    pageable
+            );
+        } else if (hasBigCategories) {
+            log.info("대분류로만 검색");
+            memberPage = memberRepository.findByBigCategories(
+                    searchRequest.getBigCategories(),
+                    pageable
+            );
+        } else if (hasSkills) {
+            log.info("기술스택으로만 검색");
+            memberPage = memberRepository.findBySkills(
+                    searchRequest.getSkillList(),
+                    pageable
+            );
+        } else {
+            log.info("조건 없음 - 전체 회원 조회");
+            memberPage = memberRepository.findAll(pageable);
+        }
 
         List<Member> members = memberPage.getContent();
+
+        log.info("검색 결과 - 총 {}개 회원 조회됨", members.size());
+        log.info("페이지 정보 - 총 {}페이지 중 {}페이지, 총 {}개 회원",
+                memberPage.getTotalPages(), memberPage.getNumber() + 1, memberPage.getTotalElements());
 
         return members.stream()
                 .map(MemberCardResponse::responseToDto)
