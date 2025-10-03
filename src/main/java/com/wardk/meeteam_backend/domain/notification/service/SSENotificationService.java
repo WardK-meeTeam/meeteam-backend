@@ -3,15 +3,19 @@ package com.wardk.meeteam_backend.domain.notification.service;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.notification.repository.EmitterRepository;
 import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 
+import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.notification.dto.*;
+import com.wardk.meeteam_backend.web.notification.ApprovalResult;
+import com.wardk.meeteam_backend.web.notification.SseEnvelope;
+import com.wardk.meeteam_backend.web.notification.payload.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +40,7 @@ public class SSENotificationService {
     private final NotificationRepository notificationRepository;
     private final EmitterRepository emitterRepository;
     private final MemberRepository memberRepository;
+    private final ProjectRepository projectRepository;
 
     // ====== 구독 ======
     // emitter 를 client 에게 반환 ( 서버로 부터 이벤트를 client 가 받을 수 있게 된다.)
@@ -110,25 +115,12 @@ public class SSENotificationService {
                     .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
         }
 
-        // 메시지 생성
-        String finalMessage = switch (type) {
-            case PROJECT_MY_APPLY -> String.format("[%s] 에 지원이 완료되었습니다.", project.getName());
-            case PROJECT_APPLY -> {
-                if (actor == null) throw new CustomException(ErrorCode.ACTOR_NOT_FOUND);
-                yield String.format("%s님이 [%s]에 지원했어요.", actor.getRealName(), project.getName());
-            }
-            case PROJECT_APPROVE -> String.format("[%s] 지원이 승인되었습니다.", project.getName());
-            case PROJECT_REJECT -> String.format("[%s] 지원이 거절되었습니다.", project.getName());
-        };
-
-
 
         // 1) DB 저장 (과거 기록 조회용)
         Notification notification = notificationRepository.save(
                 Notification.builder()
                         .receiver(receiver)
                         .type(type)
-                        .message(finalMessage)
                         .project(project)
                         .isRead(false)
                         .actorId(actorId) // 알림 송신자Id
@@ -138,11 +130,10 @@ public class SSENotificationService {
 
 
         // 2) 타입별 payload 조립
-        Object payload = switch (type) {
+        Payload payload = switch (type) {
             case PROJECT_MY_APPLY -> new ApplyNotiPayload( //지원자에게 알림
                     receiver.getId(), // 지원한 사람 == 받는 사람
                     project.getName(),
-                    finalMessage,
                     LocalDate.now()
             );
             case PROJECT_APPLY -> { // 내 프로젝트에 누군가 지원 (팀장에게 알림)
@@ -154,7 +145,6 @@ public class SSENotificationService {
                         actor.getId(), // 지원자Id
                         actor.getRealName(), // 지원자이름
                         project.getName(), //프로젝트 이름
-                        finalMessage,
                         LocalDate.now()
                 );
             }
@@ -163,28 +153,20 @@ public class SSENotificationService {
                     receiver.getId(),
                     project.getId(),
                     ApprovalResult.APPROVED,
-                    finalMessage,
                     LocalDate.now()
             );
             case PROJECT_REJECT -> new SimpleMessagePayload(
                     receiver.getId(),
                     project.getId(),
                     ApprovalResult.REJECTED,
-                    finalMessage,
                     LocalDate.now()
             );
             default -> throw new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND);
         };
 
-
-        SseEnvelope<Object> envelope = SseEnvelope.builder()
-                .type(type)
-                .data(payload)
-                .createdAt(LocalDate.now())
-                .build();
+        SseEnvelope<Object> envelope = extracted(type, payload);
 
         broadcast(receiver.getId(), type, envelope);
-
 
     }
 
@@ -263,5 +245,73 @@ public class SSENotificationService {
 
     private String makeEventId(Long memberId) {
         return memberId + "_" + System.currentTimeMillis();
+    }
+
+    @Transactional
+    public void notifyTo2(Long memberId, NotificationType type, Long projectId, String projectName, LocalDate occurredAt) {
+
+
+        Member receiver = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+
+        // 1) DB 저장 (과거 기록 조회용)
+        Notification notification = notificationRepository.save(
+                Notification.builder()
+                        .receiver(receiver)
+                        .type(type)
+                        .project(project)
+                        .isRead(false)
+                        .build()
+        );
+
+
+        ProjectEndNotiPayload payload = new ProjectEndNotiPayload(projectId, memberId, projectName, occurredAt);
+
+        SseEnvelope<Object> envelope = extracted(type, payload);
+
+        broadcast(receiver.getId(), type, envelope);
+
+    }
+
+    // ====== 알림 생성 + 실시간 전송 (NotificationEvent 기반) ======
+    /**
+     * NotificationEvent를 받아서 알림을 생성하고 실시간으로 전송하는 메서드입니다.
+     *
+     * @param event 알림 이벤트 객체
+     *
+     * 이 메서드에서 직접 엔티티를 조회하여 영속성 컨텍스트 내에서 처리합니다.
+     * @Async로 실행되는 환경에서도 안전하게 엔티티를 사용할 수 있습니다.
+     */
+    @Transactional
+    public void notifyTo(NotificationEvent event) {
+
+        Member receiver = memberRepository.findById(event.getReceiverId())
+                .orElseThrow(() -> {
+                    log.error("[알림] 수신자를 찾을 수 없음: {}", event.getReceiverId());
+                    return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+                });
+
+        Project project = projectRepository.findById(event.getProjectId())
+                .orElseThrow(() -> {
+                    log.error("[알림] 프로젝트를 찾을 수 없음: {}", event.getProjectId());
+                    return new CustomException(ErrorCode.PROJECT_NOT_FOUND);
+                });
+
+        // 기존 notifyTo 메서드 호출
+        notifyTo(receiver, event.getType(), project, event.getActorId(), event.getApplicationId());
+    }
+
+    private static SseEnvelope<Object> extracted(NotificationType type, Payload payload) {
+        SseEnvelope<Object> envelope = SseEnvelope.builder()
+                .type(type)
+                .data(payload)
+                .createdAt(LocalDate.now())
+                .build();
+
+        return envelope;
     }
 }

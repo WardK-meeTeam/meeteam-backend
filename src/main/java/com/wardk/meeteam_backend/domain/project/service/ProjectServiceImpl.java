@@ -8,6 +8,9 @@ import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
+import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
+import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
+import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
@@ -37,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -70,6 +74,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectCategoryApplicationRepository projectCategoryApplicationRepository;
     private final ProjectMemberServiceImpl projectMemberServiceImpl;
     private final WebClient.Builder webClientBuilder;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     @CacheEvict(value = "mainPageProjects", allEntries = true) // 프로젝트 등록 시 캐시삭제
@@ -234,7 +239,25 @@ public class ProjectServiceImpl implements ProjectService {
 
         project.delete();
 
+        List<Long> membersId = getMembersId(project);
+
+        eventPublisher.publishEvent(new ProjectEndEvent(
+                NotificationType.PROJECT_END,
+                membersId,
+                projectId,
+                project.getName(),
+                LocalDate.now()
+        ));
+
         return ProjectDeleteResponse.responseDto(projectId, project.getName());
+    }
+
+    private static List<Long> getMembersId(Project project) {
+        List<Long> membersId = project.getMembers()
+                .stream()
+                .map(p -> p.getMember().getId())
+                .toList();
+        return membersId;
     }
 
     @Override

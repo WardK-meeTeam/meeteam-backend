@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.web.notification.dto;
+package com.wardk.meeteam_backend.web.notification.payload;
 
 
 import lombok.AllArgsConstructor;
@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
-public class NewApplicantPayload { // 내 프로젝트에 누가 지원함(프로젝트 소유자에게 가는 카드)
+public class NewApplicantPayload implements Payload { // 내 프로젝트에 누가 지원함(프로젝트 소유자에게 가는 카드)
 
     /**
      * applicationId, projectId 를 통해
@@ -22,6 +22,5 @@ public class NewApplicantPayload { // 내 프로젝트에 누가 지원함(프�
     Long applicantId; // 참여자
     String applicantName;
     String projectName;
-    String message;
     LocalDate date;
 }
