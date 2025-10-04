@@ -242,6 +242,8 @@ security:
         - method: "*"
           uri: /login/oauth2/code/**
         - method: "*"
+          uri: /oauth2/authorization/**
+        - method: "*"
           uri: /index.html
         - method: "*"
           uri: /api/auth/oauth2/**
