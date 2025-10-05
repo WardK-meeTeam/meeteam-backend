@@ -8,17 +8,16 @@ import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.MemberSkillRepository;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
-import com.wardk.meeteam_backend.global.auth.dto.EmailDuplicateResponse;
-import com.wardk.meeteam_backend.global.auth.dto.register.RegisterDescriptionRequest;
-import com.wardk.meeteam_backend.global.auth.dto.register.RegisterResponse;
+import com.wardk.meeteam_backend.global.auth.service.dto.SignupTokenInfo;
+import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
+import com.wardk.meeteam_backend.web.auth.dto.register.*;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.global.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.MemberSubCategoryRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
@@ -27,24 +26,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-//    private final FileUtil fileUtil;
     private final S3FileService s3FileService;
     private final SubCategoryRepository subCategoryRepository;
-    private final MemberSubCategoryRepository memberSubCategoryRepository;
-    private final MemberSkillRepository memberSkillRepository;
     private final SkillRepository skillRepository;
     private final JwtUtil jwtUtil;
 
 
     @Transactional
     public RegisterResponse register(RegisterRequest registerRequest, MultipartFile file) {
-
         // 이메일 중복 불가능
         memberRepository.findOptionByEmail(registerRequest.getEmail())
                 .ifPresent(email -> {
@@ -55,7 +52,6 @@ public class AuthService {
         if (file != null && !file.isEmpty()) {
             imageUrl = s3FileService.uploadFile(file, "images");
         }
-
         Member member = Member.builder()
                 .realName(registerRequest.getName())
                 .age(registerRequest.getAge())
@@ -66,29 +62,47 @@ public class AuthService {
                 .isParticipating(true)
                 .role(UserRole.USER)
                 .build();
-
-
-        memberRepository.save(member);
-
-        registerRequest.getSubCategories().stream().
-                forEach(e -> {
-                    SubCategory subCategory = subCategoryRepository.findByName(e.getSubcategory())
-                            .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
-                    member.addSubCategory(subCategory);
-                });
-
-
-        registerRequest.getSkills().stream()
-                .forEach(e -> {
-                    Skill skill = skillRepository.findBySkillName(e.getSkillName())
-                            .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
-                    member.addMemberSkill(skill);
-                });
-
-        return new RegisterResponse(registerRequest.getName(), member.getId());
-
+        return createRegisterResponse(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
     }
 
+    @Transactional
+    public RegisterResponse oauth2Register(OAuth2RegisterRequest registerRequest, MultipartFile file) {
+        // 회원가입 전용 토큰 검증 및 파싱
+        SignupTokenInfo signupTokenInfo = jwtUtil.getParsedSignupTokenInfo(registerRequest.getToken());
+        String imageUrl = null;
+        if (file != null && !file.isEmpty()) {
+            imageUrl = s3FileService.uploadFile(file, "images");
+        }
+        Member member = Member.builder()
+            .realName(registerRequest.getName())
+            .age(registerRequest.getAge())
+            .gender(registerRequest.getGender())
+            .password(bCryptPasswordEncoder.encode(registerRequest.getPassword()))
+            .storeFileName(imageUrl)
+            .isParticipating(true)
+            .role(UserRole.USER)
+            .email(signupTokenInfo.getEmail())          // 회원가입 전용 토큰에서 파싱한 email
+            .provider(signupTokenInfo.getProvider())
+            .providerId(signupTokenInfo.getProviderId())
+            .build();
+        return createRegisterResponse(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+    }
+
+    private RegisterResponse createRegisterResponse(Member member, List<SubCategoryDto> subCategories, List<SkillDto> skills, MultipartFile file) {
+        Member registerMember = memberRepository.save(member);
+        subCategories.forEach(e -> {
+                SubCategory subCategory = subCategoryRepository.findByName(e.getSubcategory())
+                    .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
+                member.addSubCategory(subCategory);
+            });
+        skills.forEach(e -> {
+                Skill skill = skillRepository.findBySkillName(e.getSkillName())
+                    .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
+                member.addMemberSkill(skill);
+            });
+        return new RegisterResponse(registerMember.getRealName(), member.getId());
+
+    }
 
     @Transactional
     public EmailDuplicateResponse checkDuplicateEmail(String email) {
@@ -130,7 +144,7 @@ public class AuthService {
             try {
                 if (!jwtUtil.isExpired(existingAccessToken)) {
                     String category = jwtUtil.getCategory(existingAccessToken);
-                    if ("access".equals(category)) {
+                    if (category.equals(JwtUtil.ACCESS_CATEGORY)) {
                         // 기존 Access Token이 아직 유효하므로 그대로 반환
                         return existingAccessToken;
                     }
@@ -156,7 +170,7 @@ public class AuthService {
 
             // 토큰 카테고리 확인 (refresh 토큰인지 확인)
             String category = jwtUtil.getCategory(refreshToken);
-            if (!"refresh".equals(category)) {
+            if (!category.equals(JwtUtil.REFRESH_CATEGORY)) {
                 throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
             }
 
@@ -169,7 +183,7 @@ public class AuthService {
 
             // 새로운 Access Token 생성
             CustomSecurityUserDetails userDetails = new CustomSecurityUserDetails(member);
-            return jwtUtil.createAccessToken(userDetails);
+            return jwtUtil.createAccessToken(member);
 
         } catch (Exception e) {
             // JWT 파싱 오류나 기타 오류 시
@@ -208,7 +222,7 @@ public class AuthService {
         }
 
         for (Cookie cookie : request.getCookies()) {
-            if ("refreshToken".equals(cookie.getName())) {
+            if (JwtUtil.REFRESH_COOKIE_NAME.equals(cookie.getName())) {
                 return cookie.getValue();
             }
         }
