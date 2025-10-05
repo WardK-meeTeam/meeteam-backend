@@ -1,19 +1,15 @@
 package com.wardk.meeteam_backend.web.pr.controller;
 
-import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
-import com.wardk.meeteam_backend.domain.pr.repository.PullRequestRepository;
 import com.wardk.meeteam_backend.domain.pr.service.PullRequestService;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.pr.dto.PullRequestResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/prs")

@@ -6,10 +6,7 @@ spring:
                     google:
                         client-id: ${GOOGLE_CLIENT_ID}
                         client-secret: ${GOOGLE_CLIENT_SECRET}
-                        scope:
-                            - openid
-                            - profile
-                            - email
+                        scope: openid, email
                         redirect-uri: https://api.meeteam.alom-sejong.com/login/oauth2/code/google  # 강제 지정
                     github:
                         client-id: ${GITHUB_CLIENT_ID}
@@ -77,9 +74,9 @@ spring:
 
 jwt:
     secret-key: ${JWT_SECRET_KEY}
-    access-exp-time: ${JWT_ACCESS_EXP_TIME:36000000} # 액세스 토큰 만료 시간 (밀리초 단위, 예: 1시간)
-    refresh-exp-time: ${JWT_REFRESH_EXP_TIME:604800000} # 리프레시 토큰 만료 시간
-
+    access-exp-time: ${JWT_ACCESS_EXP_TIME:36000000}                # 액세스 토큰 만료 시간
+    refresh-exp-time: ${JWT_REFRESH_EXP_TIME:604800000}             # 리프레시 토큰 만료 시간
+    oauth2-signup-exp-time: ${JWT_OAUTH2_SIGNUP_EXP_TIME:300000}    # 회원가입 인증 토큰 만료 시간
 
 
 # AWS S3 설정
@@ -158,11 +155,9 @@ github:
 app:
     oauth2:
         redirect:
-            success-base-url: ${FRONTEND_BASE_URL}
-            success-path: ${OAUTH2_SUCCESS_PATH}
-            failure-base-url: ${FRONTEND_BASE_URL}
-            failure-path: ${OAUTH2_FAILURE_PATH}
-            failure-endpoint: ${OAUTH2_FAILURE_ENDPOINT}
+            login-success-url: ${FRONTEND_LOGIN_SUCCESS_URL:http://localhost:3000/main}
+            oauth2-signup-url: ${FRONTEND_OAUTH2_SIGNUP_URL:http://localhost:3000/oauth2/redirect}
+            failure-url: ${FRONTEND_LOGIN_FAILURE_URL:http://localhost:3000/login}
         providers:
             google:
                 name: "google"
@@ -172,7 +167,6 @@ app:
             github:
                 name: "github"
                 user-name-attribute: "name"
-                login-attribute: "login"
                 email-attribute: "email"
                 id-attribute: "id"
 

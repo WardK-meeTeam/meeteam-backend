@@ -6,9 +6,9 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.response.SuccessCode;
 import com.wardk.meeteam_backend.global.response.ErrorResponse;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.global.auth.dto.login.LoginRequest;
-import com.wardk.meeteam_backend.global.auth.dto.login.LoginResponse;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.login.LoginRequest;
+import com.wardk.meeteam_backend.web.auth.dto.login.LoginResponse;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;
@@ -67,10 +67,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         CustomSecurityUserDetails customSecurityUserDetails = (CustomSecurityUserDetails) authentication.getPrincipal();
 
         // AccessToken 발급
-        String accessToken = jwtUtil.createAccessToken(customSecurityUserDetails);
+        String accessToken = jwtUtil.createAccessToken(customSecurityUserDetails.getMember());
 
         // RefreshToken 발급
-        String refreshToken = jwtUtil.createRefreshToken(customSecurityUserDetails);
+        String refreshToken = jwtUtil.createRefreshToken(customSecurityUserDetails.getMember());
 
         // 헤더에 AccessToken 추가
         response.addHeader("Authorization", "Bearer " + accessToken);
@@ -80,7 +80,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
 
         // 쿠키에 refreshToken 추가
-        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        Cookie cookie = new Cookie(JwtUtil.REFRESH_COOKIE_NAME, refreshToken);
         cookie.setHttpOnly(true); // HttpOnly 설정
         cookie.setSecure(true);
         cookie.setPath("/");

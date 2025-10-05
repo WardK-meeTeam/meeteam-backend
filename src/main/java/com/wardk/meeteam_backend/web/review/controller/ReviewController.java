@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.web.review.controller;
 
 import com.wardk.meeteam_backend.domain.review.service.ReviewService;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.review.dto.ReviewRequest;
 import com.wardk.meeteam_backend.web.review.dto.ReviewResponse;

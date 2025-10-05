@@ -22,41 +22,9 @@ public class OAuth2Properties {
     @Getter
     @RequiredArgsConstructor
     public static class Redirect {
-
-        //OAuth2 성공 시 프론트엔드 베이스 URL
-        private final String successBaseUrl;
-
-        //OAuth2 성공 시 리다이렉트 경로
-        private final String successPath;
-
-        //OAuth2 실패 시 프론트엔드 베이스 URL
-        private final String failureBaseUrl;
-
-        //OAuth2 실패 시 리다이렉트 경로
-        private final String failurePath;
-
-        //OAuth2 실패 처리 엔드포인트
-        private final String failureEndpoint;
-
-        //성공 시 완전한 리다이렉트 URL 생성
-        public String getSuccessUrl() {
-            return successBaseUrl + successPath;
-        }
-
-        //실패 시 완전한 리다이렉트 URL 생성
-        public String getFailureUrl() {
-            return failureBaseUrl + failurePath;
-        }
-
-        //토큰과 함께 성공 리다이렉트 URL 생성
-        public String getSuccessUrlWithToken(String token) {
-            return getSuccessUrl() + "?token=" + token;
-        }
-
-        //에러와 함께 실패 리다이렉트 URL 생성
-        public String getFailureUrlWithError(String error) {
-            return getFailureUrl() + "?error=" + error;
-        }
+        private final String loginSuccessUrl;       // 기존 회원 로그인 성공 시 이동할 URL
+        private final String oauth2SignupUrl;       // 신규 회원 추가 정보 입력 페이지 URL
+        private final String failureUrl;            // 로그인 실패 시 이동할 URL
     }
 
     @Getter
@@ -79,7 +47,6 @@ public class OAuth2Properties {
         public static class Github {
             private final String name;
             private final String userNameAttribute;
-            private final String loginAttribute;
             private final String emailAttribute;
             private final String idAttribute;
         }

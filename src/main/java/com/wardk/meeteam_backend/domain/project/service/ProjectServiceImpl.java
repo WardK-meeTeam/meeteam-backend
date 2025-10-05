@@ -8,7 +8,6 @@ import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
-import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
 import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
@@ -24,7 +23,7 @@ import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberServi
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberServiceImpl;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;

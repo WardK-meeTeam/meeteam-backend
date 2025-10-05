@@ -1,8 +1,9 @@
 package com.wardk.meeteam_backend.global.util;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
+import com.wardk.meeteam_backend.global.auth.service.dto.SignupTokenInfo;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -35,8 +36,13 @@ public class JwtUtil {
   @Value("${jwt.refresh-exp-time}")
   private Long refreshTokenExpTime; // RefreshToken 만료 시간
 
-  private static final String ACCESS_CATEGORY = "access";
-  private static final String REFRESH_CATEGORY = "refresh";
+  @Value("${jwt.oauth2-signup-exp-time}")
+  private Long oauth2SignupTokenExpTime; // OAuth2 회원가입 토큰 만료 시간
+
+  public static final String ACCESS_CATEGORY = "access";
+  public static final String REFRESH_CATEGORY = "refresh";
+  public static final String REFRESH_COOKIE_NAME = "refreshToken";
+  private static final String OAUTH2_REGISTER = "register";
 
   // 토큰에서 username 파싱
   public String getUsername(String token) {
@@ -69,7 +75,7 @@ public class JwtUtil {
             .before(new Date());
   }
 
-  // Access/Refresh 토큰 여부
+  // Access/Refresh/회원가입용 토큰 여부
   public String getCategory(String token) {
     return Jwts.parser()
             .verifyWith(getSignKey())
@@ -91,40 +97,30 @@ public class JwtUtil {
 
   /**
    * AccessToken 생성
-   *
-   * @param customSecurityUserDetails
-   * @return
    */
-  public String createAccessToken(CustomSecurityUserDetails customSecurityUserDetails) {
-    log.info("엑세스 토큰 생성 중: 회원: {}", customSecurityUserDetails.getUsername());
-    return createToken(ACCESS_CATEGORY, customSecurityUserDetails, accessTokenExpTime);
+  public String createAccessToken(Member member) {
+    log.info("엑세스 토큰 생성 중: 회원: {}", member.getEmail());
+    return createToken(ACCESS_CATEGORY, member.getEmail(), member.getId(), accessTokenExpTime);
   }
 
   /**
    * RefreshToken 생성
-   *
-   * @param customSecurityUserDetails
-   * @return
    */
-  public String createRefreshToken(CustomSecurityUserDetails customSecurityUserDetails) {
-    log.info("리프래시 토큰 생성 중: 회원: {}", customSecurityUserDetails.getUsername());
-    return createToken(REFRESH_CATEGORY, customSecurityUserDetails, refreshTokenExpTime);
+  public String createRefreshToken(Member member) {
+    log.info("리프레시 토큰 생성 중: 회원: {}", member.getEmail());
+    return createToken(REFRESH_CATEGORY, member.getEmail(), member.getId(), refreshTokenExpTime);
   }
 
   /**
    * JWT 토큰 생성 메서드
-   *
-   * @param customSecurityUserDetails 회원 상세 정보
-   * @param expiredAt         만료 시간
    * @return 생성된 JWT 토큰
    */
-  private String createToken(String category, CustomSecurityUserDetails customSecurityUserDetails, Long expiredAt) {
-
+  private String createToken(String category, String email, Long memberId, Long expiredAt) {
     return Jwts.builder()
-            .subject(customSecurityUserDetails.getUsername())
+            .subject(email)
             .claim("category", category)
-            .claim("username", customSecurityUserDetails.getUsername())
-            .claim("id", customSecurityUserDetails.getMemberId())
+            .claim("username", email)
+            .claim("id", memberId)
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + expiredAt))
             .signWith(getSignKey())
@@ -182,7 +178,7 @@ public class JwtUtil {
    * @param token JWT 토큰
    * @return 추출된 클레임
    */
-  public Claims getClaims(String token) {
+  private Claims getClaims(String token) {
     return Jwts.parser()
             .verifyWith(getSignKey())
             .build()
@@ -236,14 +232,11 @@ public class JwtUtil {
   }
 
   /**
-   * OAuth2 사용자를 위한 AccessToken 생성 (이메일 기반)
-   *
-   * @param email 사용자 이메일
-   * @param name 사용자 이름
+   * OAuth2 사용자를 위한 회원가입 전용 JWT 토큰 생성
    * @return JWT AccessToken
    */
 
-  public String createAccessTokenForOAuth2(Member member) {
+  public String createOAuth2SignupToken(Member member) {
     if (member == null) {
       throw new IllegalArgumentException("Member cannot be null");
     }
@@ -258,95 +251,55 @@ public class JwtUtil {
 
     return Jwts.builder()
             .subject(member.getEmail())
-            .claim("category", ACCESS_CATEGORY)
-            .claim("username", member.getEmail())
+            .claim("category", OAUTH2_REGISTER)
+            .claim("email", member.getEmail())
             .claim("role", member.getRole().name())
-            .claim("id", member.getId())
+            .claim("providerId", member.getProviderId())
+            .claim("provider", member.getProvider())
             .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + accessTokenExpTime))
+            .expiration(new Date(System.currentTimeMillis() + oauth2SignupTokenExpTime))
             .signWith(getSignKey())
             .compact();
   }
 
-  /**
-   * OAuth2 사용자를 위한 RefreshToken 생성 (Member 객체 기반)
-   */
-  public String createRefreshTokenForOAuth2(Member member) {
-    if (member == null) {
-      throw new IllegalArgumentException("Member cannot be null");
-    }
-    if (member.getEmail() == null || member.getEmail().isEmpty()) {
-      throw new IllegalArgumentException("Member email cannot be null or empty");
-    }
-    if (member.getRole() == null) {
-      throw new IllegalArgumentException("Member role cannot be null");
-    }
-
-    log.info("OAuth2 리프레시 토큰 생성 중: 회원: {}", member.getEmail());
-
-    return Jwts.builder()
-            .subject(member.getEmail())
-            .claim("category", REFRESH_CATEGORY)
-            .claim("username", member.getEmail())
-            .claim("role", member.getRole().name())
-            .claim("id", member.getId())
-            .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + refreshTokenExpTime))
-            .signWith(getSignKey())
-            .compact();
-  }
-
-  public String createAccessTokenForOAuth2Email(String email, String name) {
-    if (email == null || email.isEmpty()) {
-      throw new IllegalArgumentException("Email cannot be null or empty");
-    }
-
-    log.info("OAuth2 엑세스 토큰 생성 중: 이메일: {}", email);
-
-    return Jwts.builder()
-            .subject(email)
-            .claim("category", ACCESS_CATEGORY)
-            .claim("username", email)
-            .claim("role", "USER") // 기본 역할 설정
-            .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + accessTokenExpTime))
-            .signWith(getSignKey())
-            .compact();
-  }
-
-  /**
-   * OAuth2 사용자를 위한 RefreshToken 생성 (이메일 기반)
-   */
-  public String createRefreshTokenForOAuth2Email(String email, String name) {
-    if (email == null || email.isEmpty()) {
-      throw new IllegalArgumentException("Email cannot be null or empty");
-    }
-
-    log.info("OAuth2 리프레시 토큰 생성 중: 이메일: {}", email);
-
-    return Jwts.builder()
-            .subject(email)
-            .claim("category", REFRESH_CATEGORY)
-            .claim("username", email)
-            .claim("role", "USER") // 기본 역할 설정
-            .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + refreshTokenExpTime))
-            .signWith(getSignKey())
-            .compact();
-  }
-
-  /**
-   * Refresh Token 검증 (OAuth2용)
-   */
-  public boolean validateRefreshToken(String token) {
+  public SignupTokenInfo getParsedSignupTokenInfo(String token) {
     try {
       Claims claims = getClaims(token);
+
+      // 필수 클레임 추출
+      String email = claims.get("email", String.class);
+      String role = claims.get("role", String.class);
+      String providerId = claims.get("providerId", String.class);
+      String provider = claims.get("provider", String.class);
       String category = claims.get("category", String.class);
-      return REFRESH_CATEGORY.equals(category) && !isExpired(token);
-    } catch (Exception e) {
-      log.warn("Refresh Token 검증 실패: {}", e.getMessage());
-      return false;
+
+      // 필수 정보 검증
+      if (email == null || role == null || providerId == null || provider == null || category == null) {
+        log.error("OAuth2 회원가입 토큰에 필요한 정보가 누락되었습니다: {}", claims);
+        throw new IllegalArgumentException("Invalid OAuth2 signup token");
+      }
+
+      // Role이 OAUTH2_GUEST 인지 확인
+      if (!role.equals(UserRole.OAUTH2_GUEST)) {
+        log.error("OAuth2 회원가입 토큰의 Role이 올바르지 않습니다: {}", role);
+        throw new IllegalArgumentException("Invalid OAuth2 signup token role");
+      }
+
+      // Category가 register 인지 확인
+      if(!category.equals(OAUTH2_REGISTER)) {
+        log.error("OAuth2 회원가입 토큰의 Category가 올바르지 않습니다: {}", getCategory(token));
+        throw new IllegalArgumentException("Invalid OAuth2 signup token category");
+      }
+
+      // 모든 검증 통과 시 SignupTokenInfo 객체 반환
+      return SignupTokenInfo.builder()
+          .provider(provider)
+          .email(email)
+          .providerId(providerId)
+          .build();
+    } catch (JwtException e) {
+      log.error("OAuth2 회원가입 토큰 파싱 중 오류 발생: {}", e.getMessage());
+      throw new IllegalArgumentException("Invalid OAuth2 signup token", e);
     }
   }
-
 }

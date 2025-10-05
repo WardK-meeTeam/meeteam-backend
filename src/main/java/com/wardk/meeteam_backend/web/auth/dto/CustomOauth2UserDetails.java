@@ -1,28 +1,26 @@
-package com.wardk.meeteam_backend.global.auth.dto;
+package com.wardk.meeteam_backend.web.auth.dto;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
+@Getter
+@AllArgsConstructor
 public class CustomOauth2UserDetails implements UserDetails, OAuth2User {
 
+    @Getter
     private final Member member;
-    private Map<String, Object> attributes; // 구글에서 받아온 정보들
-
-    public CustomOauth2UserDetails(Member member, Map<String, Object> attributes) {
-        this.member = member;
-        this.attributes = attributes;
-    }
-
-    public Member getMember() {
-        return member;
-    }
-
+    private Map<String, Object> attributes;
+    private boolean isNewMember;
 
     @Override
     public Map<String, Object> getAttributes() {
@@ -31,8 +29,7 @@ public class CustomOauth2UserDetails implements UserDetails, OAuth2User {
 
     @Override
     public String getName() {
-        // Google OAuth2에서 사용자 식별자 반환
-        return member.getEmail(); // 또는 member.getProviderId()
+        return member.getEmail();
     }
 
     public Long getMemberId() {
@@ -41,15 +38,8 @@ public class CustomOauth2UserDetails implements UserDetails, OAuth2User {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> collection = new ArrayList<>();
-        collection.add(new GrantedAuthority() {
-            @Override
-            public String getAuthority() {
-                return member.getRole().name();
-            }
-        });
-
-        return collection;
+        // Spring Security는 'ROLE_' 접두사를 기준으로 권한을 인식합니다.
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()));
     }
 
     @Override

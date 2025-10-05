@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.web.codereview.controller;
 import com.wardk.meeteam_backend.domain.chat.dto.ChatMessageDto;
 import com.wardk.meeteam_backend.domain.codereview.service.CodeReviewChatBroadcastService;
 import com.wardk.meeteam_backend.domain.codereview.service.CodeReviewChatService;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;

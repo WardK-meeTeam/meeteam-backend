@@ -88,7 +88,7 @@ public class SecurityConfig {
                 // OAuth 2.0 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oauth2SuccessHandler) // OAuth 성공 후 핸들러 설정
-                        .failureUrl(oAuth2Properties.getRedirect().getFailureEndpoint()) // 설정에서 가져온 실패 URL
+                        .failureUrl(oAuth2Properties.getRedirect().getFailureUrl()) // 설정에서 가져온 실패 URL
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
                         )

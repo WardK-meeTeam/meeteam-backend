@@ -1,10 +1,9 @@
 package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.ProjectConditionRequest;
 import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
-import com.wardk.meeteam_backend.web.project.dto.PageConditionResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
