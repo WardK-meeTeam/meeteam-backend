@@ -255,5 +255,10 @@ security:
           uri: /api/projects/V2/* # 프로젝트 상세 조회
         - method: GET
           uri: /api/main/projects
-
+        - method: *
+          uri: /oauth2/redirect # OAuth2 리다이렉트 url
+        - method: *
+          uri: /main            # 로그인 성공 url
+        - method: *
+          uri: /login           # 로그인 실패 url
 
