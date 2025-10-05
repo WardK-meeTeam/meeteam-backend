@@ -59,7 +59,7 @@ spring:
             mode: never
     data:
         redis:
-            host: localhost
+            host: redis
             port: 6379
     rabbitmq:
         host: ${SPRING_RABBITMQ_HOST:rabbitmq}  # Docker Compose 서비스명
