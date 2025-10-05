@@ -2,20 +2,18 @@ package com.wardk.meeteam_backend.global.auth.service;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
-import com.wardk.meeteam_backend.global.auth.dto.CustomOauth2UserDetails;
-import com.wardk.meeteam_backend.global.auth.dto.oauth.GitHubUserDetails;
-import com.wardk.meeteam_backend.global.auth.dto.oauth.GoogleUserDetails;
-import com.wardk.meeteam_backend.global.auth.dto.oauth.OAuth2UserInfo;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.global.config.OAuth2Properties;
+import com.wardk.meeteam_backend.web.auth.dto.CustomOauth2UserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -24,103 +22,72 @@ import java.util.Optional;
 public class CustomOauth2UserService extends DefaultOAuth2UserService {
 
     private final MemberRepository memberRepository;
+    private final OAuth2Properties oAuth2Properties;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        try {
-            OAuth2User oAuth2User = super.loadUser(userRequest);
+        OAuth2User oAuth2User = super.loadUser(userRequest);
+        String provider = userRequest.getClientRegistration().getRegistrationId();
 
-            log.info("=== Google OAuth2 User Attributes ===");
-            oAuth2User.getAttributes().forEach((key, value) -> {
-                log.info("Key: {}, Value: {}, Type: {}", key, value, value != null ? value.getClass().getSimpleName() : "null");
-            });
-            log.info("=====================================");
+        ParsedUserInfo userInfo = parseAttributes(provider, oAuth2User.getAttributes());
 
-            String provider = userRequest.getClientRegistration().getRegistrationId();
-            OAuth2UserInfo oAuth2UserInfo = null;
+        if (userInfo.email() == null || userInfo.email().isEmpty()) {
+            throw new OAuth2AuthenticationException("OAuth2 사용자 이메일 정보가 없습니다.");
+        }
 
-            if(provider.equals("google")) {
-                log.info("구글 로그인 - 사용자 정보 파싱 시작");
-                oAuth2UserInfo = new GoogleUserDetails(oAuth2User.getAttributes());
-            }else if(provider.equals("github")){
-                log.info("깃허브 로그인 - 사용자 정보 파싱 시작");
-                oAuth2UserInfo = new GitHubUserDetails(oAuth2User.getAttributes());
-            }else {
-                throw new OAuth2AuthenticationException("지원하지 않는 OAuth2 Provider: " + provider);
-            }
-
-            // null 체크 추가
-            if (oAuth2UserInfo == null) {
-                throw new OAuth2AuthenticationException("OAuth2 사용자 정보를 파싱할 수 없습니다.");
-            }
-
-            String providerId = oAuth2UserInfo.getProviderId();
-            String email = oAuth2UserInfo.getEmail();
-            String name = oAuth2UserInfo.getName();
-
-            // 이메일 null 체크
-            if (email == null || email.isEmpty()) {
-                throw new OAuth2AuthenticationException("OAuth2 사용자 이메일 정보가 없습니다.");
-            }
-
-            log.info("OAuth2 사용자 정보 - email: {}, name: {}, providerId: {}", email, name, providerId);
-
-            Member findMember = findOrCreateMember(email, name, providerId, provider);  // ← Provider 기반 조회
-
-
-            return new CustomOauth2UserDetails(findMember, oAuth2User.getAttributes());
-
-        } catch (Exception e) {
-            log.error("OAuth2 사용자 로드 실패", e);
-            OAuth2Error error = new OAuth2Error("user_load_error", "OAuth2 사용자 로드 중 오류 발생", null);
-            throw new OAuth2AuthenticationException(error, e);
+        // Provider와 ProviderId로 사용자를 조회
+        Optional<Member> memberOptional = memberRepository.findByProviderAndProviderId(provider, userInfo.providerId());
+        if (memberOptional.isPresent()) {
+            Member member = memberOptional.get();
+            log.info("기존 회원입니다: {}", member.getEmail());
+            // isNewMember 플래그를 false로 설정하여 반환
+            return new CustomOauth2UserDetails(member, oAuth2User.getAttributes(), false);
+        } else {
+            log.info("신규 회원입니다. 임시 회원 정보를 생성합니다: {}", userInfo.email());
+            Member tempMember = Member.builder()
+                .email(userInfo.email())
+                .provider(provider)
+                .providerId(userInfo.providerId())
+                .role(UserRole.OAUTH2_GUEST) // 임시 권한 부여
+                .build();
+            // isNewMember 플래그를 true로 설정하여 반환
+            return new CustomOauth2UserDetails(tempMember, oAuth2User.getAttributes(), true);
         }
     }
 
     /**
-     * Provider + ProviderId 기반으로 회원 조회 또는 생성
+     * ★ 3. Provider별로 다른 attributes를 파싱하여 표준화된 DTO로 반환하는 메서드
      */
-    private Member findOrCreateMember(String email, String name, String providerId, String provider) {
-        log.info("회원 조회/생성 시작: provider={}, providerId={}, email={}", provider, providerId, email);
+    private ParsedUserInfo parseAttributes(String providerName, Map<String, Object> attributes) {
+        String providerId, email, name;
+        OAuth2Properties.Providers providers = oAuth2Properties.getProviders();
+        if (providers.getGoogle().getName().equals(providerName)) {
+            OAuth2Properties.Providers.Google googleProps = providers.getGoogle();
+            providerId = (String) attributes.get(googleProps.getIdAttribute());
+            email = (String) attributes.get(googleProps.getEmailAttribute());
+            name = (String) attributes.get(googleProps.getUserNameAttribute());
 
-        // 1순위: Provider + ProviderId로 조회 (가장 확실한 방법)
-        Optional<Member> existingMember = memberRepository.findByProviderAndProviderId(provider, providerId);
-        if (existingMember.isPresent()) {
-            log.info("기존 회원 조회 성공: id={}, email={}", existingMember.get().getId(), existingMember.get().getEmail());
-            return existingMember.get();
-        }
+        } else if (providers.getGithub().getName().equals(providerName)) {
+            OAuth2Properties.Providers.Github githubProps = providers.getGithub();
+            providerId = String.valueOf(attributes.get(githubProps.getIdAttribute())); // GitHub ID는 숫자일 수 있으므로 String으로 변환
+            email = (String) attributes.get(githubProps.getEmailAttribute());
+            name = (String) attributes.get(githubProps.getUserNameAttribute());
 
-        // 2순위: 신규 회원 생성
-        log.info("새로운 OAuth2 사용자 생성: email={}, provider={}, providerId={}", email, provider, providerId);
-
-        try {
-            Member newMember = Member.builder()
-                    .email(email)
-                    .realName(name)
-                    .provider(provider)
-                    .providerId(providerId)
-                    .role(UserRole.USER)
-                    .build();
-
-            Member savedMember = memberRepository.save(newMember);
-            log.info("새 회원 생성 성공: id={}, email={}", savedMember.getId(), email);
-            return savedMember;
-
-        } catch (Exception e) {
-            log.error("새로운 OAuth2 사용자 생성 중 오류 발생: email={}, provider={}, providerId={}",
-                    email, provider, providerId, e);
-
-            // 동시성 문제로 인해 다른 스레드에서 생성되었을 가능성 체크
-            Optional<Member> concurrentMember = memberRepository.findByProviderAndProviderId(provider, providerId);
-            if (concurrentMember.isPresent()) {
-                log.info("동시성 문제로 다른 스레드에서 생성된 회원 발견: id={}", concurrentMember.get().getId());
-                return concurrentMember.get();
+            // Github는 이메일이 null일 수 있으므로, providerId 이용한 임시 이메일 생성
+            if (email == null) {
+                email = providerId + "@users.noreply.github.com";
+                log.warn("GitHub 이메일 정보가 없어 임시 이메일을 생성했습니다: {}", email);
             }
-
-            // 이메일 중복으로 실패한 경우 기존 회원 조회 시도
-            return memberRepository.findByEmail(email)
-                    .orElseThrow(() -> new OAuth2AuthenticationException("사용자 생성 실패: " + e.getMessage()));
+        } else {
+            throw new OAuth2AuthenticationException("지원하지 않는 OAuth2 Provider: " + providerName);
         }
+
+        return new ParsedUserInfo(providerId, email, name);
     }
 
+    /**
+     * 파싱된 사용자 정보를 담기 위한 간단한 record 클래스
+     */
+    private record ParsedUserInfo(String providerId, String email, String name) {}
 }
+
