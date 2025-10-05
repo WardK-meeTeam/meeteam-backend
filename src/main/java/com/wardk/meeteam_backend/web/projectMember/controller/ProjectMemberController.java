@@ -2,7 +2,7 @@ package com.wardk.meeteam_backend.web.projectMember.controller;
 
 import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.projectMember.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

@@ -1,12 +1,12 @@
-package com.wardk.meeteam_backend.global.auth.controller;
+package com.wardk.meeteam_backend.web.auth.controller;
 
 
-import com.wardk.meeteam_backend.global.auth.dto.EmailDuplicateResponse;
-import com.wardk.meeteam_backend.global.auth.dto.register.RegisterDescriptionRequest;
+import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
+import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.global.auth.dto.login.LoginRequest;
-import com.wardk.meeteam_backend.global.auth.dto.register.RegisterRequest;
-import com.wardk.meeteam_backend.global.auth.dto.register.RegisterResponse;
+import com.wardk.meeteam_backend.web.auth.dto.login.LoginRequest;
+import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
+import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
 import com.wardk.meeteam_backend.global.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.Cookie;
 
 @RestController
 @RequiredArgsConstructor

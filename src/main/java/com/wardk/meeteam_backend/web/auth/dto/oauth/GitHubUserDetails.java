@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth.dto.oauth;
+package com.wardk.meeteam_backend.web.auth.dto.oauth;
 
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;

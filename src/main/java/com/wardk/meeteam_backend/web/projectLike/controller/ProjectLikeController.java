@@ -2,7 +2,7 @@ package com.wardk.meeteam_backend.web.projectLike.controller;
 
 import com.wardk.meeteam_backend.domain.projectLike.service.ProjectLikeService;
 import com.wardk.meeteam_backend.global.aop.aspect.OptimisticLockRetryAspect;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.projectLike.dto.LikeStatusResponse;
 import com.wardk.meeteam_backend.web.projectLike.dto.ToggleLikeResponse;

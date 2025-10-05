@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth.dto.register;
+package com.wardk.meeteam_backend.web.auth.dto.register;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

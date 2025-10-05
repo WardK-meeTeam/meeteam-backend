@@ -2,7 +2,7 @@ package com.wardk.meeteam_backend.web.notification.controller;
 
 import com.wardk.meeteam_backend.domain.notification.service.NotificationService;
 import com.wardk.meeteam_backend.domain.notification.service.SSENotificationService;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.notification.dto.NotificationResponse;
 import com.wardk.meeteam_backend.web.notification.dto.NotificationUnreadCountResponse;

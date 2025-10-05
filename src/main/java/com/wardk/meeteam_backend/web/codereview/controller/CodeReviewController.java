@@ -6,7 +6,7 @@ import com.wardk.meeteam_backend.domain.codereview.service.PrReviewOrchestration
 import com.wardk.meeteam_backend.domain.codereview.service.PrReviewService;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 import com.wardk.meeteam_backend.domain.pr.repository.PullRequestRepository;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.codereview.dto.PrReviewJobResponse;
@@ -18,8 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/codereviews")

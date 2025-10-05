@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth.dto.register;
+package com.wardk.meeteam_backend.web.auth.dto.register;
 
 
 import com.wardk.meeteam_backend.domain.member.entity.Gender;

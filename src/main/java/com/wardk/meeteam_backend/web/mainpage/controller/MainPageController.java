@@ -2,7 +2,7 @@ package com.wardk.meeteam_backend.web.mainpage.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
 import com.wardk.meeteam_backend.web.mainpage.dto.ProjectConditionMainPageResponse;
@@ -17,9 +17,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-
-import java.util.Arrays;
 
 @RequestMapping("/api/main")
 @RequiredArgsConstructor

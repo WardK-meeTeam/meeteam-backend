@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth.dto;
+package com.wardk.meeteam_backend.web.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

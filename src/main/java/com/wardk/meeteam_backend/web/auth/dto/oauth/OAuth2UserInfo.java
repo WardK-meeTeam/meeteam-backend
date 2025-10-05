@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth.dto.oauth;
+package com.wardk.meeteam_backend.web.auth.dto.oauth;
 
 public interface OAuth2UserInfo {
     String getProvider(); // 소셜 로그인 제공자 (예: "google", "github" 등)

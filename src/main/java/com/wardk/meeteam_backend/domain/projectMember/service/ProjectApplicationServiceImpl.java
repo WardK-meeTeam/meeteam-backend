@@ -14,7 +14,7 @@ import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplic
 import com.wardk.meeteam_backend.domain.projectMember.entity.WeekDay;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectApplicationRepository;
 import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
-import com.wardk.meeteam_backend.global.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;

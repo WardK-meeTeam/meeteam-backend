@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth.controller;
+package com.wardk.meeteam_backend.web.auth.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

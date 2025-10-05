@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.global.auth.dto.login;
+package com.wardk.meeteam_backend.web.auth.dto.login;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
