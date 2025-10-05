@@ -261,4 +261,5 @@ security:
           uri: /main            # 로그인 성공 url
         - method: "*"
           uri: /login           # 로그인 실패 url
-
+        - method: "*"
+          uri: /oauth2/authorization/google
