@@ -256,4 +256,4 @@ security:
         - method: "*"
           uri: /login           # 로그인 실패 url
         - method: "*"
-          uri: /oauth2/authorization/google
+          uri: /oauth2/authorization/**
