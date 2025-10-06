@@ -40,8 +40,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             String signupToken = jwtUtil.createOAuth2SignupToken(member);
 
             // 추가 정보 입력 페이지로 리다이렉트
-            redirectUrl = UriComponentsBuilder.fromUriString(oAuth2Properties.getRedirect().getOauth2SignupUrl())
-                .queryParam("token", signupToken)
+            redirectUrl = UriComponentsBuilder.fromUriString(oAuth2Properties.getOauth2RedirectUrl())
+                .queryParam("accessToken", signupToken)
+                .queryParam("type", "register")
                 .build().toUriString();
         } else {
             log.info("기존 회원 로그인을 진행합니다. 사용자: {}", member.getEmail());
@@ -53,8 +54,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             setRefreshTokenCookie(response, refreshToken);
 
             // Access Token은 쿼리 파라미터로 프론트엔드에 전달
-            redirectUrl = UriComponentsBuilder.fromUriString(oAuth2Properties.getRedirect().getLoginSuccessUrl())
+            redirectUrl = UriComponentsBuilder.fromUriString(oAuth2Properties.getOauth2RedirectUrl())
                 .queryParam("accessToken", accessToken)
+                .queryParam("type", "login")
                 .build().toUriString();
         }
         // 생성된 URL로 리다이렉트

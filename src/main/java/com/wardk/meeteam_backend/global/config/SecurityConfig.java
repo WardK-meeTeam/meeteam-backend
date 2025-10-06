@@ -1,5 +1,7 @@
 package com.wardk.meeteam_backend.global.config;
 
+import com.wardk.meeteam_backend.global.auth.repository.CustomCookieAuthorizationRequestRepository;
+import com.wardk.meeteam_backend.global.auth.service.CustomOidcUserService;
 import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
 import com.wardk.meeteam_backend.global.exception.RestAuthenticationEntryPoint;
 import com.wardk.meeteam_backend.global.auth.filter.JwtFilter;
@@ -7,7 +9,6 @@ import com.wardk.meeteam_backend.global.auth.filter.LoginFilter;
 import com.wardk.meeteam_backend.global.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -29,11 +30,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -42,7 +38,8 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final SecurityUrls securityUrls;
     private final AuthenticationConfiguration authenticationConfiguration;
-    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService;
+    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOauth2UserService;
+    private final CustomOidcUserService customOidcUserService;
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
@@ -68,16 +65,10 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 // form 로그인 방식 disable
                 .formLogin(AbstractHttpConfigurer::disable)
-                // ★ 2) 인증 실패 시 401 반환 (기본 /login 리다이렉트 막기)
+                // 미인증 진입 시 401로 JSON/빈 응답 처리, 권한 부족 시 403
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(
-                                new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)
-                        )
-                )
-                // ★ 미인증 진입 시 401로 JSON/빈 응답 처리, 권한 부족 시 403
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(restAuthenticationEntryPoint) // ★ 401을 ErrorResponse로
-                        .accessDeniedHandler(restAccessDeniedHandler)           // ★ 403을 ErrorResponse로
+                        .authenticationEntryPoint(restAuthenticationEntryPoint) // 인증 실패 시 401 반환 (기본 /login 리다이렉트 막기)
+                        .accessDeniedHandler(restAccessDeniedHandler)           // 403을 ErrorResponse로
                 )
                 // 인증 필요 없는(화이트리스트) 경로 한 곳에서 관리
                 .authorizeHttpRequests((authorize) -> authorize
@@ -88,9 +79,10 @@ public class SecurityConfig {
                 // OAuth 2.0 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oauth2SuccessHandler) // OAuth 성공 후 핸들러 설정
-                        .failureUrl(oAuth2Properties.getRedirect().getFailureUrl()) // 설정에서 가져온 실패 URL
+                        .failureUrl(oAuth2Properties.getOauth2RedirectUrl()) // 설정에서 가져온 실패 URL
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService) // 커스텀 OAuth2UserService 사용
+                                .userService(customOauth2UserService) // 커스텀 OAuth2UserService 사용
+                            .oidcUserService(customOidcUserService)
                         )
                 )
                 // ★ 완전한 STATELESS (세션 사용하지 않음)
@@ -156,5 +148,4 @@ public class SecurityConfig {
         firewall.setAllowSemicolon(true);
         return firewall;
     }
-
 }
