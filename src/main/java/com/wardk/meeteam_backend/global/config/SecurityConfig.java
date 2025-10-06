@@ -1,6 +1,5 @@
 package com.wardk.meeteam_backend.global.config;
 
-import com.wardk.meeteam_backend.global.auth.repository.CustomCookieAuthorizationRequestRepository;
 import com.wardk.meeteam_backend.global.auth.service.CustomOidcUserService;
 import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
 import com.wardk.meeteam_backend.global.exception.RestAuthenticationEntryPoint;
@@ -82,7 +81,7 @@ public class SecurityConfig {
                         .failureUrl(oAuth2Properties.getOauth2RedirectUrl()) // 설정에서 가져온 실패 URL
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOauth2UserService) // 커스텀 OAuth2UserService 사용
-                            .oidcUserService(customOidcUserService)
+                                .oidcUserService(customOidcUserService)
                         )
                 )
                 // ★ 완전한 STATELESS (세션 사용하지 않음)
