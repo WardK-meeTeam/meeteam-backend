@@ -154,10 +154,7 @@ github:
 
 app:
     oauth2:
-        redirect:
-            login-success-url: ${FRONTEND_LOGIN_SUCCESS_URL:http://localhost:3000/main}
-            oauth2-signup-url: ${FRONTEND_OAUTH2_SIGNUP_URL:http://localhost:3000/oauth2/redirect}
-            failure-url: ${FRONTEND_LOGIN_FAILURE_URL:http://localhost:3000/login}
+        oauth2-redirect-url: ${FRONTEND_OAUTH2_REDIRECT_URL:http://localhost:3000/oauth2/redirect}
         providers:
             google:
                 name: "google"

@@ -14,18 +14,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class OAuth2Properties {
 
     //리다이렉트 관련 설정
-    private final Redirect redirect;
+    private final String oauth2RedirectUrl;
 
     //프로바이더별 설정
     private final Providers providers;
-
-    @Getter
-    @RequiredArgsConstructor
-    public static class Redirect {
-        private final String loginSuccessUrl;       // 기존 회원 로그인 성공 시 이동할 URL
-        private final String oauth2SignupUrl;       // 신규 회원 추가 정보 입력 페이지 URL
-        private final String failureUrl;            // 로그인 실패 시 이동할 URL
-    }
 
     @Getter
     @RequiredArgsConstructor
