@@ -237,4 +237,9 @@ public class AuthService {
 
         return null;
     }
+
+    @Transactional
+    public void deleteByEmail(String email) {
+        memberRepository.deleteByEmail(email);
+    }
 }
