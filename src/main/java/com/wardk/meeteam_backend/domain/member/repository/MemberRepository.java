@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
+    void deleteByEmail(String email);
 
     Optional<Member> findOptionByEmail(String email);
 

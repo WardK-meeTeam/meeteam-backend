@@ -154,7 +154,7 @@ github:
 
 app:
     oauth2:
-        oauth2-redirect-url: ${FRONTEND_OAUTH2_REDIRECT_URL:http://localhost:3000/oauth2/redirect}
+        oauth2-redirect-url: https://meeteam.alom-sejong.com/oauth2/redirect
         providers:
             google:
                 name: "google"

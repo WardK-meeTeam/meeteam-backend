@@ -1,9 +1,16 @@
 package com.wardk.meeteam_backend.test;
 
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.global.auth.service.AuthService;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.web.auth.dto.login.LoginRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -13,7 +20,15 @@ import java.util.List;
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 public class TestController {
+    private final AuthService authService;
+
+    @DeleteMapping("/auth/delete")
+    @Operation(summary = "테스트용 회원 탈퇴", description = "헤더에 토큰을 담으면, 해당 정보로 회원 탈퇴를 진행합니다.")
+    public void deleteUserForTest(@AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+        authService.deleteByEmail(userDetails.getUsername());
+    }
 
     @Autowired
     DataSource dataSource;

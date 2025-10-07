@@ -1,8 +1,7 @@
 package com.wardk.meeteam_backend.global.auth.filter;
 
 
-import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.member.entity.UserRole;
+
 import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.config.SecurityUrls;
