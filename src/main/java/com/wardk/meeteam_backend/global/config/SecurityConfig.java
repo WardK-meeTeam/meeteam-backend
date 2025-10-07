@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.global.config;
 
 import com.wardk.meeteam_backend.global.auth.service.CustomOidcUserService;
+import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
 import com.wardk.meeteam_backend.global.exception.RestAuthenticationEntryPoint;
 import com.wardk.meeteam_backend.global.auth.filter.JwtFilter;
@@ -37,6 +38,7 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final SecurityUrls securityUrls;
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final CustomUserDetailsService customUserDetailsService;
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOauth2UserService;
     private final CustomOidcUserService customOidcUserService;
     private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
@@ -89,7 +91,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .addFilterBefore(
-                        new JwtFilter(jwtUtil, securityUrls),
+                        new JwtFilter(jwtUtil, securityUrls, customUserDetailsService),
                         LoginFilter.class
                 )
                 .addFilterAt(
