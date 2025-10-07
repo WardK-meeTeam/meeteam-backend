@@ -6,15 +6,15 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
-import com.wardk.meeteam_backend.domain.skill.repository.MemberSkillRepository;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.auth.service.dto.SignupTokenInfo;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
+import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
+import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.web.auth.dto.register.*;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.member.repository.MemberSubCategoryRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
@@ -63,11 +63,12 @@ public class AuthService {
                 .isParticipating(true)
                 .role(UserRole.USER)
                 .build();
-        return createRegisterResponse(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+        saveMemberAndSubCategoriesAndSkills(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+        return new RegisterResponse(member.getRealName(), member.getId());
     }
 
     @Transactional
-    public RegisterResponse oauth2Register(OAuth2RegisterRequest registerRequest, MultipartFile file) {
+    public OAuth2RegisterResult oauth2Register(OAuth2RegisterRequest registerRequest, MultipartFile file) {
         // 회원가입 전용 토큰 검증 및 파싱
         SignupTokenInfo signupTokenInfo = jwtUtil.getParsedSignupTokenInfo(registerRequest.getToken());
         memberRepository.findByProviderAndProviderId(signupTokenInfo.getProvider(), signupTokenInfo.getProviderId())
@@ -90,11 +91,15 @@ public class AuthService {
             .provider(signupTokenInfo.getProvider())
             .providerId(signupTokenInfo.getProviderId())
             .build();
-        return createRegisterResponse(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+
+        String accessToken = jwtUtil.createAccessToken(member);
+        String refreshToken = jwtUtil.createRefreshToken(member);
+        saveMemberAndSubCategoriesAndSkills(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+        return new OAuth2RegisterResult(member, accessToken, refreshToken);
     }
 
-    private RegisterResponse createRegisterResponse(Member member, List<SubCategoryDto> subCategories, List<SkillDto> skills, MultipartFile file) {
-        Member registerMember = memberRepository.save(member);
+    private void saveMemberAndSubCategoriesAndSkills(Member member, List<SubCategoryDto> subCategories, List<SkillDto> skills, MultipartFile file) {
+        memberRepository.save(member);
         subCategories.forEach(e -> {
                 SubCategory subCategory = subCategoryRepository.findByName(e.getSubcategory())
                     .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
@@ -105,8 +110,6 @@ public class AuthService {
                     .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
                 member.addMemberSkill(skill);
             });
-        return new RegisterResponse(registerMember.getRealName(), member.getId());
-
     }
 
     @Transactional
