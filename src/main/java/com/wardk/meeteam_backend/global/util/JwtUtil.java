@@ -280,7 +280,7 @@ public class JwtUtil {
       }
 
       // Role이 OAUTH2_GUEST 인지 확인
-      if (!role.equals(UserRole.OAUTH2_GUEST)) {
+      if (!role.equals(UserRole.OAUTH2_GUEST.name())) {
         log.error("OAuth2 회원가입 토큰의 Role이 올바르지 않습니다: {}", role);
         throw new IllegalArgumentException("Invalid OAuth2 signup token role");
       }
