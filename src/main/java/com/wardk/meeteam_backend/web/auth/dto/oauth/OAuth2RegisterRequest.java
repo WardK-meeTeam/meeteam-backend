@@ -1,6 +1,8 @@
-package com.wardk.meeteam_backend.web.auth.dto.register;
+package com.wardk.meeteam_backend.web.auth.dto.oauth;
 
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
+import com.wardk.meeteam_backend.web.auth.dto.register.SkillDto;
+import com.wardk.meeteam_backend.web.auth.dto.register.SubCategoryDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
