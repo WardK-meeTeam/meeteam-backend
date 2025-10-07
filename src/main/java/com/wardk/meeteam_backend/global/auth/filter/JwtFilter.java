@@ -2,6 +2,8 @@ package com.wardk.meeteam_backend.global.auth.filter;
 
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.member.entity.UserRole;
+import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.config.SecurityUrls;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
@@ -24,6 +26,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final SecurityUrls securityUrls; // 화이트리스트 경로 관리 클래스
+    private final CustomUserDetailsService customUserDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -103,14 +106,8 @@ public class JwtFilter extends OncePerRequestFilter {
             String email = jwtUtil.getUsername(token);
             Long memberId = jwtUtil.getMemberId(token);
 
-            // Member 객체 생성
-            Member member = Member.builder()
-                    .email(email)
-                    .id(memberId)
-                    .build();
-
-            // UserDetails에 회원 정보 객체 담기
-            CustomSecurityUserDetails customSecurityUserDetails = new CustomSecurityUserDetails(member);
+            // UserDetailsService를 통해 DB 에서 완전한 사용자 정보를 조회합니다.
+            CustomSecurityUserDetails customSecurityUserDetails = customUserDetailsService.loadUserByUsername(email);
 
             // 스프링 시큐리티 인증 토큰 생성
             Authentication authToken = new UsernamePasswordAuthenticationToken(
