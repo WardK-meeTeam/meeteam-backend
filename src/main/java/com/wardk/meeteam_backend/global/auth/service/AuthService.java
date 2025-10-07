@@ -69,6 +69,10 @@ public class AuthService {
     public RegisterResponse oauth2Register(OAuth2RegisterRequest registerRequest, MultipartFile file) {
         // 회원가입 전용 토큰 검증 및 파싱
         SignupTokenInfo signupTokenInfo = jwtUtil.getParsedSignupTokenInfo(registerRequest.getToken());
+        memberRepository.findByProviderAndProviderId(signupTokenInfo.getProvider(), signupTokenInfo.getProviderId())
+            .ifPresent(register -> {
+                throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
+            });
         String imageUrl = null;
         if (file != null && !file.isEmpty()) {
             imageUrl = s3FileService.uploadFile(file, "images");
