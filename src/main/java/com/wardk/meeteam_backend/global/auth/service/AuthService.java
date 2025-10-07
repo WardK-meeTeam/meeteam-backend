@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -81,7 +82,7 @@ public class AuthService {
             .realName(registerRequest.getName())
             .age(registerRequest.getAge())
             .gender(registerRequest.getGender())
-            .password(bCryptPasswordEncoder.encode(registerRequest.getPassword()))
+            .password(bCryptPasswordEncoder.encode(UUID.randomUUID().toString()))
             .storeFileName(imageUrl)
             .isParticipating(true)
             .role(UserRole.USER)

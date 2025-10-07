@@ -26,11 +26,6 @@ public class OAuth2RegisterRequest {
   @Schema(description = "성별", example = "MALE", allowableValues = {"MALE","FEMALE"})
   private Gender gender;
 
-  @Schema(description = "비밀번호", example = "qwer1234")
-  @NotEmpty
-  private String password;
-
-
   @Schema(description = "분야(소분류) 목록")
   private List<SubCategoryDto> subCategories;
 
