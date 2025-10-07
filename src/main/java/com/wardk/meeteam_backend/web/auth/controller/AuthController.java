@@ -71,7 +71,7 @@ public class AuthController {
         @RequestPart("request") OAuth2RegisterRequest request,
         @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        log.info("회원가입={}", request.getName());
+        log.info("OAuth2 회원가입={}", request.getName());
 
         RegisterResponse register = authService.oauth2Register(request, file);
 
