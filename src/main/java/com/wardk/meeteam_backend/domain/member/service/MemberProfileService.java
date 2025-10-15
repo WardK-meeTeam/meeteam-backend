@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.web.member.dto.MemberProfileResponse;
 import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateRequest;
 import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateResponse;
 import com.wardk.meeteam_backend.web.member.dto.MemberSearchRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,5 +19,5 @@ public interface MemberProfileService {
 
     List<MemberCardResponse> getAllMemberCards();
 
-    List<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable);
+    Page<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable);
 }

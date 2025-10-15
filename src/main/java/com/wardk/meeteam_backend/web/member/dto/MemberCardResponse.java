@@ -1,14 +1,9 @@
 package com.wardk.meeteam_backend.web.member.dto;
 
-import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
-import com.wardk.meeteam_backend.domain.skill.entity.Skill;
-import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -20,7 +15,8 @@ public class MemberCardResponse {
     private String storeFileName;
     private double temperature;
     private Long projectCount;
-    private List<String> skillList; // Skill 엔티티 대신 String으로 변경
+    private List<String> skillList;
+    private List<String> bigCategory; // 대분류 추가
 
 
     public static MemberCardResponse responseToDto(Member member) {
@@ -33,6 +29,10 @@ public class MemberCardResponse {
                 .skillList(member.getMemberSkills().stream()
                         .map(memberSkill -> memberSkill.getSkill().getSkillName()) // Skill 이름만 추출
                         .toList())
+                .bigCategory(member.getSubCategories().stream()
+                        .map(memberSubCategory -> memberSubCategory.getSubCategory().getBigCategory().getName())
+                        .distinct() // 중복 제거
+                        .toList()) // List로 수집
                 .build();
     }
 }

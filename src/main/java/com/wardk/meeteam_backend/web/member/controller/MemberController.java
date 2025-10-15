@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -83,7 +84,7 @@ public class MemberController {
 
     @Operation(summary = "사용자 조건 검색", description = "사용자 이름, 플랫폼, 분야, 기술 스택 등 다양한 조건으로 사용자를 검색합니다.")
     @GetMapping("api/members/search")
-    public SuccessResponse<List<MemberCardResponse>> searchMembers(
+    public SuccessResponse<Page<MemberCardResponse>> searchMembers (
             @RequestParam(value = "bigCategories", required = false) List<String> bigCategories,
             @RequestParam(value = "skillList", required = false) List<String> skillList,
             @ParameterObject Pageable pageable
@@ -93,7 +94,7 @@ public class MemberController {
         searchRequest.setBigCategories(bigCategories);
         searchRequest.setSkillList(skillList);
 
-        List<MemberCardResponse> searchResults = memberProfileService.searchMembers(searchRequest, pageable);
+        Page<MemberCardResponse> searchResults = memberProfileService.searchMembers(searchRequest, pageable);
         return SuccessResponse.onSuccess(searchResults);
     }
 }

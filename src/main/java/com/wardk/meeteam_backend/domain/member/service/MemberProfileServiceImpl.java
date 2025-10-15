@@ -134,7 +134,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
+    public Page<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
 
         Page<Member> memberPage;
 
@@ -166,15 +166,13 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             memberPage = memberRepository.findAll(pageable);
         }
 
-        List<Member> members = memberPage.getContent();
+//        List<Member> members = memberPage.getContent();
 
-        log.info("검색 결과 - 총 {}개 회원 조회됨", members.size());
+        log.info("검색 결과 - 총 {}개 회원 조회됨", memberPage.getTotalElements());
         log.info("페이지 정보 - 총 {}페이지 중 {}페이지, 총 {}개 회원",
                 memberPage.getTotalPages(), memberPage.getNumber() + 1, memberPage.getTotalElements());
 
-        return members.stream()
-                .map(MemberCardResponse::responseToDto)
-                .toList();
+        return memberPage.map(MemberCardResponse::responseToDto);
     }
     /**
      * 회원 관심 분야 업데이트
