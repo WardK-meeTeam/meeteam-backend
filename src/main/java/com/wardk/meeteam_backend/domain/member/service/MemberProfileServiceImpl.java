@@ -130,43 +130,23 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     }
 
     /**
-     * 회원 검색 (조건에 따라 적절한 쿼리 선택)
+     * 회원 검색 (QueryDSL을 사용한 동적 쿼리 및 정렬)
      */
     @Override
     @Transactional(readOnly = true)
     public Page<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
 
-        Page<Member> memberPage;
+        log.info("QueryDSL을 사용한 회원 검색 - 대분류: {}, 기술스택: {}, 정렬: {}",
+                searchRequest.getBigCategories(),
+                searchRequest.getSkillList(),
+                pageable.getSort());
 
-        // 조건에 따라 적절한 쿼리 선택
-        boolean hasBigCategories = searchRequest.getBigCategories() != null && !searchRequest.getBigCategories().isEmpty();
-        boolean hasSkills = searchRequest.getSkillList() != null && !searchRequest.getSkillList().isEmpty();
-
-        if (hasBigCategories && hasSkills) {
-            log.info("대분류와 기술스택 모두로 검색");
-            memberPage = memberRepository.findByBigCategoriesAndSkills(
-                    searchRequest.getBigCategories(),
-                    searchRequest.getSkillList(),
-                    pageable
-            );
-        } else if (hasBigCategories) {
-            log.info("대분류로만 검색");
-            memberPage = memberRepository.findByBigCategories(
-                    searchRequest.getBigCategories(),
-                    pageable
-            );
-        } else if (hasSkills) {
-            log.info("기술스택으로만 검색");
-            memberPage = memberRepository.findBySkills(
-                    searchRequest.getSkillList(),
-                    pageable
-            );
-        } else {
-            log.info("조건 없음 - 전체 회원 조회");
-            memberPage = memberRepository.findAll(pageable);
-        }
-
-//        List<Member> members = memberPage.getContent();
+        // QueryDSL로 조회
+        Page<Member> memberPage = memberRepository.searchMembers(
+                searchRequest.getBigCategories(),
+                searchRequest.getSkillList(),
+                pageable
+        );
 
         log.info("검색 결과 - 총 {}개 회원 조회됨", memberPage.getTotalElements());
         log.info("페이지 정보 - 총 {}페이지 중 {}페이지, 총 {}개 회원",
