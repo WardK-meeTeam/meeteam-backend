@@ -1,16 +1,13 @@
 package com.wardk.meeteam_backend.domain.member.repository;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.skill.entity.Skill;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-@Component
 public interface MemberRepositoryCustom {
 
-    Member getProfile(Long memberId);
-
+    Page<Member> searchMembers(List<String> bigCategories, List<String> skillList, Pageable pageable);
 }
 
