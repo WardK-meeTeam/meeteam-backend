@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -67,13 +69,17 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
      * Refresh Token 쿠키 설정 메서드
      */
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        Cookie refreshTokenCookie = new Cookie(JwtUtil.REFRESH_COOKIE_NAME, refreshToken);
-        refreshTokenCookie.setHttpOnly(true);  // JS 접근 불가
-        refreshTokenCookie.setSecure(false);   // 개발환경에서는 false (배포시 true)
-        refreshTokenCookie.setPath("/");       // 모든 경로에서 유효
-        refreshTokenCookie.setMaxAge((int) (jwtUtil.getRefreshExpirationTime() / 1000)); // 30일
+        // ResponseCookie 빌더를 사용하여 SameSite 속성을 명시적으로 설정
+        ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, refreshToken)
+            .httpOnly(true)    // HttpOnly 설정
+            .secure(true)      // Secure 설정 (HTTPS 필수)
+            .path("/")         // Path 설정
+            .domain(".meeteam.alom-sejong.com") // 도메인 설정 (점 포함)
+            .sameSite("None")                   // 서브도메인 간 공유를 허용
+            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000) // MaxAge 설정
+            .build();
 
-        response.addCookie(refreshTokenCookie);
+        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
         log.info("Refresh Token 쿠키 설정 완료");
     }
 }
