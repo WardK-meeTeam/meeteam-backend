@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -83,13 +84,17 @@ public class AuthController {
         // JS에서 읽을 수 있도록 expose-header 추가
         response.addHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.AUTHORIZATION);
         // 쿠키에 refreshToken 추가
-        Cookie cookie = new Cookie(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken());
-        cookie.setHttpOnly(true); // HttpOnly 설정
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setDomain(".meeteam.alom-sejong.com");       // 도메인 설정
-        cookie.setMaxAge((int) (jwtUtil.getRefreshExpirationTime() / 1000)); // 쿠키 maxAge는 초 단위 이므로, 밀리초를 1000으로 나눔
-        response.addCookie(cookie);
+        // ResponseCookie 빌더를 사용하여 SameSite 속성을 명시적으로 설정
+        ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken())
+            .httpOnly(true)    // HttpOnly 설정 (보안ㅋ
+            .secure(true)      // Secure 설정 (HTTPS 필수)
+            .path("/")         // Path 설정
+            .domain(".meeteam.alom-sejong.com") // 도메인 설정 (점 포함)
+            .sameSite("None")                   // 서브도메인 간 공유를 허용
+            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000) // MaxAge 설정
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
 
         // 로그인에 성공하면 유저 정보 반환
         response.setContentType("application/json");
