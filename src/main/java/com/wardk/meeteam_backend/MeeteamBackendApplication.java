@@ -14,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class MeeteamBackendApplication {
 
 	public static void main(String[] args) {
+
+		System.out.println("Available processors: " + Runtime.getRuntime().availableProcessors());
 		SpringApplication.run(MeeteamBackendApplication.class, args);
 	}
 
