@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,7 +34,10 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
     private final LlmReviewService llmReviewService;
     private final LlmSummaryService llmSummaryService;
     private final CodeReviewChatService codeReviewChatService;
-    private final Executor asyncTaskExecutor;
+    // 기존 Executor를 Virtual Thread Executor로 교체
+    // private final Executor asyncTaskExecutor = Executors.newVirtualThreadPerTaskExecutor();
+    // 플랫폼 스레드 기반 Executor로 변경
+    private final Executor asyncTaskExecutor = Executors.newCachedThreadPool();
     private final LlmConcurrencyLimiter limiter;
 
     /**
