@@ -259,4 +259,4 @@ security:
         - method: GET
           uri: /api/members/search # 회원 검색
         - method: GET
-          uri: /api/project/like/*
+          uri: api/project/like/* # 좋아요 개수
