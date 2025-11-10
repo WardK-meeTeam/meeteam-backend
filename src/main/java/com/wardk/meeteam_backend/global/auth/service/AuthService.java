@@ -242,4 +242,19 @@ public class AuthService {
     public void deleteByEmail(String email) {
         memberRepository.deleteByEmail(email);
     }
+
+    /**
+     * 로그아웃 - Refresh Token 쿠키를 삭제하기 위한 만료된 쿠키를 반환
+     * 클라이언트는 Access Token을 직접 삭제해야 함
+     *
+     * @return 만료된 Refresh Token 쿠키
+     */
+    public Cookie logout() {
+        Cookie cookie = new Cookie(JwtUtil.REFRESH_COOKIE_NAME, null);
+        cookie.setMaxAge(0); // 즉시 만료
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // HTTPS 환경에서만 전송
+        return cookie;
+    }
 }

@@ -258,3 +258,5 @@ security:
           uri: /api/members/all # 회원 목록 조회
         - method: GET
           uri: /api/members/search # 회원 검색
+        - method: GET
+          uri: /api/project/like/*
