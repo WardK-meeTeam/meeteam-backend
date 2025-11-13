@@ -146,8 +146,10 @@ public class AuthController {
     @Operation(summary = "로그아웃", description = "로그아웃을 수행합니다. Refresh Token 쿠키를 삭제하며, 클라이언트는 Access Token을 직접 삭제해야 합니다.")
     @PostMapping("api/auth/logout")
     public SuccessResponse<String> logout(HttpServletResponse response) {
-        Cookie expiredCookie = authService.logout();
-        response.addCookie(expiredCookie);
+
+        ResponseCookie expiredCookie = authService.logoutCookie();
+        response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
+
         log.info("로그아웃 완료 - Refresh Token 쿠키 삭제");
         return SuccessResponse.onSuccess("로그아웃이 완료되었습니다.");
     }

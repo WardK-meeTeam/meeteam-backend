@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -80,12 +81,17 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
 
         // 쿠키에 refreshToken 추가
-        Cookie cookie = new Cookie(JwtUtil.REFRESH_COOKIE_NAME, refreshToken);
-        cookie.setHttpOnly(true); // HttpOnly 설정
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge((int) (jwtUtil.getRefreshExpirationTime() / 1000)); // 쿠키 maxAge는 초 단위 이므로, 밀리초를 1000으로 나눔
-        response.addCookie(cookie);
+        ResponseCookie refreshCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, refreshToken)
+                .httpOnly(true)                            // JS 접근 차단
+                .secure(true)                              // HTTPS 환경 필수
+                .path("/")                                 // 모든 경로에서 접근 가능
+                .sameSite("None")                          // CORS 환경에서도 쿠키 전송 가능
+                .domain(".meeteam.alom-sejong.com")        // 서브도메인 간 공유 허용
+                .maxAge(jwtUtil.getRefreshExpirationTime() / 1000) // 초 단위 변환
+                .build();
+
+        // 응답 헤더에 Set-Cookie 추가
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         // 로그인에 성공하면 유저 정보 반환
         response.setContentType("application/json");

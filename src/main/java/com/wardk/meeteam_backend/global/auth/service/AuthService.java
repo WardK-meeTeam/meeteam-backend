@@ -21,6 +21,7 @@ import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -249,12 +250,14 @@ public class AuthService {
      *
      * @return 만료된 Refresh Token 쿠키
      */
-    public Cookie logout() {
-        Cookie cookie = new Cookie(JwtUtil.REFRESH_COOKIE_NAME, null);
-        cookie.setMaxAge(0); // 즉시 만료
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true); // HTTPS 환경에서만 전송
-        return cookie;
+    public ResponseCookie logoutCookie() {
+        return ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, null)
+                .path("/")                                 // 경로 동일
+                .domain(".meeteam.alom-sejong.com")        // 도메인 동일
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .maxAge(0)                                 // 즉시 만료
+                .build();
     }
 }
