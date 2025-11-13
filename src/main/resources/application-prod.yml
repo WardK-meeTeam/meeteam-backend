@@ -177,6 +177,7 @@ cors:
         - http://localhost:3000                  # 로컬 개발용
         - http://localhost:3001                  # 추가 로컬 개발용
         - https://localhost:3000                 # 로컬 개발용 (HTTPS)
+        - http://dev.meeteam.alom-sejong.com:3000
 
     allowed-methods:
         - GET
