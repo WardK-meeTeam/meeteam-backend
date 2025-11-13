@@ -221,4 +221,14 @@ public class Project extends BaseEntity {
         this.recruitmentStatus = Recruitment.CLOSED;
         this.endDate = LocalDate.now();
     }
+
+
+    public void updateRecruitmentsStatus() {
+        boolean isClosed = this.recruitments.stream()
+                .allMatch(r -> r.getCurrentCount() >= r.getRecruitmentCount());
+
+        if (isClosed) {
+            this.recruitmentStatus = Recruitment.CLOSED;
+        }
+    }
 }
