@@ -70,6 +70,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
 
         projectCategoryApplication.increaseCurrentCount();
+        project.updateRecruitmentsStatus();
 
         projectMemberRepository.save(projectMember);
     }
