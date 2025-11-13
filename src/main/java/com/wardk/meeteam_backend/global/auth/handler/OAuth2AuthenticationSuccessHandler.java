@@ -72,7 +72,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // ResponseCookie 빌더를 사용하여 SameSite 속성을 명시적으로 설정
         ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, refreshToken)
             .httpOnly(true)    // HttpOnly 설정
-            .secure(true)      // Secure 설정 (HTTPS 필수)
+            .secure(false)      // Secure 설정 (HTTPS 필수)
             .path("/")         // Path 설정
             .domain(".meeteam.alom-sejong.com") // 도메인 설정 (점 포함)
             .sameSite("None")                   // 서브도메인 간 공유를 허용

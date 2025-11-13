@@ -255,7 +255,7 @@ public class AuthService {
                 .path("/")                                 // 경로 동일
                 .domain(".meeteam.alom-sejong.com")        // 도메인 동일
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .sameSite("None")
                 .maxAge(0)                                 // 즉시 만료
                 .build();
