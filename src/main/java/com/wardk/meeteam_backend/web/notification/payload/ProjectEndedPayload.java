@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @AllArgsConstructor
 @Data
-public class ProjectEndNotiPayload implements Payload {
+public class ProjectEndedPayload implements Payload {
 
 
     private Long projectId;
