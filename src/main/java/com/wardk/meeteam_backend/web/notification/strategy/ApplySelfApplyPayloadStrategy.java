@@ -1,36 +1,27 @@
-package com.wardk.meeteam_backend.web.notification.payload;
+package com.wardk.meeteam_backend.web.notification.strategy;
 
+import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.web.notification.context.NotificationContext;
+import com.wardk.meeteam_backend.web.notification.payload.Payload;
+import com.wardk.meeteam_backend.web.notification.payload.ProjectApplicationSubmittedPayload;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
-@Data
-@AllArgsConstructor
-@Builder
-@RequiredArgsConstructor
-public class ApplySelfApplyPayloadStrategy implements Payload {
+@Component
+public class ApplySelfApplyPayloadStrategy implements NotificationPayloadStrategy {
 
-    /**
-     * 프로젝트 지원자가 지원을 완료하면 받는 본문내용
-     */
-
-    private Long receiverId;
-
-    private String projectName;
-
-    private LocalDate localDate;
-
-
-    public static Payload create(NotificationContext context) {
-        return ApplySelfApplyPayloadStrategy.builder()
-                .receiverId(context.getReceiver().getId())
-                .projectName(context.getProject().getName())
-                .localDate(LocalDate.now())
-                .build();
+    @Override
+    public NotificationType getType() {
+        return NotificationType.PROJECT_SELF_APPLY;
     }
 
+    @Override
+    public Payload create(NotificationContext context) {
+        return ProjectApplicationSubmittedPayload.create(context);
+    }
 }

@@ -4,7 +4,9 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
+import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
+import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
@@ -39,7 +41,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
     private final SubCategoryRepository subCategoryRepository;
-
+    private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
 
@@ -50,9 +52,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if (project.getStatus() == ProjectStatus.COMPLETED || project.getRecruitmentStatus() == Recruitment.CLOSED) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
+        project.isCompleted();
 
         Member member = memberRepository.findOptionByEmail(applicantEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -87,13 +87,17 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         Long receiverId = project.getCreator().getId();
         Long actorId = member.getId();
 
+
+        Notification notification = createNotification(project, actorId, memberApplication);
+        notificationRepository.save(notification);
+
         //프로젝트 리더 알림
         eventPublisher.publishEvent(new NotificationEvent(
                 receiverId,
                 project.getId(),
                 actorId,
                 NotificationType.PROJECT_APPLY,
-                memberApplication.getId() // 지원서 알림
+                memberApplication.getId() // 지원서id
         ));
 
 
@@ -102,7 +106,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 actorId,
                 project.getId(),
                 actorId,
-                NotificationType.PROJECT_MY_APPLY
+                NotificationType.PROJECT_SELF_APPLY
         ));
 
 
@@ -110,6 +114,16 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         return ApplicationResponse.responseDto(memberApplication);
     }
 
+    private static Notification createNotification(Project project, Long actorId, ProjectMemberApplication memberApplication) {
+        return Notification.builder()
+                .type(NotificationType.PROJECT_APPLY)
+                .receiver(project.getCreator())
+                .actorId(actorId)
+                .isRead(false)
+                .project(project)
+                .applicationId(memberApplication.getId())
+                .build();
+    }
 
 
     @Override
@@ -181,7 +195,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                     applicantId,
                     projectId,
                     projectCreatorId,
-                    NotificationType.PROJECT_APPROVE
+                    NotificationType.PROJECT_APPLICATION_APPROVED
             ));
 
 
@@ -197,7 +211,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 applicantId,
                 projectId,
                 projectCreatorId,
-                NotificationType.PROJECT_REJECT
+                NotificationType.PROJECT_APPLICATION_REJECTED
         ));
 
         return ApplicationDecisionResponse.rejectResponseDto(

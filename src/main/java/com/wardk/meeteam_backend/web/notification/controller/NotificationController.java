@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.web.notification.controller;
 
 import com.wardk.meeteam_backend.domain.notification.service.NotificationService;
-import com.wardk.meeteam_backend.domain.notification.service.SSENotificationService;
+import com.wardk.meeteam_backend.domain.notification.service.NotificationSubscribeService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.notification.dto.NotificationResponse;
@@ -27,7 +27,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationController {
 
 
-    private final SSENotificationService sseNotificationService;
+    private final NotificationSubscribeService notificationSubscribeService;
     private final NotificationService notificationService;
 
     /**
@@ -44,7 +44,7 @@ public class NotificationController {
                                 // Last-Event-ID 헤더는 마지막으로 받은 이벤트부터 이벤트 스트리밍을 재개하는 데 사용됩니다.
                                 @RequestHeader(value = "Last-Event-ID", required = false, defaultValue = "")
                                 String lastEventId) {
-        return sseNotificationService.subscribe(userDetails.getUsername(), lastEventId);
+        return notificationSubscribeService.subscribe(userDetails.getUsername(), lastEventId);
     }
 
 

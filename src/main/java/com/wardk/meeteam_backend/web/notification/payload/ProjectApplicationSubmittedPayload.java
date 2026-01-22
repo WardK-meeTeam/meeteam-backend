@@ -1,26 +1,29 @@
 package com.wardk.meeteam_backend.web.notification.payload;
 
 
+import com.wardk.meeteam_backend.web.notification.context.NotificationContext;
+import com.wardk.meeteam_backend.web.notification.strategy.ApplySelfApplyPayloadStrategy;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
-public class NewApplicantPayload implements Payload { // 내 프로젝트에 누가 지원함(프로젝트 소유자에게 가는 카드)
-
-    /**
-     * applicationId, projectId 를 통해
-     * api/projects-application/{projectId}/{applicationId} 필요
-     */
-    Long applicationId;// 지원한 사람의 지원서Id
-    Long projectId; // 프로젝트Id
+@Builder
+public class ProjectApplicationSubmittedPayload implements Payload {
 
 
-    Long receiverId; // 팀장 ID
-    Long applicantId; // 참여자
-    String applicantName;
-    String projectName;
-    LocalDate date;
+    private Long receiverId;
+    private String projectName;
+    private LocalDate localDate;
+
+    public static Payload create(NotificationContext context) {
+        return ProjectApplicationSubmittedPayload.builder()
+                .receiverId(context.getReceiver().getId())
+                .projectName(context.getProject().getName())
+                .localDate(LocalDate.now())
+                .build();
+    }
 }

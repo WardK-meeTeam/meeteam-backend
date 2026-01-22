@@ -4,7 +4,6 @@ package com.wardk.meeteam_backend.web.notification.dto;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
-import com.wardk.meeteam_backend.web.notification.payload.NotificationPayload;
 import lombok.Data;
 
 import java.time.LocalDate;

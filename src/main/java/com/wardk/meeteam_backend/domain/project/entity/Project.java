@@ -231,4 +231,14 @@ public class Project extends BaseEntity {
             this.recruitmentStatus = Recruitment.CLOSED;
         }
     }
+
+
+    public void isCompleted() {
+        if (status == ProjectStatus.COMPLETED || recruitmentStatus == Recruitment.CLOSED) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+    }
+
+
+
 }

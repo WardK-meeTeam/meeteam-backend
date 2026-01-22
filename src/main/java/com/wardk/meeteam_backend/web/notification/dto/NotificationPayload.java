@@ -1,6 +1,7 @@
-package com.wardk.meeteam_backend.web.notification.payload;
+package com.wardk.meeteam_backend.web.notification.dto;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.web.notification.payload.Payload;
 import lombok.Data;
 
 @Data
