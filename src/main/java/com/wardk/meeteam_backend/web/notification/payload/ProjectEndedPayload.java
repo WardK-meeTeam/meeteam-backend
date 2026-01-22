@@ -12,10 +12,17 @@ import java.time.LocalDate;
 @Builder
 public class ProjectEndedPayload implements Payload {
 
-
     private Long projectId;
     private Long memberId;
     private String projectName;
     private LocalDate occurredAt;
 
+    public static Payload create(NotificationContext context) {
+        return ProjectEndedPayload.builder()
+                .projectId(context.getProjectId())
+                .memberId(context.getReceiverId())
+                .projectName(context.getProjectName())
+                .occurredAt(context.getOccurredAt())
+                .build();
+    }
 }

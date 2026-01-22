@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class ProjectApplicationRejectedPayloadStrategy implements NotificationPayloadStrategy{
     @Override
     public NotificationType getType() {
-        return NotificationType.PROJECT_APPLICATION_REJECTED;
+        return NotificationType.PROJECT_REJECT;
     }
 
     @Override

@@ -241,7 +241,7 @@ public class ProjectServiceImpl implements ProjectService {
         List<Long> membersId = getMembersId(project);
 
         eventPublisher.publishEvent(new ProjectEndEvent(
-                NotificationType.PROJECT_ENDED,
+                NotificationType.PROJECT_END,
                 membersId,
                 projectId,
                 project.getName(),

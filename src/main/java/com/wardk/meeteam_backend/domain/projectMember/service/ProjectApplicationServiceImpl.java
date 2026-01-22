@@ -88,25 +88,35 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         Long actorId = member.getId();
 
 
-        Notification notification = createNotification(project, actorId, memberApplication);
-        notificationRepository.save(notification);
+        // 1. 팀장에게 지원 알림 저장
+        Notification applyNotification = createNotification(
+                project.getCreator(), project, actorId, NotificationType.PROJECT_APPLY, memberApplication.getId()
+        );
+        notificationRepository.save(applyNotification);
 
-        //프로젝트 리더 알림
+        // 2. 지원자에게 지원 완료 알림 저장
+        Notification myApplyNotification = createNotification(
+                member, project, actorId, NotificationType.PROJECT_MY_APPLY, memberApplication.getId()
+        );
+        notificationRepository.save(myApplyNotification);
+
+
+        //프로젝트 리더 알림 발행 (SSE)
         eventPublisher.publishEvent(new NotificationEvent(
                 receiverId,
                 project.getId(),
                 actorId,
                 NotificationType.PROJECT_APPLY,
-                memberApplication.getId() // 지원서id
+                memberApplication.getId()
         ));
 
 
-        // 지원자 알림
+        // 지원자 알림 발행 (SSE)
         eventPublisher.publishEvent(new NotificationEvent(
                 actorId,
                 project.getId(),
                 actorId,
-                NotificationType.PROJECT_SELF_APPLY
+                NotificationType.PROJECT_MY_APPLY
         ));
 
 
@@ -114,14 +124,14 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         return ApplicationResponse.responseDto(memberApplication);
     }
 
-    private static Notification createNotification(Project project, Long actorId, ProjectMemberApplication memberApplication) {
+    private Notification createNotification(Member receiver, Project project, Long actorId, NotificationType type, Long applicationId) {
         return Notification.builder()
-                .type(NotificationType.PROJECT_APPLY)
-                .receiver(project.getCreator())
-                .actorId(actorId)
-                .isRead(false)
+                .receiver(receiver)
                 .project(project)
-                .applicationId(memberApplication.getId())
+                .actorId(actorId)
+                .type(type)
+                .applicationId(applicationId)
+                .isRead(false)
                 .build();
     }
 
@@ -191,11 +201,21 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                     application.getSubCategory()
             );
 
+            // 승인 알림 저장
+            Notification approveNotification = createNotification(
+                    application.getApplicant(), // receiver: 지원자
+                    application.getProject(),
+                    projectCreatorId,           // actor: 팀장
+                    NotificationType.PROJECT_APPROVE,
+                    application.getId()
+            );
+            notificationRepository.save(approveNotification);
+
             eventPublisher.publishEvent(new NotificationEvent(
                     applicantId,
                     projectId,
                     projectCreatorId,
-                    NotificationType.PROJECT_APPLICATION_APPROVED
+                    NotificationType.PROJECT_APPROVE
             ));
 
 
@@ -207,11 +227,21 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             );
         }
 
+        // 거절 알림 저장
+        Notification rejectNotification = createNotification(
+                application.getApplicant(), // receiver: 지원자
+                application.getProject(),
+                projectCreatorId,           // actor: 팀장
+                NotificationType.PROJECT_REJECT,
+                application.getId()
+        );
+        notificationRepository.save(rejectNotification);
+
         eventPublisher.publishEvent(new NotificationEvent(
                 applicantId,
                 projectId,
                 projectCreatorId,
-                NotificationType.PROJECT_APPLICATION_REJECTED
+                NotificationType.PROJECT_REJECT
         ));
 
         return ApplicationDecisionResponse.rejectResponseDto(

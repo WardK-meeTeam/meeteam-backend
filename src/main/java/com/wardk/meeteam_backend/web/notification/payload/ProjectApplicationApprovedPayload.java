@@ -11,19 +11,19 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @Builder
-public class ProjectApplicationApprovedPayload implements Payload{
+public class ProjectApplicationApprovedPayload implements Payload {
 
-
-    private Long receiverId; // 알림 받는 사람 id
+    private Long receiverId;
     private Long projectId;
     private ApprovalResult approvalResult;
     private LocalDate date;
 
     public static Payload create(NotificationContext context) {
         return ProjectApplicationApprovedPayload.builder()
-                .receiverId(context.getReceiver().getId())
-                .projectId(context.getProject().getId())
+                .receiverId(context.getReceiverId())
+                .projectId(context.getProjectId())
                 .approvalResult(ApprovalResult.APPROVED)
+                .date(context.getOccurredAt())
                 .build();
     }
 }

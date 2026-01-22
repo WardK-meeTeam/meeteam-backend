@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class ProjectApplicationApprovedPayloadStrategy implements NotificationPayloadStrategy{
     @Override
     public NotificationType getType() {
-        return NotificationType.PROJECT_APPLICATION_APPROVED;
+        return NotificationType.PROJECT_APPROVE;
     }
 
     @Override

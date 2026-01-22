@@ -3,10 +3,10 @@ package com.wardk.meeteam_backend.domain.notification.entity;
 public enum NotificationType {
 
     PROJECT_APPLY(true),     // actor 필요
-    PROJECT_SELF_APPLY(false), // actor 불필요
-    PROJECT_APPLICATION_APPROVED(false),
-    PROJECT_APPLICATION_REJECTED(false),
-    PROJECT_ENDED(false);
+    PROJECT_MY_APPLY(false), // actor 불필요
+    PROJECT_APPROVE(false),
+    PROJECT_REJECT(false),
+    PROJECT_END(false);
 
 
     private final boolean requiresActor;

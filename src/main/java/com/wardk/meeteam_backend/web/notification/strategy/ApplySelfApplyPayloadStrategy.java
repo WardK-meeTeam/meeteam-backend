@@ -17,7 +17,7 @@ public class ApplySelfApplyPayloadStrategy implements NotificationPayloadStrateg
 
     @Override
     public NotificationType getType() {
-        return NotificationType.PROJECT_SELF_APPLY;
+        return NotificationType.PROJECT_MY_APPLY;
     }
 
     @Override
