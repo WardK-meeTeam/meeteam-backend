@@ -4,7 +4,9 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
+import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
+import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
@@ -39,7 +41,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
     private final SubCategoryRepository subCategoryRepository;
-
+    private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
 
@@ -50,9 +52,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if (project.getStatus() == ProjectStatus.COMPLETED || project.getRecruitmentStatus() == Recruitment.CLOSED) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
+        project.isCompleted();
 
         Member member = memberRepository.findOptionByEmail(applicantEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -87,17 +87,31 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         Long receiverId = project.getCreator().getId();
         Long actorId = member.getId();
 
-        //프로젝트 리더 알림
+
+        // 1. 팀장에게 지원 알림 저장
+        Notification applyNotification = createNotification(
+                project.getCreator(), project, actorId, NotificationType.PROJECT_APPLY, memberApplication.getId()
+        );
+        notificationRepository.save(applyNotification);
+
+        // 2. 지원자에게 지원 완료 알림 저장
+        Notification myApplyNotification = createNotification(
+                member, project, actorId, NotificationType.PROJECT_MY_APPLY, memberApplication.getId()
+        );
+        notificationRepository.save(myApplyNotification);
+
+
+        //프로젝트 리더 알림 발행 (SSE)
         eventPublisher.publishEvent(new NotificationEvent(
                 receiverId,
                 project.getId(),
                 actorId,
                 NotificationType.PROJECT_APPLY,
-                memberApplication.getId() // 지원서 알림
+                memberApplication.getId()
         ));
 
 
-        // 지원자 알림
+        // 지원자 알림 발행 (SSE)
         eventPublisher.publishEvent(new NotificationEvent(
                 actorId,
                 project.getId(),
@@ -110,6 +124,16 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         return ApplicationResponse.responseDto(memberApplication);
     }
 
+    private Notification createNotification(Member receiver, Project project, Long actorId, NotificationType type, Long applicationId) {
+        return Notification.builder()
+                .receiver(receiver)
+                .project(project)
+                .actorId(actorId)
+                .type(type)
+                .applicationId(applicationId)
+                .isRead(false)
+                .build();
+    }
 
 
     @Override
@@ -177,6 +201,16 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                     application.getSubCategory()
             );
 
+            // 승인 알림 저장
+            Notification approveNotification = createNotification(
+                    application.getApplicant(), // receiver: 지원자
+                    application.getProject(),
+                    projectCreatorId,           // actor: 팀장
+                    NotificationType.PROJECT_APPROVE,
+                    application.getId()
+            );
+            notificationRepository.save(approveNotification);
+
             eventPublisher.publishEvent(new NotificationEvent(
                     applicantId,
                     projectId,
@@ -192,6 +226,16 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                     application.getStatus()
             );
         }
+
+        // 거절 알림 저장
+        Notification rejectNotification = createNotification(
+                application.getApplicant(), // receiver: 지원자
+                application.getProject(),
+                projectCreatorId,           // actor: 팀장
+                NotificationType.PROJECT_REJECT,
+                application.getId()
+        );
+        notificationRepository.save(rejectNotification);
 
         eventPublisher.publishEvent(new NotificationEvent(
                 applicantId,

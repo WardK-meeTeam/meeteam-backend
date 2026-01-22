@@ -4,18 +4,19 @@ package com.wardk.meeteam_backend.domain.notification.service;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
+import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.notification.repository.EmitterRepository;
 import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.notification.ApprovalResult;
 import com.wardk.meeteam_backend.web.notification.SseEnvelope;
-import com.wardk.meeteam_backend.web.notification.payload.*;
+import com.wardk.meeteam_backend.web.notification.context.NotificationContext;
+import com.wardk.meeteam_backend.web.notification.factory.NotificationPayloadFactory;
+import com.wardk.meeteam_backend.web.notification.payload.Payload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,292 +27,168 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Map;
 
-import static org.springframework.util.StringUtils.*;
-
+/**
+ * SSE 기반 실시간 알림 서비스.
+ *
+ * 트랜잭션 및 비동기 처리 전략:
+ * - 이 서비스는 @Async + @TransactionalEventListener(AFTER_COMMIT)로 호출됨
+ * - 호출 시점에 원본 트랜잭션은 이미 커밋된 상태
+ * - 새로운 트랜잭션에서 엔티티 조회 및 알림 저장 수행
+ * - SSE 전송은 트랜잭션과 무관하게 진행 (실패해도 DB는 커밋됨)
+ */
 @Slf4j
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class SSENotificationService {
-
-
-    private static final long DEFAULT_TIMEOUT = 60L * 60L * 1000L; // 1h
 
     private final NotificationRepository notificationRepository;
     private final EmitterRepository emitterRepository;
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
+    private final NotificationPayloadFactory payloadFactory;
 
-    // ====== 구독 ======
-    // emitter 를 client 에게 반환 ( 서버로 부터 이벤트를 client 가 받을 수 있게 된다.)
-    public SseEmitter subscribe(String email, String lastEventId) {
-
-        Member member = memberRepository.findOptionByEmail(email)
-                .orElseThrow( () -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        Long memberId = member.getId();
-
-        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT); // 1시간 타임아웃으로 SSE 생성
-
-        // 저장 및 수명 관리
-        String emitterId = makeEmitterId(memberId); // "{memberId}_{timestamp}"
-        emitterRepository.save(emitterId, emitter); // 메모리에 emitter 등록
-
-        //즉시 실행이 아니라 미래에 발생할 이벤트에 대비한 예약 실행 (바로 실행되는게 아니라 미리 등록해 놓는것이다.)
-        emitter.onCompletion(() -> emitterRepository.deleteById(emitterId)); // 정상 종료 시 정리
-        emitter.onTimeout(() -> emitterRepository.deleteById(emitterId)); // 타임아웃 시 정리
-        emitter.onError(e -> emitterRepository.deleteById(emitterId)); // 에러 시 정리
-
-        // 1) 연결 확인용 더미 이벤트(503 방지)
-        sendPing(emitter);
-
-
-        // ── 재연결: Last-Event-ID 이후의 미수신 이벤트 재전송 (ZSET score 범위 조회)
-        if (hasText(lastEventId)) {
-            long afterTs = extractTs(lastEventId);
-            if (afterTs != Long.MIN_VALUE) {
-                Map<String, Object> cachedEvents =
-                        emitterRepository.findEventCacheAfterByMemberId(String.valueOf(memberId), afterTs); // Redis에서 시간순 Map
-                cachedEvents.forEach((eid, payload) -> sendReplay(emitter, eid, payload)); // 이벤트명(name) 포함 재전송
-            } else {
-                log.warn("Skip replay due to non-numeric Last-Event-ID: {}", lastEventId);
-            }
-        }
-
-        return emitter;
-    }
-
-    // ====== 알림 생성 + 실시간 전송 ======
     /**
-     * 특정 사용자에게 알림을 생성하고 실시간으로 전송하는 메서드입니다.
-     *
-     * @param receiver 알림을 받을 대상 사용자
-     * @param type 알림 유형 (지원, 승인, 거절 등)
-     * @param project 알림과 연관된 프로젝트
-     * @param actorId 알림을 발생시킨 주체의 ID (일부 유형에서는 필수)
-     * @throws CustomException actorId가 필요한 알림 유형인데 null이거나,
-     *                         존재하지 않는 사용자/프로젝트일 경우 발생
-     *
-     * 1) 알림 메시지를 생성하고 DB에 저장합니다.
-     * 2) 알림 유형에 따라 payload 객체를 생성합니다.
-     * 3) SSE를 통해 구독 중인 클라이언트에게 실시간 전송합니다.
-     *
-     * 이 메서드는 트랜잭션 없이 실행되며, 호출하는 쪽에서 트랜잭션을 관리합니다.
+     * NotificationEvent 처리 - 단일 수신자 알림
+     * 새로운 트랜잭션에서 실행되어 엔티티 조회 및 알림 저장이 가능함.
      */
     @Transactional
-    public void notifyTo(Member receiver, NotificationType type, Project project, Long actorId, Long applicationId) {
+    public void notify(NotificationEvent event) {
+        NotificationType type = event.getType();
 
+        // 1. 필수 검증
+        validateActorIfRequired(type, event.getActorId());
 
-        // actorId 가 꼭 필요한데 null이면 예외
-        if (type.requiresActor() && actorId == null) {
-            throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+        // 2. 엔티티 조회
+        Member receiver = findMemberOrThrow(event.getReceiverId(), "수신자");
+        Project project = findProjectOrThrow(event.getProjectId());
+        Member actor = findActorIfRequired(type, event.getActorId());
+
+        // 3. Context 생성 (엔티티에서 필요한 데이터 추출)
+        NotificationContext context = NotificationContext.of(event, project, actor);
+
+        // 4. SSE 전송 (전송 실패가 저장 트랜잭션을 롤백시키지 않도록 예외 처리)
+        // 주의: Notification 엔티티 저장은 메인 비즈니스 로직(ProjectApplicationService)에서 이미 수행됨
+        try {
+            Payload payload = payloadFactory.create(type, context);
+            broadcastToReceiver(receiver.getId(), type, payload);
+            log.info("[알림] 전송 완료 - type: {}, receiver: {}", type, receiver.getId());
+        } catch (Exception e) {
+            log.error("[알림] 전송 실패 (DB 저장은 완료됨) - type: {}, receiver: {}, error: {}", type, receiver.getId(), e.getMessage());
         }
+    }
 
+    /**
+     * ProjectEndEvent 처리 - 다중 수신자 알림
+     * 프로젝트 종료/삭제 시 모든 팀원에게 알림 전송.
+     */
+    @Transactional
+    public void notify(ProjectEndEvent event) {
+        NotificationType type = event.getType();
+        Long projectId = event.getProjectId();
+        String projectName = event.getProjectName();
 
-        // actor 조회 (필요할 때만)
-        Member actor = null;
-        if (actorId != null && type.requiresActor()) {
-            actor = memberRepository.findById(actorId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-        }
+        Project project = findProjectOrThrow(projectId);
 
+        for (Long memberId : event.getProjectMembersId()) {
+            try {
+                Member receiver = findMemberOrThrow(memberId, "수신자");
 
-        // 1) DB 저장 (과거 기록 조회용)
-        Notification notification = notificationRepository.save(
-                Notification.builder()
-                        .receiver(receiver)
-                        .type(type)
-                        .project(project)
-                        .isRead(false)
-                        .actorId(actorId) // 알림 송신자Id
-                        .applicationId(applicationId) // 지원서Id
-                        .build()
-        );
-
-
-        // 2) 타입별 payload 조립
-        Payload payload = switch (type) {
-            case PROJECT_MY_APPLY -> new ApplyNotiPayload( //지원자에게 알림
-                    receiver.getId(), // 지원한 사람 == 받는 사람
-                    project.getName(),
-                    LocalDate.now()
-            );
-            case PROJECT_APPLY -> { // 내 프로젝트에 누군가 지원 (팀장에게 알림)
-                if (actor == null) throw new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND);
-                yield new NewApplicantPayload(
-                        applicationId, // 지원서Id -> 지원서 상세보기 API 를 호출용
-                        project.getId(), // 프로젝트Id -> 지원서 상세보기 API 호출용
-                        receiver.getId(),// 팀장 Id
-                        actor.getId(), // 지원자Id
-                        actor.getRealName(), // 지원자이름
-                        project.getName(), //프로젝트 이름
-                        LocalDate.now()
+                // Context 생성
+                NotificationContext context = NotificationContext.forProjectEnded(
+                        memberId, projectId, projectName
                 );
-            }
 
-            case PROJECT_APPROVE -> new SimpleMessagePayload(
-                    receiver.getId(),
-                    project.getId(),
-                    ApprovalResult.APPROVED,
-                    LocalDate.now()
-            );
-            case PROJECT_REJECT -> new SimpleMessagePayload(
-                    receiver.getId(),
-                    project.getId(),
-                    ApprovalResult.REJECTED,
-                    LocalDate.now()
-            );
-            default -> throw new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND);
-        };
+                // DB 저장
+                saveNotification(receiver, project, type, null, null);
 
-        SseEnvelope<Object> envelope = extracted(type, payload);
+                // SSE 전송
+                try {
+                    Payload payload = payloadFactory.create(type, context);
+                    broadcastToReceiver(memberId, type, payload);
+                    log.info("[알림] PROJECT_ENDED 전송 - receiver: {}, project: {}", memberId, projectId);
+                } catch (Exception e) {
+                    log.error("[알림] PROJECT_ENDED 전송 실패 (DB 저장은 완료됨) - receiver: {}, error: {}", memberId, e.getMessage());
+                }
 
-        broadcast(receiver.getId(), type, envelope);
-
-    }
-
-    private void broadcast(Long receiverId, NotificationType type, Object envelope) {
-        Map<String, SseEmitter> emitters =
-                emitterRepository.findAllEmitterStartWithByMemberId(String.valueOf(receiverId));
-
-        // 동일 이벤트는 한 번만 저장하고, 같은 eventId로 모든 emitter에 전송
-        String eventId = makeEventId(receiverId); // 동일 이벤트 하나의 ID
-        emitterRepository.saveEventCache(eventId, envelope); // 캐시에 1회만 저장
-
-        emitters.forEach((emitterId, emitter) -> {
-            try {
-                emitter.send(SseEmitter.event()
-                        .id(eventId)
-                        .name(type.name()) // 프론트에서 EventSource.addEventListener(type)
-                        .data(envelope));
-            } catch (IOException e) {
-                emitter.completeWithError(e);
-            }
-        });
-    }
-
-
-    private void sendReplay(SseEmitter emitter, String eventId, Object data) {
-        try {
-            if (data instanceof SseEnvelope<?> env && env.getType() != null) { // 저장해둔 타입이 있으면
-                emitter.send(SseEmitter.event()
-                        .id(eventId)
-                        .name(env.getType().name()) // 재전송에도 이벤트명 부여
-                        .data(data));
-            } else {
-                throw new CustomException(ErrorCode.NO_MATCHING_TYPE);
-            }
-        } catch (IOException ex) {
-            emitter.completeWithError(ex);
-        }
-    }
-
-    // 초기 연결 확인용 핑 이벤트: id를 주지 않아 브라우저의 Last-Event-ID가 갱신되지 않도록 함
-    private void sendPing(SseEmitter emitter) {
-        try {
-            emitter.send(SseEmitter.event()
-                    .name("PING")
-                    .data("connected"));
-        } catch (IOException ex) {
-            emitter.completeWithError(ex);
-        }
-    }
-
-    private long extractTs(String eventId) {
-        if (eventId == null || eventId.isBlank()) return Long.MIN_VALUE;
-        int idx = eventId.lastIndexOf('_');
-        if (idx >= 0 && idx + 1 < eventId.length()) {
-            try {
-                return Long.parseLong(eventId.substring(idx + 1));
-            } catch (NumberFormatException e) {
-                log.warn("Invalid eventId format (suffix not numeric): {}", eventId);
-                return Long.MIN_VALUE;
-            }
-        } else {
-            try {
-                return Long.parseLong(eventId);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid eventId format (not numeric): {}", eventId);
-                return Long.MIN_VALUE;
+            } catch (Exception e) {
+                log.error("[알림] 알림 처리 중 오류 발생 - receiver: {}, error: {}", memberId, e.getMessage());
             }
         }
     }
 
-    // Event-Id 구조를 {memberId}_{timestamp} 구조로 만듬
-    // 앞부분 식별자용 , 뒷부분 이벤트 발생 시각
-    private String makeEmitterId(Long memberId) {
-        return memberId + "_" + System.currentTimeMillis();
+    // ==================== Private Methods ====================
+
+    private void validateActorIfRequired(NotificationType type, Long actorId) {
+        if (type.requiresActor() && actorId == null) {
+            throw new CustomException(ErrorCode.ACTOR_NOT_FOUND);
+        }
     }
 
-    private String makeEventId(Long memberId) {
-        return memberId + "_" + System.currentTimeMillis();
-    }
-
-    @Transactional
-    public void notifyTo2(Long memberId, NotificationType type, Long projectId, String projectName, LocalDate occurredAt) {
-
-
-        Member receiver = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-
-
-        // 1) DB 저장 (과거 기록 조회용)
-        Notification notification = notificationRepository.save(
-                Notification.builder()
-                        .receiver(receiver)
-                        .type(type)
-                        .project(project)
-                        .isRead(false)
-                        .build()
-        );
-
-
-        ProjectEndNotiPayload payload = new ProjectEndNotiPayload(projectId, memberId, projectName, occurredAt);
-
-        SseEnvelope<Object> envelope = extracted(type, payload);
-
-        broadcast(receiver.getId(), type, envelope);
-
-    }
-
-    // ====== 알림 생성 + 실시간 전송 (NotificationEvent 기반) ======
-    /**
-     * NotificationEvent를 받아서 알림을 생성하고 실시간으로 전송하는 메서드입니다.
-     *
-     * @param event 알림 이벤트 객체
-     *
-     * 이 메서드에서 직접 엔티티를 조회하여 영속성 컨텍스트 내에서 처리합니다.
-     * @Async로 실행되는 환경에서도 안전하게 엔티티를 사용할 수 있습니다.
-     */
-    @Transactional
-    public void notifyTo(NotificationEvent event) {
-
-        Member receiver = memberRepository.findById(event.getReceiverId())
+    private Member findMemberOrThrow(Long memberId, String role) {
+        return memberRepository.findById(memberId)
                 .orElseThrow(() -> {
-                    log.error("[알림] 수신자를 찾을 수 없음: {}", event.getReceiverId());
+                    log.error("[알림] {}를 찾을 수 없음: {}", role, memberId);
                     return new CustomException(ErrorCode.MEMBER_NOT_FOUND);
                 });
-
-        Project project = projectRepository.findById(event.getProjectId())
-                .orElseThrow(() -> {
-                    log.error("[알림] 프로젝트를 찾을 수 없음: {}", event.getProjectId());
-                    return new CustomException(ErrorCode.PROJECT_NOT_FOUND);
-                });
-
-        // 기존 notifyTo 메서드 호출
-        notifyTo(receiver, event.getType(), project, event.getActorId(), event.getApplicationId());
     }
 
-    private static SseEnvelope<Object> extracted(NotificationType type, Payload payload) {
+    private Project findProjectOrThrow(Long projectId) {
+        return projectRepository.findById(projectId)
+                .orElseThrow(() -> {
+                    log.error("[알림] 프로젝트를 찾을 수 없음: {}", projectId);
+                    return new CustomException(ErrorCode.PROJECT_NOT_FOUND);
+                });
+    }
+
+    private Member findActorIfRequired(NotificationType type, Long actorId) {
+        if (actorId != null && type.requiresActor()) {
+            return memberRepository.findById(actorId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.ACTOR_NOT_FOUND));
+        }
+        return null;
+    }
+
+    private void saveNotification(Member receiver, Project project, NotificationType type,
+                                  Long actorId, Long applicationId) {
+        Notification notification = Notification.builder()
+                .receiver(receiver)
+                .project(project)
+                .type(type)
+                .actorId(actorId)
+                .applicationId(applicationId)
+                .isRead(false)
+                .build();
+
+        notificationRepository.save(notification);
+    }
+
+    private void broadcastToReceiver(Long receiverId, NotificationType type, Payload payload) {
         SseEnvelope<Object> envelope = SseEnvelope.builder()
                 .type(type)
                 .data(payload)
                 .createdAt(LocalDate.now())
                 .build();
 
-        return envelope;
+        Map<String, SseEmitter> emitters =
+                emitterRepository.findAllEmitterStartWithByMemberId(String.valueOf(receiverId));
+
+        String eventId = makeEventId(receiverId);
+        emitterRepository.saveEventCache(eventId, envelope);
+
+        emitters.forEach((emitterId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event()
+                        .id(eventId)
+                        .name(type.name())
+                        .data(envelope));
+            } catch (IOException e) {
+                log.warn("[알림] SSE 전송 실패 - emitter: {}", emitterId);
+                emitter.completeWithError(e);
+            }
+        });
+    }
+
+    private String makeEventId(Long memberId) {
+        return memberId + "_" + System.currentTimeMillis();
     }
 }

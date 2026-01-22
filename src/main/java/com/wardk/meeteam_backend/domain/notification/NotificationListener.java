@@ -29,7 +29,7 @@ public class NotificationListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(NotificationEvent e) {
         // 엔티티 조회를 SSENotificationService로 위임
-        notificationService.notifyTo(e);
+        notificationService.notify(e);
     }
 
 
@@ -37,13 +37,6 @@ public class NotificationListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(ProjectEndEvent e) {
-
-        e.getProjectMembersId().stream()
-                .forEach(
-                        memberId ->
-                                notificationService.notifyTo2
-                                        (memberId, e.getType(), e.getProjectId(), e.getProjectName(), e.getOccurredAt())
-                );
-
+        notificationService.notify(e);
     }
 }
