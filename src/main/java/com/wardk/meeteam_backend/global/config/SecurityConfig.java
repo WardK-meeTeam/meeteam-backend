@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.global.config;
 
+import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
 import com.wardk.meeteam_backend.global.auth.service.CustomOidcUserService;
 import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
@@ -46,6 +47,7 @@ public class SecurityConfig {
     private final RestAccessDeniedHandler restAccessDeniedHandler;
     private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
     private final CorsProperties corsProperties; // CORS 설정 주입
+    private final TokenBlacklistRepository tokenBlacklistRepository; // 토큰 블랙리스트 저장소
 
     /**
      * Security Filter Chain 설정
@@ -91,7 +93,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .addFilterBefore(
-                        new JwtFilter(jwtUtil, securityUrls, customUserDetailsService),
+                        new JwtFilter(jwtUtil, securityUrls, customUserDetailsService, tokenBlacklistRepository),
                         LoginFilter.class
                 )
                 .addFilterAt(

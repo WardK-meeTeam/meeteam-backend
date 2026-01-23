@@ -19,6 +19,7 @@ import javax.crypto.SecretKey;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -94,6 +95,18 @@ public class JwtUtil {
             .get("id", Long.class);
   }
 
+  /**
+   * 토큰에서 JTI (JWT ID) 추출
+   */
+  public String getJti(String token) {
+    return Jwts.parser()
+            .verifyWith(getSignKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .getId();
+  }
+
 
   /**
    * AccessToken 생성
@@ -117,6 +130,7 @@ public class JwtUtil {
    */
   private String createToken(String category, String email, Long memberId, Long expiredAt) {
     return Jwts.builder()
+            .id(UUID.randomUUID().toString())  // JTI 추가 (블랙리스트용 고유 식별자)
             .subject(email)
             .claim("category", category)
             .claim("username", email)
