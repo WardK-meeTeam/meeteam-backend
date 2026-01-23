@@ -4,6 +4,9 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  sql:
+    init:
+      mode: never  # data.sql 실행 비활성화 (테스트에서는 필요 없음)
   jpa:
     hibernate:
       ddl-auto: create-drop
