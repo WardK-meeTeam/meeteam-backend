@@ -1,0 +1,133 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  ai:
+    openai:
+      api-key: dummy-api-key
+      model: gpt-4o-mini
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    stomp:
+      port: 61613
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+            scope: openid, email
+            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
+          github:
+            client-id: test-github-client-id
+            client-secret: test-github-client-secret
+            scope: user:email, read:user
+            redirect-uri: "http://localhost:8080/login/oauth2/code/github"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+            user-name-attribute: sub
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+            user-name-attribute: id
+
+cloud:
+  aws:
+    credentials:
+      access-key: test-access-key
+      secret-key: test-secret-key
+    region:
+      static: us-east-1
+    s3:
+      enabled: false
+      bucket: test-bucket
+
+file:
+  dir: /tmp/meeteam-test
+  upload:
+    allowed-extensions: jpg,png,jpeg
+    max-size: 5242880 # 5MB
+    s3:
+      base-url: https://test-bucket.s3.us-east-1.amazonaws.com
+
+jwt:
+  secret-key: dGhpc2lzYXverybG9uZ3NlY3JldGtleXRvc2F0aXNmeWhtYWNzaGEyNTZyZXF1aXJlbWVudHM= # Base64 encoded dummy key
+  access-exp-time: 3600000
+  refresh-exp-time: 86400000
+  oauth2-signup-exp-time: 600000
+
+github:
+  app:
+    id: 12345
+    private-key-pem: |
+      -----BEGIN PRIVATE KEY-----
+      MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7test
+      -----END PRIVATE KEY-----
+  webhook:
+    secret: test-webhook-secret
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+
+security:
+  whitelist:
+    - method: "*"
+      uri: /api/auth/**
+    - method: "*"
+      uri: /actuator/**
+    - method: GET
+      uri: /api/projects/**
+    - method: GET
+      uri: /api/main/**
+
+# OAuth2 설정
+app:
+  oauth2:
+    oauth2-redirect-url: http://localhost:3000/oauth2/redirect
+    providers:
+      google:
+        name: google
+        user-name-attribute: name
+        email-attribute: email
+        id-attribute: sub
+      github:
+        name: github
+        user-name-attribute: name
+        email-attribute: email
+        id-attribute: id
+
+# CORS 설정
+cors:
+  allowed-origins:
+    - http://localhost:3000
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers:
+    - "*"
+  exposed-headers:
+    - Authorization
+  allow-credentials: true
+  max-age: 3600
