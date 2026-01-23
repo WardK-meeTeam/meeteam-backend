@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.global.auth.filter;
 
 
 
+import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
 import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.config.SecurityUrls;
@@ -26,6 +27,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final SecurityUrls securityUrls; // 화이트리스트 경로 관리 클래스
     private final CustomUserDetailsService customUserDetailsService;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -98,6 +100,13 @@ public class JwtFilter extends OncePerRequestFilter {
             // 토큰 소멸 시간 검증
             if (jwtUtil.isExpired(token)) {
                 log.debug("토큰이 만료됨");
+                return false;
+            }
+
+            // 블랙리스트 체크 (로그아웃된 토큰인지 확인)
+            String jti = jwtUtil.getJti(token);
+            if (jti != null && tokenBlacklistRepository.isBlacklisted(jti)) {
+                log.warn("블랙리스트에 등록된 토큰입니다. JTI: {}", jti);
                 return false;
             }
 

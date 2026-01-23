@@ -7,6 +7,7 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
+import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
 import com.wardk.meeteam_backend.global.auth.service.dto.SignupTokenInfo;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
@@ -21,6 +22,7 @@ import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final MemberRepository memberRepository;
@@ -40,6 +43,7 @@ public class AuthService {
     private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
     private final JwtUtil jwtUtil;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
 
     @Transactional
@@ -245,17 +249,49 @@ public class AuthService {
     }
 
     /**
-     * 로그아웃 - Refresh Token 쿠키를 삭제하기 위한 만료된 쿠키를 반환
-     * 클라이언트는 Access Token을 직접 삭제해야 함
+     * 로그아웃 처리 - AccessToken을 블랙리스트에 추가하고 만료된 쿠키 반환
+     *
+     * @param accessToken 블랙리스트에 추가할 AccessToken (null 가능)
+     * @return 만료된 Refresh Token 쿠키
+     */
+    public ResponseCookie logout(String accessToken) {
+        // AccessToken이 있으면 블랙리스트에 추가
+        if (accessToken != null && !accessToken.isBlank()) {
+            try {
+                // 토큰이 유효한 경우에만 블랙리스트에 추가
+                if (!jwtUtil.isExpired(accessToken)) {
+                    String jti = jwtUtil.getJti(accessToken);
+                    long remainingTime = jwtUtil.getAccessTokenExpirationTime(accessToken);
+
+                    if (jti != null) {
+                        tokenBlacklistRepository.addToBlacklist(jti, remainingTime);
+                        log.info("AccessToken이 블랙리스트에 추가되었습니다. JTI: {}", jti);
+                    } else {
+                        // JTI가 없는 구버전 토큰의 경우 (호환성)
+                        log.warn("토큰에 JTI가 없습니다. 블랙리스트에 추가하지 않습니다.");
+                    }
+                }
+            } catch (Exception e) {
+                // 토큰 파싱 실패해도 로그아웃은 진행
+                log.warn("토큰 블랙리스트 추가 중 오류 발생: {}", e.getMessage());
+            }
+        }
+
+        // Refresh Token 쿠키 삭제
+        return createExpiredRefreshTokenCookie();
+    }
+
+    /**
+     * 만료된 Refresh Token 쿠키 생성
      *
      * @return 만료된 Refresh Token 쿠키
      */
-    public ResponseCookie logoutCookie() {
-        return ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, null)
+    private ResponseCookie createExpiredRefreshTokenCookie() {
+        return ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, "")
                 .path("/")                                 // 경로 동일
                 .domain(".meeteam.alom-sejong.com")        // 도메인 동일
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)                              // OAuth2 회원가입과 동일하게 true로 설정
                 .sameSite("None")
                 .maxAge(0)                                 // 즉시 만료
                 .build();
