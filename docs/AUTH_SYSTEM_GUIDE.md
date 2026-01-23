@@ -510,6 +510,58 @@ public String refreshAccessToken(HttpServletRequest request) {
 }
 ```
 
+### 클라이언트 구현 가이드 (Silent Refresh)
+
+API 요청 시 토큰 만료로 `401` 에러가 발생하면, 유저 개입 없이 자동으로 토큰을 재발급받고 원래 요청을 재시도하는 **Interceptor** 구현이 필요합니다.
+
+**1. 로직 상세 흐름 (Axios Interceptor 권장)**
+
+1.  **Request**: 클라이언트가 API 요청 전송
+2.  **Error (401)**: 백엔드에서 `401 Unauthorized` 응답 (AccessToken 만료)
+3.  **Catch**: Interceptor의 `responseError` 핸들러에서 401 에러 감지
+4.  **Refresh**:
+    *   즉시 `POST /api/auth/refresh` 요청 전송
+    *   **주의**: `refreshToken`은 `HttpOnly Cookie`에 있으므로, 요청 시 `withCredentials: true` 설정 필수 (브라우저가 알아서 쿠키를 실어 보냄)
+5.  **Retry**:
+    *   **성공 시**: 응답받은 새 AccessToken으로 헤더를 갱신하고, **방금 실패했던 원래 요청(Original Request)을 새로운 토큰으로 재전송**
+    *   **실패 시**: RefreshToken도 만료된 것이므로 **강제 로그아웃** 및 로그인 페이지 리다이렉트
+
+**2. 구현 참고용 의사 코드 (Axios 예시)**
+
+```javascript
+// response interceptor
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // 401 에러이고, 아직 재시도를 안 했다면 (_retry 플래그 등 활용)
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // 1. 토큰 재발급 요청 (쿠키 자동 전송됨)
+        const { data } = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+        
+        // 2. 새 토큰 갈아끼우기
+        const newAccessToken = data.result; // 응답 구조에 따라 경로 조정 필요
+        axios.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+
+        // 3. 원래 요청 재시도
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        // 재발급 실패 시 로그아웃 처리
+        alert('로그인이 만료되었습니다.');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
 ---
 
 ## 7. 로그아웃
