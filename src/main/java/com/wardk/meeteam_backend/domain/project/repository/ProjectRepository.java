@@ -38,8 +38,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
     List<Project> findAllWithCreatorAndSkills();
 
     @Query("SELECT DISTINCT p FROM Project p " +
-            "JOIN FETCH p.members pm " +
-            "JOIN FETCH pm.member m " +
+            "LEFT JOIN FETCH p.members pm " +
+            "LEFT JOIN FETCH pm.member m " +
             "WHERE p.id = :projectId AND p.isDeleted = false")
     Optional<Project> findByIdWithMembers(Long projectId);
 
