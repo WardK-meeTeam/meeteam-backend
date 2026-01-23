@@ -143,15 +143,29 @@ public class AuthController {
         return SuccessResponse.onSuccess(authService.refreshAccessToken(request));
     }
 
-    @Operation(summary = "로그아웃", description = "로그아웃을 수행합니다. Refresh Token 쿠키를 삭제하며, 클라이언트는 Access Token을 직접 삭제해야 합니다.")
-    @PostMapping("api/auth/logout")
-    public SuccessResponse<String> logout(HttpServletResponse response) {
+    @Operation(summary = "로그아웃", description = "로그아웃을 수행합니다. AccessToken을 블랙리스트에 등록하고, Refresh Token 쿠키를 삭제합니다. 클라이언트는 Access Token을 직접 삭제해야 합니다.")
+    @PostMapping("/logout")
+    public SuccessResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        // Authorization 헤더에서 AccessToken 추출
+        String accessToken = extractAccessToken(request);
 
-        ResponseCookie expiredCookie = authService.logoutCookie();
+        // 로그아웃 처리 (토큰 블랙리스트 추가 + 쿠키 삭제)
+        ResponseCookie expiredCookie = authService.logout(accessToken);
         response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
 
-        log.info("로그아웃 완료 - Refresh Token 쿠키 삭제");
+        log.info("로그아웃 완료 - AccessToken 블랙리스트 등록 및 Refresh Token 쿠키 삭제");
         return SuccessResponse.onSuccess("로그아웃이 완료되었습니다.");
+    }
+
+    /**
+     * Authorization 헤더에서 AccessToken 추출
+     */
+    private String extractAccessToken(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            return authorization.substring(7);
+        }
+        return null;
     }
 
 }
