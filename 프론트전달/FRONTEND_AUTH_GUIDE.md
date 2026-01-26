@@ -1,5 +1,21 @@
 # 프론트엔드 인증 가이드
 
+## 수정된 버그 및 개선 사항 (2026-01-26)
+
+### 1. OAuth 로그아웃 구현 (NEW!)
+
+**개선:** 로그아웃 시 OAuth 제공자(Google/GitHub)의 토큰도 함께 철회됩니다.
+
+**변경된 동작:**
+```
+기존: JWT 블랙리스트 등록 + RefreshToken 쿠키 삭제
+변경: JWT 블랙리스트 등록 + OAuth 토큰 철회 + RefreshToken 쿠키 삭제
+```
+
+**프론트엔드 변경 필요 없음!** 기존 로그아웃 API 그대로 사용하면 됩니다.
+
+---
+
 ## 수정된 버그 및 개선 사항 (2026-01-23)
 
 ### 1. 로그아웃 API 엔드포인트 수정
@@ -52,7 +68,7 @@ Response:
 - Body: { "result": "{newAccessToken}" }
 ```
 
-### 4. 로그아웃 (변경됨!)
+### 4. 로그아웃 (OAuth 지원 추가!)
 ```
 POST /api/auth/logout
 Header: Authorization: Bearer {accessToken}  ← 필수! (블랙리스트 등록용)
@@ -63,6 +79,11 @@ Response:
 ```
 
 **주의:** Authorization 헤더를 포함해야 해당 토큰이 블랙리스트에 등록됩니다.
+
+**OAuth 사용자의 경우 (자동 처리):**
+- Google: `https://oauth2.googleapis.com/revoke` 호출하여 토큰 철회
+- GitHub: `DELETE /applications/{client_id}/token` 호출하여 토큰 철회
+- 프론트엔드에서 별도 처리 불필요!
 
 ---
 
@@ -192,7 +213,18 @@ window.addEventListener('storage', (e) => {
 
 **프론트엔드 대응:** 특별한 조치 불필요 (백엔드 개선 사항)
 
-### 3. OAuth2 토큰 URL 노출
+### 3. OAuth 로그아웃 구현 완료 (2026-01-26)
+
+**현재 상태:** OAuth 로그아웃이 구현되었습니다.
+
+**동작 방식:**
+1. 로그아웃 API 호출 시 JWT 블랙리스트 등록
+2. OAuth 사용자인 경우 자동으로 OAuth 제공자 토큰 철회
+3. RefreshToken 쿠키 삭제
+
+**프론트엔드 대응:** 변경 불필요 - 기존 로그아웃 로직 그대로 사용
+
+### 4. OAuth2 토큰 URL 노출
 
 **현재 상태:** OAuth2 로그인 후 AccessToken이 URL 쿼리 파라미터로 전달됩니다.
 
@@ -226,10 +258,13 @@ window.addEventListener('storage', (e) => {
 ## 체크리스트
 
 - [ ] 로그아웃 시 AccessToken 삭제 구현
+- [ ] 로그아웃 요청 시 Authorization 헤더 포함 확인
 - [ ] 401 응답 시 토큰 재발급 로직 구현
 - [ ] OAuth2 콜백에서 URL 토큰 제거 구현
 - [ ] API 요청에 `credentials: 'include'` 설정 (쿠키 전송용)
 - [ ] CORS 설정으로 인한 쿠키 문제 확인
+
+> **참고:** OAuth 로그아웃은 백엔드에서 자동 처리되므로 프론트엔드 추가 구현 불필요
 
 ---
 

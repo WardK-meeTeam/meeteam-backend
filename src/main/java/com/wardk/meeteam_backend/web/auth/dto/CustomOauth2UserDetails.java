@@ -26,19 +26,22 @@ public class CustomOauth2UserDetails implements UserDetails, OAuth2User, OidcUse
     private final boolean isNewMember;
     private final OidcIdToken idToken; // ★ 3. OIDC 관련 필드 추가
     private final OidcUserInfo userInfo;
+    private final String oauthAccessToken; // OAuth 제공자의 Access Token (로그아웃 시 토큰 철회용)
 
     // 생성자 수정
-    public CustomOauth2UserDetails(Member member, Map<String, Object> attributes, boolean isNewMember, OidcIdToken idToken, OidcUserInfo userInfo) {
+    public CustomOauth2UserDetails(Member member, Map<String, Object> attributes, boolean isNewMember,
+                                   OidcIdToken idToken, OidcUserInfo userInfo, String oauthAccessToken) {
         this.member = member;
         this.attributes = attributes;
         this.isNewMember = isNewMember;
         this.idToken = idToken;
         this.userInfo = userInfo;
+        this.oauthAccessToken = oauthAccessToken;
     }
 
     // 일반 OAuth2용 생성자 (GitHub 등)
-    public CustomOauth2UserDetails(Member member, Map<String, Object> attributes, boolean isNewMember) {
-        this(member, attributes, isNewMember, null, null);
+    public CustomOauth2UserDetails(Member member, Map<String, Object> attributes, boolean isNewMember, String oauthAccessToken) {
+        this(member, attributes, isNewMember, null, null, oauthAccessToken);
     }
 
     // OidcUser 인터페이스의 필수 메서드 구현

@@ -137,7 +137,7 @@ public class AuthController {
         return SuccessResponse.onSuccess(authService.refreshAccessToken(request));
     }
 
-    @Operation(summary = "로그아웃", description = "로그아웃을 수행합니다. AccessToken을 블랙리스트에 등록하고, Refresh Token 쿠키를 삭제합니다. 클라이언트는 Access Token을 직접 삭제해야 합니다.")
+    @Operation(summary = "로그아웃", description = "로그아웃을 수행합니다. AccessToken을 블랙리스트에 등록하고, OAuth 사용자의 경우 OAuth 제공자(Google/GitHub)의 토큰도 철회합니다. Refresh Token 쿠키를 삭제합니다. 클라이언트는 Access Token을 직접 삭제해야 합니다.")
     @PostMapping("/logout")
     public SuccessResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
         // Authorization 헤더에서 AccessToken 추출
