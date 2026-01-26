@@ -8,7 +8,6 @@ import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.web.auth.dto.login.LoginRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
 import com.wardk.meeteam_backend.global.auth.service.AuthService;
@@ -123,11 +122,6 @@ public class AuthController {
     }*/
 
 
-
-    @PostMapping("/login")
-    public String login(@RequestBody LoginRequest request) {
-        return request.getUsername();
-    }
 
     @Operation(summary = "이메일 중복 체크", description = "입력한 이메일이 이미 존재하는지 확인합니다.")
     @PostMapping("/email")
