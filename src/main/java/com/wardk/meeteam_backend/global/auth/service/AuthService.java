@@ -44,6 +44,7 @@ public class AuthService {
     private final SkillRepository skillRepository;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final OAuthTokenRevokeService oAuthTokenRevokeService;
 
 
     @Transactional
@@ -249,16 +250,17 @@ public class AuthService {
     }
 
     /**
-     * 로그아웃 처리 - AccessToken을 블랙리스트에 추가하고 만료된 쿠키 반환
+     * 로그아웃 처리 - AccessToken을 블랙리스트에 추가하고, OAuth 토큰을 철회하고, 만료된 쿠키 반환
      *
      * @param accessToken 블랙리스트에 추가할 AccessToken (null 가능)
      * @return 만료된 Refresh Token 쿠키
      */
+    @Transactional
     public ResponseCookie logout(String accessToken) {
-        // AccessToken이 있으면 블랙리스트에 추가
+        // AccessToken이 있으면 블랙리스트에 추가 및 OAuth 토큰 철회
         if (accessToken != null && !accessToken.isBlank()) {
             try {
-                // 토큰이 유효한 경우에만 블랙리스트에 추가
+                // 토큰이 유효한 경우에만 처리
                 if (!jwtUtil.isExpired(accessToken)) {
                     String jti = jwtUtil.getJti(accessToken);
                     long remainingTime = jwtUtil.getAccessTokenExpirationTime(accessToken);
@@ -270,6 +272,9 @@ public class AuthService {
                         // JTI가 없는 구버전 토큰의 경우 (호환성)
                         log.warn("토큰에 JTI가 없습니다. 블랙리스트에 추가하지 않습니다.");
                     }
+
+                    // OAuth 토큰 철회 처리
+                    revokeOAuthToken(accessToken);
                 }
             } catch (Exception e) {
                 // 토큰 파싱 실패해도 로그아웃은 진행
@@ -279,6 +284,49 @@ public class AuthService {
 
         // Refresh Token 쿠키 삭제
         return createExpiredRefreshTokenCookie();
+    }
+
+    /**
+     * OAuth 토큰 철회 처리
+     * JWT에서 사용자 정보를 추출하여 저장된 OAuth 토큰을 철회하고 삭제
+     *
+     * @param accessToken JWT Access Token
+     */
+    private void revokeOAuthToken(String accessToken) {
+        try {
+            String email = jwtUtil.getUsername(accessToken);
+            Member member = memberRepository.findByEmail(email).orElse(null);
+
+            if (member == null) {
+                log.debug("사용자를 찾을 수 없어 OAuth 토큰 철회를 건너뜁니다.");
+                return;
+            }
+
+            // OAuth 사용자가 아닌 경우 건너뜀
+            if (member.getProvider() == null || member.getOauthAccessToken() == null) {
+                log.debug("일반 로그인 사용자이므로 OAuth 토큰 철회를 건너뜁니다.");
+                return;
+            }
+
+            // OAuth 토큰 철회
+            boolean revoked = oAuthTokenRevokeService.revokeToken(
+                member.getProvider(),
+                member.getOauthAccessToken()
+            );
+
+            if (revoked) {
+                log.info("OAuth 토큰 철회 성공 - provider: {}", member.getProvider());
+            }
+
+            // 저장된 OAuth 토큰 삭제
+            member.setOauthAccessToken(null);
+            memberRepository.save(member);
+            log.info("저장된 OAuth 토큰 삭제 완료");
+
+        } catch (Exception e) {
+            // OAuth 토큰 철회 실패해도 로그아웃은 계속 진행
+            log.warn("OAuth 토큰 철회 중 오류 발생: {}", e.getMessage());
+        }
     }
 
     /**

@@ -28,7 +28,7 @@ public class OAuth2UserProcessor {
     private final MemberRepository memberRepository;
     private final OAuth2Properties oAuth2Properties;
 
-    public OAuth2User process(String providerName, OAuth2User oAuth2User) {
+    public OAuth2User process(String providerName, OAuth2User oAuth2User, String oauthAccessToken) {
         ParsedUserInfo userInfo = parseAttributes(providerName, oAuth2User.getAttributes());
 
         Optional<Member> memberOptional = memberRepository.findByProviderAndProviderId(providerName, userInfo.providerId());
@@ -55,9 +55,10 @@ public class OAuth2UserProcessor {
         // 구글(OIDC)과 깃허브(OAuth2) 사용자를 구분하여 적절한 CustomUserDetails 객체 생성
         if (oAuth2User instanceof OidcUser) {
             DefaultOidcUser oidcUser = (DefaultOidcUser) oAuth2User;
-            return new CustomOauth2UserDetails(member, oAuth2User.getAttributes(), isNewMember, oidcUser.getIdToken(), oidcUser.getUserInfo());
+            return new CustomOauth2UserDetails(member, oAuth2User.getAttributes(), isNewMember,
+                oidcUser.getIdToken(), oidcUser.getUserInfo(), oauthAccessToken);
         } else {
-            return new CustomOauth2UserDetails(member, oAuth2User.getAttributes(), isNewMember);
+            return new CustomOauth2UserDetails(member, oAuth2User.getAttributes(), isNewMember, oauthAccessToken);
         }
     }
 
