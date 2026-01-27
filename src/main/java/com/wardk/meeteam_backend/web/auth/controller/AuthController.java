@@ -11,6 +11,8 @@ import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
 import com.wardk.meeteam_backend.global.auth.service.AuthService;
+import com.wardk.meeteam_backend.global.exception.CustomException;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
@@ -72,11 +74,28 @@ public class AuthController {
     @Operation(summary = "OAuth2 회원가입", description = "OAuth2 회원가입 전용 페이지에서 회원 정보를 입력받아 계정을 생성 후, 로그인 처리를 합니다. 헤더에 액세스 토큰을 반환합니다.")
     @PostMapping(value = "/register/oauth2", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<RegisterResponse> oAuth2Register(
+        HttpServletRequest httpRequest,
         HttpServletResponse response,
         @RequestPart("request") OAuth2RegisterRequest request,
         @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        log.info("OAuth2 회원가입={}", request.getName());
+        // 토큰이 없는 경우 헤더에서 추출 시도
+        if (request.getToken() == null || request.getToken().isEmpty()) {
+            String headerToken = extractAccessToken(httpRequest);
+            if (headerToken != null && !headerToken.isEmpty()) {
+                log.info("Request Body에 토큰이 없어 Header에서 토큰을 추출하여 사용합니다.");
+                request.setToken(headerToken);
+            } else {
+                log.error("OAuth2 회원가입 실패: 토큰이 누락되었습니다.");
+                throw new CustomException(ErrorCode.INVALID_REQUEST);
+            }
+        }
+
+        log.info("OAuth2 회원가입 요청 - name: {}, token 존재여부: {}, token 길이: {}",
+            request.getName(),
+            request.getToken() != null && !request.getToken().isEmpty(),
+            request.getToken() != null ? request.getToken().length() : 0);
+
         OAuth2RegisterResult result = authService.oauth2Register(request, file);
         // ResponseCookie 빌더를 사용하여 SameSite 속성을 명시적으로 설정
         ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken())
