@@ -83,7 +83,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         // 쿠키에 refreshToken 추가
         ResponseCookie refreshCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, refreshToken)
                 .httpOnly(true)                            // JS 접근 차단
-                .secure(false)                              // HTTPS 환경 필수
+                .secure(true)                              // HTTPS 환경 필수
                 .path("/")                                 // 모든 경로에서 접근 가능
                 .sameSite("None")                          // CORS 환경에서도 쿠키 전송 가능
                 .domain(".meeteam.alom-sejong.com")        // 서브도메인 간 공유 허용
