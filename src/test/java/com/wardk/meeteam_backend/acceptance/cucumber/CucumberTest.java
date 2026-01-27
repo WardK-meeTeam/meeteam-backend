@@ -19,7 +19,7 @@ import static io.cucumber.junit.platform.engine.Constants.*;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features")
 @ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty, summary")
-@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.wardk.meeteam_backend.acceptance.cucumber.steps")
+@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.wardk.meeteam_backend.acceptance.cucumber")
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "@acceptance")
 public class CucumberTest {
 }

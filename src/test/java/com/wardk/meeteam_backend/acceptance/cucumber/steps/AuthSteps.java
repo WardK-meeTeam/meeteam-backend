@@ -12,12 +12,19 @@ import io.cucumber.java.ko.그러면;
 import io.cucumber.java.ko.그리고;
 import io.cucumber.java.ko.만약;
 import io.cucumber.java.ko.먼저;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 
+import javax.crypto.SecretKey;
+import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,46 +45,38 @@ public class AuthSteps {
     @Autowired
     private MemberFactory memberFactory;
 
+    @Value("${jwt.secret-key}")
+    private String secretKey;
+
     // ==========================================================================
     // 로그인 Steps
     // ==========================================================================
 
     @만약("{string}이 이메일 {string}과 비밀번호 {string}으로 로그인을 시도하면")
     public void 로그인을_시도하면(String name, String email, String password) {
-        ExtractableResponse<Response> response = api.getAuth().로그인(email, password);
+        var response = api.getAuth().로그인(email, password);
         testContext.setResponse(response);
 
         if (response.statusCode() == HttpStatus.OK.value()) {
-            String accessToken = response.header("Authorization");
-            if (accessToken != null && accessToken.startsWith("Bearer ")) {
-                accessToken = accessToken.substring(7);
-            }
-            String refreshToken = response.cookie(JwtUtil.REFRESH_COOKIE_NAME);
-
-            MemberContext memberContext = testContext.getMember(name);
-            memberContext.setAccessToken(accessToken);
-            memberContext.setRefreshToken(refreshToken);
-
-            testContext.setAccessToken(accessToken);
-            testContext.setRefreshToken(refreshToken);
+            saveLoginTokensToContext(name, response);
         }
     }
 
     @만약("{string}가 이메일 {string}과 비밀번호 {string}으로 로그인을 시도하면")
     public void 미가입자가_로그인을_시도하면(String name, String email, String password) {
-        ExtractableResponse<Response> response = api.getAuth().로그인(email, password);
+        var response = api.getAuth().로그인(email, password);
         testContext.setResponse(response);
     }
 
     @만약("{string}이 이메일 없이 비밀번호 {string}만으로 로그인을 시도하면")
     public void 이메일_없이_로그인을_시도하면(String name, String password) {
-        ExtractableResponse<Response> response = api.getAuth().로그인("", password);
+        var response = api.getAuth().로그인("", password);
         testContext.setResponse(response);
     }
 
     @만약("{string}이 이메일 {string}만으로 로그인을 시도하면")
     public void 비밀번호_없이_로그인을_시도하면(String name, String email) {
-        ExtractableResponse<Response> response = api.getAuth().로그인(email, "");
+        var response = api.getAuth().로그인(email, "");
         testContext.setResponse(response);
     }
 
@@ -118,25 +117,24 @@ public class AuthSteps {
     @먼저("{string}의 리프레시 토큰이 만료되었다")
     public void 리프레시_토큰이_만료되었다(String name) {
         MemberContext member = testContext.getMember(name);
-        member.setRefreshToken("expired-refresh-token");
+        String expiredToken = createExpiredToken(member.getEmail(), member.getId());
+        member.setRefreshToken(expiredToken);
     }
 
     @먼저("{string}이 리프레시 토큰 없이 토큰 재발급을 요청하면")
     public void 리프레시_토큰_없이_토큰_재발급을_요청하면(String name) {
-        ExtractableResponse<Response> response = api.getAuth().토큰_재발급(null);
+        var response = api.getAuth().토큰_재발급(null);
         testContext.setResponse(response);
     }
 
     @만약("{string}이 토큰 재발급을 요청하면")
     public void 토큰_재발급을_요청하면(String name) {
         MemberContext member = testContext.getMember(name);
-        ExtractableResponse<Response> response = api.getAuth().토큰_재발급(member.getRefreshToken());
+        var response = api.getAuth().토큰_재발급(member.getRefreshToken());
         testContext.setResponse(response);
 
         if (response.statusCode() == HttpStatus.OK.value()) {
-            String newAccessToken = response.jsonPath().getString("result");
-            member.setAccessToken(newAccessToken);
-            testContext.setAccessToken(newAccessToken);
+            saveNewAccessTokenToContext(name, response);
         }
     }
 
@@ -159,6 +157,22 @@ public class AuthSteps {
                 .as("토큰 재발급 응답 상태코드")
                 .isNotEqualTo(HttpStatus.OK.value());
     }
+    
+    private String createExpiredToken(String email, Long memberId) {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
+
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString())
+                .subject(email)
+                .claim("category", "refresh")
+                .claim("username", email)
+                .claim("id", memberId)
+                .issuedAt(new Date(System.currentTimeMillis() - 1000 * 60 * 60)) // 1시간 전 생성
+                .expiration(new Date(System.currentTimeMillis() - 1000 * 60)) // 1분 전 만료
+                .signWith(key)
+                .compact();
+    }
 
     // ==========================================================================
     // 로그아웃 Steps
@@ -168,7 +182,7 @@ public class AuthSteps {
     @만약("{string}가 로그아웃을 요청하면")
     public void 로그아웃을_요청하면(String name) {
         MemberContext member = testContext.getMember(name);
-        ExtractableResponse<Response> response = api.getAuth().로그아웃(member.getAccessToken());
+        var response = api.getAuth().로그아웃(member.getAccessToken());
         testContext.setResponse(response);
     }
 
@@ -198,13 +212,12 @@ public class AuthSteps {
     @만약("{string}이 이전에 발급받은 토큰으로 프로젝트 목록을 조회하면")
     public void 이전에_발급받은_토큰으로_프로젝트_목록을_조회하면(String name) {
         MemberContext member = testContext.getMember(name);
-        ExtractableResponse<Response> response = api.getAuth().인증_테스트(member.getAccessToken());
+        var response = api.getAuth().인증_테스트(member.getAccessToken());
         testContext.setResponse(response);
     }
 
     @그리고("Google OAuth 토큰이 철회된다")
     public void Google_OAuth_토큰이_철회된다() {
-        // OAuth 토큰 철회는 서버 내부에서 처리되므로 성공 응답만 확인
         assertThat(testContext.getStatusCode())
                 .as("로그아웃 응답 상태코드")
                 .isEqualTo(HttpStatus.OK.value());
@@ -228,16 +241,11 @@ public class AuthSteps {
         Integer age = row.containsKey("나이") ? Integer.parseInt(row.get("나이")) : null;
         String gender = row.getOrDefault("성별", null);
 
-        ExtractableResponse<Response> response = api.getAuth().회원가입(name, email, password, age, gender);
+        var response = api.getAuth().회원가입(name, email, password, age, gender);
         testContext.setResponse(response);
 
-        // 회원가입 성공 시 컨텍스트에 저장
-        if (response.statusCode() == HttpStatus.OK.value() || response.statusCode() == HttpStatus.CREATED.value()) {
-            MemberContext memberContext = new MemberContext();
-            memberContext.setName(name);
-            memberContext.setEmail(email);
-            memberContext.setPassword(password);
-            testContext.addMember(name, memberContext);
+        if (isSuccessResponse(response)) {
+            saveRegisteredMemberToContext(name, email, password);
         }
     }
 
@@ -266,10 +274,7 @@ public class AuthSteps {
     @그리고("{string}은 로그인할 수 있다")
     public void 로그인할_수_있다(String name) {
         MemberContext memberContext = testContext.getMember(name);
-        ExtractableResponse<Response> response = api.getAuth().로그인(
-                memberContext.getEmail(),
-                memberContext.getPassword()
-        );
+        var response = api.getAuth().로그인(memberContext.getEmail(), memberContext.getPassword());
 
         assertThat(response.statusCode())
                 .as("로그인 가능 여부")
@@ -282,44 +287,123 @@ public class AuthSteps {
 
     @먼저("{string}가 Google 계정으로 로그인한 상태이다")
     public void Google_계정으로_로그인한_상태이다(String name) {
-        Member member = memberFactory.createOAuthMember(
-                name,
-                name.toLowerCase() + "@gmail.com",
-                "google",
-                "google-" + System.currentTimeMillis()
-        );
-
-        MemberContext memberContext = new MemberContext();
-        memberContext.setId(member.getId());
-        memberContext.setName(name);
-        memberContext.setEmail(member.getEmail());
-        memberContext.setProvider("google");
-
-        testContext.addMember(name, memberContext);
-
-        // OAuth 로그인은 실제로는 별도 플로우이지만, 테스트에서는 직접 토큰 생성
-        // 실제 구현 시 OAuth 모킹 필요
+        registerOAuthMemberToContext(name, name.toLowerCase() + "@gmail.com", "google");
     }
 
     @먼저("{string}가 Google 계정으로 가입한 기존 회원이다")
     public void Google_계정으로_가입한_기존_회원이다(String name) {
-        Google_계정으로_로그인한_상태이다(name);
+        registerOAuthMemberToContext(name, name.toLowerCase() + "@gmail.com", "google");
     }
 
     @먼저("{string}가 GitHub 계정으로 가입한 기존 회원이다")
     public void GitHub_계정으로_가입한_기존_회원이다(String name) {
-        Member member = memberFactory.createOAuthMember(
-                name,
-                name.toLowerCase() + "@github.com",
-                "github",
-                "github-" + System.currentTimeMillis()
-        );
+        registerOAuthMemberToContext(name, name.toLowerCase() + "@github.com", "github");
+    }
+
+    @그리고("{string}가 받은 OAuth 인증 코드는 {string}이다")
+    public void 받은_OAuth_인증_코드는_코드이다(String name, String code) {
+        // 회원 컨텍스트가 없으면 생성 (신규 회원인 경우)
+        if (!testContext.getMembers().containsKey(name)) {
+            MemberContext memberContext = new MemberContext();
+            memberContext.setName(name);
+            testContext.addMember(name, memberContext);
+        }
+        testContext.getMember(name).setOauthCode(code);
+    }
+
+    @만약("{string}가 토큰 교환을 요청하면")
+    public void 토큰_교환을_요청하면(String name) {
+        String code = testContext.getMember(name).getOauthCode();
+        var response = api.getAuth().토큰_교환(code);
+        testContext.setResponse(response);
+
+        if (response.statusCode() == HttpStatus.OK.value()) {
+            saveNewAccessTokenToContext(name, response);
+        }
+    }
+
+    @만약("{string}가 다음 정보로 OAuth 회원가입을 시도하면:")
+    public void 다음_정보로_OAuth_회원가입을_시도하면(String name, DataTable dataTable) {
+        Map<String, String> row = dataTable.asMaps().get(0);
+        String requestName = row.get("이름"); // dataTable의 이름 사용 (시나리오의 {string}과 같아야 함)
+        int age = Integer.parseInt(row.get("나이"));
+        String gender = row.get("성별");
+        // 분야, 기술스택 파싱 (간단히 구현)
+        String subCategoryStr = row.get("분야");
+        String skillStr = row.get("기술스택");
+
+        java.util.List<Map<String, String>> subCategories = new java.util.ArrayList<>();
+        if (subCategoryStr != null) {
+            for (String s : subCategoryStr.split(",")) {
+                subCategories.add(Map.of("subcategory", s.trim()));
+            }
+        }
+
+        java.util.List<Map<String, String>> skills = new java.util.ArrayList<>();
+        if (skillStr != null) {
+            for (String s : skillStr.split(",")) {
+                skills.add(Map.of("skillName", s.trim()));
+            }
+        }
+
+        String code = testContext.getMember(name).getOauthCode();
+        var response = api.getAuth().oauth2_회원가입(code, requestName, age, gender, subCategories, skills);
+        testContext.setResponse(response);
+
+        if (response.statusCode() == HttpStatus.OK.value()) {
+            saveNewAccessTokenToContext(name, response);
+        }
+    }
+
+    // ==========================================================================
+    // Private Helper Methods
+    // ==========================================================================
+
+    private void saveLoginTokensToContext(String name, ExtractableResponse<Response> response) {
+        String accessToken = response.header("Authorization");
+        if (accessToken != null && accessToken.startsWith("Bearer ")) {
+            accessToken = accessToken.substring(7);
+        }
+        String refreshToken = response.cookie(JwtUtil.REFRESH_COOKIE_NAME);
+
+        MemberContext memberContext = testContext.getMember(name);
+        memberContext.setAccessToken(accessToken);
+        memberContext.setRefreshToken(refreshToken);
+
+        testContext.setAccessToken(accessToken);
+        testContext.setRefreshToken(refreshToken);
+    }
+
+    private void saveNewAccessTokenToContext(String name, ExtractableResponse<Response> response) {
+        String newAccessToken = response.jsonPath().getString("result");
+
+        MemberContext member = testContext.getMember(name);
+        member.setAccessToken(newAccessToken);
+        testContext.setAccessToken(newAccessToken);
+    }
+
+    private void saveRegisteredMemberToContext(String name, String email, String password) {
+        MemberContext memberContext = new MemberContext();
+        memberContext.setName(name);
+        memberContext.setEmail(email);
+        memberContext.setPassword(password);
+        testContext.addMember(name, memberContext);
+    }
+
+    private boolean isSuccessResponse(ExtractableResponse<Response> response) {
+        int status = response.statusCode();
+        return status == HttpStatus.OK.value() || status == HttpStatus.CREATED.value();
+    }
+
+    private void registerOAuthMemberToContext(String name, String email, String provider) {
+        String providerId = provider + "-" + System.currentTimeMillis();
+        Member member = memberFactory.createOAuthMember(name, email, provider, providerId);
 
         MemberContext memberContext = new MemberContext();
         memberContext.setId(member.getId());
         memberContext.setName(name);
         memberContext.setEmail(member.getEmail());
-        memberContext.setProvider("github");
+        memberContext.setProvider(provider);
 
         testContext.addMember(name, memberContext);
     }

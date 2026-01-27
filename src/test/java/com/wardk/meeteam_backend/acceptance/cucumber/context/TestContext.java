@@ -113,6 +113,7 @@ public class TestContext {
         private String accessToken;
         private String refreshToken;
         private String provider; // OAuth provider (google, github)
+        private String oauthCode; // OAuth 인증 코드
     }
 
     /**

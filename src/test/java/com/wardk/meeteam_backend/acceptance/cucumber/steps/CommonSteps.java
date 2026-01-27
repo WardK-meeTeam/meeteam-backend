@@ -52,7 +52,11 @@ public class CommonSteps {
         String email = row.get("이메일");
         String password = row.get("비밀번호");
 
-        Member member = memberFactory.createMember(name, email, password);
+        ExtractableResponse<Response> response = api.getAuth().회원가입(name, email, password, null, null);
+        assertThat(response.statusCode()).isIn(HttpStatus.OK.value(), HttpStatus.CREATED.value());
+
+        Member member = repository.getMember().findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("회원가입 후 회원을 찾을 수 없습니다: " + email));
 
         MemberContext memberContext = new MemberContext();
         memberContext.setId(member.getId());

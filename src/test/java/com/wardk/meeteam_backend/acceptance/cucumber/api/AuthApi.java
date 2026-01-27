@@ -24,7 +24,7 @@ public class AuthApi {
      */
     public ExtractableResponse<Response> 로그인(String email, String password) {
         Map<String, String> body = new HashMap<>();
-        body.put("username", email);
+        body.put("email", email);
         body.put("password", password);
 
         return given().log().all()
@@ -94,6 +94,43 @@ public class AuthApi {
                 .multiPart("request", request, MediaType.APPLICATION_JSON_VALUE)
                 .when()
                 .post(BASE_PATH + "/register")
+                .then().log().all()
+                .extract();
+    }
+
+    /**
+     * OAuth2 토큰 교환
+     */
+    public ExtractableResponse<Response> 토큰_교환(String code) {
+        Map<String, String> body = new HashMap<>();
+        body.put("code", code);
+
+        return given().log().all()
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(body)
+                .when()
+                .post(BASE_PATH + "/token/exchange")
+                .then().log().all()
+                .extract();
+    }
+
+    /**
+     * OAuth2 회원가입
+     */
+    public ExtractableResponse<Response> oauth2_회원가입(String code, String name, Integer age, String gender, java.util.List<Map<String, String>> subCategories, java.util.List<Map<String, String>> skills) {
+        Map<String, Object> request = new HashMap<>();
+        request.put("code", code);
+        request.put("name", name);
+        request.put("age", age);
+        request.put("gender", gender);
+        request.put("subCategories", subCategories);
+        request.put("skills", skills);
+
+        return given().log().all()
+                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+                .multiPart("request", request, MediaType.APPLICATION_JSON_VALUE)
+                .when()
+                .post(BASE_PATH + "/register/oauth2")
                 .then().log().all()
                 .extract();
     }

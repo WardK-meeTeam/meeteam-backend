@@ -1,7 +1,7 @@
 # language: ko
 
 @acceptance @project
-Feature: 프로젝트 검색
+기능: 프로젝트 검색
   개발자가 자신에게 맞는 팀 프로젝트를 빠르게 찾을 수 있어야 한다.
 
   배경:

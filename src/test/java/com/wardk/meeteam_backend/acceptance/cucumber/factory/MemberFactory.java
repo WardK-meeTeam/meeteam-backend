@@ -71,19 +71,6 @@ public class MemberFactory {
     }
 
     /**
-     * 관리자 회원 생성
-     */
-    public Member createAdmin(String name) {
-        return memberRepository.save(Member.builder()
-                .realName(name)
-                .email(name.toLowerCase() + "@admin.meeteam.com")
-                .password(passwordEncoder.encode(DEFAULT_PASSWORD))
-                .role(UserRole.ADMIN)
-                .isParticipating(true)
-                .build());
-    }
-
-    /**
      * 기본 비밀번호 조회 (로그인 테스트용)
      */
     public String getDefaultPassword() {

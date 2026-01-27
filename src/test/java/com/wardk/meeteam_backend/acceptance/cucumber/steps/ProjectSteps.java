@@ -286,30 +286,25 @@ public class ProjectSteps {
     private ProjectCategory mapCategory(String category) {
         return switch (category) {
             case "교육" -> ProjectCategory.EDUCATION;
-            case "건강" -> ProjectCategory.HEALTH;
-            case "소셜" -> ProjectCategory.SOCIAL;
+            case "건강" -> ProjectCategory.HEALTHCARE;
+            case "친환경" -> ProjectCategory.ENVIRONMENT;
             case "반려동물" -> ProjectCategory.PET;
-            case "금융" -> ProjectCategory.FINANCE;
+            case "AI", "테크" -> ProjectCategory.AI_TECH;
+            case "패션", "뷰티" -> ProjectCategory.FASHION_BEAUTY;
+            case "금융" -> ProjectCategory.FINANCE_PRODUCTIVITY;
             default -> ProjectCategory.ETC;
         };
     }
 
     private String mapCategoryToCode(String category) {
-        return switch (category) {
-            case "교육" -> "EDUCATION";
-            case "건강" -> "HEALTH";
-            case "소셜" -> "SOCIAL";
-            case "반려동물" -> "PET";
-            case "금융" -> "FINANCE";
-            default -> "ETC";
-        };
+        return mapCategory(category).name();
     }
 
     private String mapPlatformToCode(String platform) {
         return switch (platform) {
             case "웹" -> "WEB";
-            case "앱" -> "APP";
-            case "데스크톱" -> "DESKTOP";
+            case "iOS" -> "IOS";
+            case "안드로이드" -> "ANDROID";
             default -> "WEB";
         };
     }

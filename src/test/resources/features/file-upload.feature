@@ -1,7 +1,7 @@
 # language: ko
 
 @acceptance @file
-Feature: 파일 업로드
+기능: 파일 업로드
   회원이 프로필 사진이나 프로젝트 이미지를 안전하게 업로드할 수 있어야 한다.
 
   배경:

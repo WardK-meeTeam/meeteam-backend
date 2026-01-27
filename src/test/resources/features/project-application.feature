@@ -1,7 +1,7 @@
 # language: ko
 
 @acceptance @application
-Feature: 프로젝트 지원 및 팀원 관리
+기능: 프로젝트 지원 및 팀원 관리
   개발자가 프로젝트에 지원하고, 팀장이 지원을 승인/거절하여 팀을 구성할 수 있어야 한다.
 
   배경:
