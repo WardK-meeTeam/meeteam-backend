@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.web.auth.dto.register.SkillDto;
 import com.wardk.meeteam_backend.web.auth.dto.register.SubCategoryDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -22,7 +23,7 @@ public class OAuth2RegisterRequest {
   private String name;
 
   @Schema(description = "나이", example = "27", minimum = "1", maximum = "120")
-  @NotEmpty
+  @NotNull
   private Integer age;
 
   @Schema(description = "성별", example = "MALE", allowableValues = {"MALE","FEMALE"})

@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.support;
 
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import lombok.Getter;
@@ -19,6 +20,7 @@ public class TestRepositorySupport {
     private final MemberRepository member;
     private final ProjectRepository project;
     private final SkillRepository skill;
+    private final SubCategoryRepository subCategory;
 
     // 필요한 Repository가 추가되면 여기에 추가
     // private final ApplicantRepository applicant;

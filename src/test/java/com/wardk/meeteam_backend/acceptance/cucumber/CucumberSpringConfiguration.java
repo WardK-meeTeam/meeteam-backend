@@ -7,7 +7,11 @@ import io.restassured.RestAssured;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.test.context.ActiveProfiles;
+
+import javax.sql.DataSource;
 
 /**
  * Cucumber Spring 통합 설정
@@ -24,10 +28,17 @@ public class CucumberSpringConfiguration {
     @Autowired
     private DatabaseCleaner databaseCleaner;
 
+    @Autowired
+    private DataSource dataSource;
+
     @Before
     public void setUp() {
         RestAssured.port = port;
         databaseCleaner.execute();
+
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+        populator.addScript(new ClassPathResource("data.sql"));
+        populator.execute(dataSource);
     }
 
 }

@@ -15,10 +15,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MemberFactory {
 
+    private static final String DEFAULT_PASSWORD = "password123";
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-
-    private static final String DEFAULT_PASSWORD = "password123";
 
     /**
      * 기본 회원 생성
@@ -63,6 +62,7 @@ public class MemberFactory {
                 .realName(name)
                 .email(email)
                 .password(passwordEncoder.encode("oauth-" + providerId))
+                .age(25)
                 .provider(provider)
                 .providerId(providerId)
                 .role(UserRole.USER)

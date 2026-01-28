@@ -21,7 +21,7 @@ public enum ErrorCode {
     EMPTY_PASSWORD(HttpStatus.BAD_REQUEST, "AUTH402", "비밀번호를 입력해주세요"),
 
     // LOGIN
-    DUPLICATE_MEMBER(HttpStatus.BAD_REQUEST, "MEMBER400", "이미 존재하는 회원입니다."),
+    DUPLICATE_MEMBER(HttpStatus.BAD_REQUEST, "MEMBER400", "이미 존재하는 이메일 입니다"),
     DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, "MEMBER400", "다시 로그인하세요"),
     REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "TOKEN401", "다시 로그인해주세요"),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN402", "세션이 만료되었습니다. 다시 로그인해주세요"),
@@ -157,7 +157,7 @@ public enum ErrorCode {
     DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반"), DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST,"EMAIL_400","이미 존재하는 이메일 입니다." ),
 
     // chat
-    CHAT_ROOM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM_MEMBER404", "채팅방 멤버를 찾을 수 없습니다.");
+    CHAT_ROOM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM_MEMBER404", "채팅방 멤버를 찾을 수 없습니다."), INVALID_PASSWORD_PATTERN(HttpStatus.BAD_REQUEST, "PASSWORD_SHORT","비밀번호는 최소 8자 이상이어야 합니다");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;

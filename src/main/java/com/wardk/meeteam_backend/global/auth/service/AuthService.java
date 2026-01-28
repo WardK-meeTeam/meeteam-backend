@@ -58,6 +58,10 @@ public class AuthService {
                     throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
                 });
 
+        if (registerRequest.getPassword().length() < 8) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD_PATTERN);
+        }
+
         String imageUrl = null;
         if (file != null && !file.isEmpty()) {
             imageUrl = s3FileService.uploadFile(file, "images");
