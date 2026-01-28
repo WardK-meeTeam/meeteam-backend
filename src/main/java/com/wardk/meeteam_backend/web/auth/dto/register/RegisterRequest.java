@@ -4,6 +4,7 @@ package com.wardk.meeteam_backend.web.auth.dto.register;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +19,7 @@ public class RegisterRequest {
     private String name;
 
     @Schema(description = "나이", example = "27", minimum = "1", maximum = "120")
-    @NotEmpty
+    @NotNull
     private Integer age;
 
     @Schema(description = "이메일", example = "meeteam@naver.com", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -29,7 +30,8 @@ public class RegisterRequest {
     private Gender gender;
 
     @Schema(description = "비밀번호", example = "qwer1234")
-    @NotEmpty
+
+    @NotEmpty(message = "비밀번호는 최소 8자 이상이어야 합니다")
     private String password;
 
 

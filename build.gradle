@@ -116,6 +116,9 @@ dependencies {
 	testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
 	testImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
 
+	// Embedded Redis for testing
+	testImplementation 'com.github.codemonstur:embedded-redis:1.4.3'
+
 
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.ehcache:ehcache:3.10.8'   // 최신 버전

@@ -52,7 +52,7 @@ public class CommonSteps {
         String email = row.get("이메일");
         String password = row.get("비밀번호");
 
-        ExtractableResponse<Response> response = api.getAuth().회원가입(name, email, password, null, null);
+        ExtractableResponse<Response> response = api.getAuth().회원가입(name, email, password, 25, "MALE");
         assertThat(response.statusCode()).isIn(HttpStatus.OK.value(), HttpStatus.CREATED.value());
 
         Member member = repository.getMember().findByEmail(email)

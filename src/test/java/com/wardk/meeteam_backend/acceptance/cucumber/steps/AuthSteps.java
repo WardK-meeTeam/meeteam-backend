@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.acceptance.cucumber.steps;
 import com.wardk.meeteam_backend.acceptance.cucumber.context.TestContext;
 import com.wardk.meeteam_backend.acceptance.cucumber.context.TestContext.MemberContext;
 import com.wardk.meeteam_backend.acceptance.cucumber.factory.MemberFactory;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.FakeOAuthServer;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestApiSupport;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestRepositorySupport;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpStatus;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,6 +46,9 @@ public class AuthSteps {
 
     @Autowired
     private MemberFactory memberFactory;
+
+    @Autowired
+    private FakeOAuthServer fakeOAuthServer;
 
     @Value("${jwt.secret-key}")
     private String secretKey;
@@ -134,7 +139,7 @@ public class AuthSteps {
         testContext.setResponse(response);
 
         if (response.statusCode() == HttpStatus.OK.value()) {
-            saveNewAccessTokenToContext(name, response);
+            saveRefreshResultToContext(name, response);
         }
     }
 
@@ -157,7 +162,7 @@ public class AuthSteps {
                 .as("토큰 재발급 응답 상태코드")
                 .isNotEqualTo(HttpStatus.OK.value());
     }
-    
+
     private String createExpiredToken(String email, Long memberId) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         SecretKey key = Keys.hmacShaKeyFor(keyBytes);
@@ -282,12 +287,79 @@ public class AuthSteps {
     }
 
     // ==========================================================================
-    // OAuth Steps
+    // OAuth Steps (FakeOAuthServer 사용)
     // ==========================================================================
+
+    @먼저("{string}가 Google OAuth 인증에 성공하여 회원가입 코드를 발급받았다")
+    public void Google_OAuth_회원가입_코드를_발급받았다(String name) {
+        String email = name.toLowerCase() + "@gmail.com";
+        String code = fakeOAuthServer.issueRegisterCode(email, "google");
+
+        MemberContext memberContext = new MemberContext();
+        memberContext.setName(name);
+        memberContext.setEmail(email);
+        memberContext.setProvider("google");
+        memberContext.setOauthCode(code);
+        testContext.addMember(name, memberContext);
+    }
+
+    @먼저("{string}가 Google OAuth 인증에 성공하여 로그인 코드를 발급받았다")
+    public void Google_OAuth_로그인_코드를_발급받았다(String name) {
+        MemberContext memberContext = testContext.getMember(name);
+        String code = fakeOAuthServer.issueLoginCode(memberContext.getId());
+        memberContext.setOauthCode(code);
+    }
+
+    @먼저("{string}가 GitHub OAuth 인증에 성공하여 로그인 코드를 발급받았다")
+    public void GitHub_OAuth_로그인_코드를_발급받았다(String name) {
+        MemberContext memberContext = testContext.getMember(name);
+        String code = fakeOAuthServer.issueLoginCode(memberContext.getId());
+        memberContext.setOauthCode(code);
+    }
+
+    @만약("{string}가 OAuth 토큰 교환을 요청하면")
+    public void OAuth_토큰_교환을_요청하면(String name) {
+        String code = testContext.getMember(name).getOauthCode();
+        var response = api.getAuth().토큰_교환(code);
+        testContext.setResponse(response);
+
+        if (response.statusCode() == HttpStatus.OK.value()) {
+            saveOAuthTokensToContext(name, response);
+        }
+    }
+
+    @만약("{string}가 다음 정보로 OAuth 회원가입을 시도하면:")
+    public void 다음_정보로_OAuth_회원가입을_시도하면(String name, DataTable dataTable) {
+        Map<String, String> row = dataTable.asMaps().get(0);
+        String requestName = row.get("이름");
+        int age = Integer.parseInt(row.get("나이"));
+        String gender = row.get("성별");
+
+        String code = testContext.getMember(name).getOauthCode();
+        var response = api.getAuth().oauth2_회원가입(
+                code, requestName, age, gender, List.of(), List.of());
+        testContext.setResponse(response);
+
+        if (response.statusCode() == HttpStatus.OK.value()) {
+            saveOAuthTokensToContext(name, response);
+        }
+    }
 
     @먼저("{string}가 Google 계정으로 로그인한 상태이다")
     public void Google_계정으로_로그인한_상태이다(String name) {
+        // 1. DB에 OAuth 회원 생성
         registerOAuthMemberToContext(name, name.toLowerCase() + "@gmail.com", "google");
+
+        // 2. FakeOAuthServer로 로그인 코드 발급
+        MemberContext memberContext = testContext.getMember(name);
+        String code = fakeOAuthServer.issueLoginCode(memberContext.getId());
+
+        // 3. 실제 토큰 교환 API 호출
+        var response = api.getAuth().토큰_교환(code);
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());
+
+        // 4. 토큰 저장
+        saveOAuthTokensToContext(name, response);
     }
 
     @먼저("{string}가 Google 계정으로 가입한 기존 회원이다")
@@ -298,61 +370,6 @@ public class AuthSteps {
     @먼저("{string}가 GitHub 계정으로 가입한 기존 회원이다")
     public void GitHub_계정으로_가입한_기존_회원이다(String name) {
         registerOAuthMemberToContext(name, name.toLowerCase() + "@github.com", "github");
-    }
-
-    @그리고("{string}가 받은 OAuth 인증 코드는 {string}이다")
-    public void 받은_OAuth_인증_코드는_코드이다(String name, String code) {
-        // 회원 컨텍스트가 없으면 생성 (신규 회원인 경우)
-        if (!testContext.getMembers().containsKey(name)) {
-            MemberContext memberContext = new MemberContext();
-            memberContext.setName(name);
-            testContext.addMember(name, memberContext);
-        }
-        testContext.getMember(name).setOauthCode(code);
-    }
-
-    @만약("{string}가 토큰 교환을 요청하면")
-    public void 토큰_교환을_요청하면(String name) {
-        String code = testContext.getMember(name).getOauthCode();
-        var response = api.getAuth().토큰_교환(code);
-        testContext.setResponse(response);
-
-        if (response.statusCode() == HttpStatus.OK.value()) {
-            saveNewAccessTokenToContext(name, response);
-        }
-    }
-
-    @만약("{string}가 다음 정보로 OAuth 회원가입을 시도하면:")
-    public void 다음_정보로_OAuth_회원가입을_시도하면(String name, DataTable dataTable) {
-        Map<String, String> row = dataTable.asMaps().get(0);
-        String requestName = row.get("이름"); // dataTable의 이름 사용 (시나리오의 {string}과 같아야 함)
-        int age = Integer.parseInt(row.get("나이"));
-        String gender = row.get("성별");
-        // 분야, 기술스택 파싱 (간단히 구현)
-        String subCategoryStr = row.get("분야");
-        String skillStr = row.get("기술스택");
-
-        java.util.List<Map<String, String>> subCategories = new java.util.ArrayList<>();
-        if (subCategoryStr != null) {
-            for (String s : subCategoryStr.split(",")) {
-                subCategories.add(Map.of("subcategory", s.trim()));
-            }
-        }
-
-        java.util.List<Map<String, String>> skills = new java.util.ArrayList<>();
-        if (skillStr != null) {
-            for (String s : skillStr.split(",")) {
-                skills.add(Map.of("skillName", s.trim()));
-            }
-        }
-
-        String code = testContext.getMember(name).getOauthCode();
-        var response = api.getAuth().oauth2_회원가입(code, requestName, age, gender, subCategories, skills);
-        testContext.setResponse(response);
-
-        if (response.statusCode() == HttpStatus.OK.value()) {
-            saveNewAccessTokenToContext(name, response);
-        }
     }
 
     // ==========================================================================
@@ -374,12 +391,24 @@ public class AuthSteps {
         testContext.setRefreshToken(refreshToken);
     }
 
-    private void saveNewAccessTokenToContext(String name, ExtractableResponse<Response> response) {
+    private void saveRefreshResultToContext(String name, ExtractableResponse<Response> response) {
         String newAccessToken = response.jsonPath().getString("result");
 
         MemberContext member = testContext.getMember(name);
         member.setAccessToken(newAccessToken);
         testContext.setAccessToken(newAccessToken);
+    }
+
+    private void saveOAuthTokensToContext(String name, ExtractableResponse<Response> response) {
+        String accessToken = response.jsonPath().getString("result.accessToken");
+        String refreshToken = response.cookie(JwtUtil.REFRESH_COOKIE_NAME);
+
+        MemberContext member = testContext.getMember(name);
+        member.setAccessToken(accessToken);
+        member.setRefreshToken(refreshToken);
+
+        testContext.setAccessToken(accessToken);
+        testContext.setRefreshToken(refreshToken);
     }
 
     private void saveRegisteredMemberToContext(String name, String email, String password) {

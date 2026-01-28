@@ -154,7 +154,7 @@ public class AuthApi {
         return given().log().all()
                 .header("Authorization", "Bearer " + accessToken)
                 .when()
-                .get("/api/main/projects")
+                .get("/api/members")
                 .then().log().all()
                 .extract();
     }
