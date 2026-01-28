@@ -1,21 +1,18 @@
 package com.wardk.meeteam_backend.global.auth.handler;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.web.auth.dto.CustomOauth2UserDetails;
 import com.wardk.meeteam_backend.global.config.OAuth2Properties;
-import com.wardk.meeteam_backend.global.util.JwtUtil;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -25,73 +22,49 @@ import java.io.IOException;
 @Slf4j
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final JwtUtil jwtUtil;
-    private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
-    private final MemberRepository memberRepository;
+    private final OAuth2Properties oAuth2Properties;
+    private final OAuthCodeRepository oAuthCodeRepository;
 
     @Override
-    @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
 
-        // CustomOAuth2UserService 에서 전달해준 CustomOauth2UserDetails 객체를 가져옴
         CustomOauth2UserDetails userDetails = (CustomOauth2UserDetails) authentication.getPrincipal();
 
         Member member = userDetails.getMember();
         String redirectUrl;
 
-        // isNewMember 플래그를 통해 신규/기존 회원 분기 처리
         if (userDetails.isNewMember()) {
             log.info("신규 회원 가입 절차를 시작합니다. 사용자: {}", member.getEmail());
-            // 임시 가입 토큰 생성
-            String signupToken = jwtUtil.createOAuth2SignupToken(member);
 
-            // 추가 정보 입력 페이지로 리다이렉트
+            OAuthRegisterInfo registerInfo = new OAuthRegisterInfo(
+                member.getEmail(),
+                member.getProvider(),
+                member.getProviderId(),
+                userDetails.getOauthAccessToken(),
+                "register"
+            );
+            String code = oAuthCodeRepository.saveRegisterInfo(registerInfo);
+
             redirectUrl = UriComponentsBuilder.fromUriString(oAuth2Properties.getOauth2RedirectUrl())
-                .queryParam("accessToken", signupToken)
+                .queryParam("code", code)
                 .queryParam("type", "register")
                 .build().toUriString();
         } else {
             log.info("기존 회원 로그인을 진행합니다. 사용자: {}", member.getEmail());
 
-            // OAuth Access Token을 Member에 저장 (로그아웃 시 토큰 철회용)
-            if (userDetails.getOauthAccessToken() != null) {
-                member.setOauthAccessToken(userDetails.getOauthAccessToken());
-                memberRepository.save(member);
-                log.info("OAuth Access Token 저장 완료");
-            }
+            OAuthLoginInfo loginInfo = new OAuthLoginInfo(
+                member.getId(),
+                userDetails.getOauthAccessToken(),
+                "login"
+            );
+            String code = oAuthCodeRepository.saveLoginInfo(loginInfo);
 
-            // 로그인용 Access/Refresh 토큰 생성
-            String accessToken = jwtUtil.createAccessToken(userDetails.getMember());
-            String refreshToken = jwtUtil.createRefreshToken(userDetails.getMember());
-
-            // Refresh Token은 쿠키에 담아 전달
-            setRefreshTokenCookie(response, refreshToken);
-
-            // Access Token은 쿼리 파라미터로 프론트엔드에 전달
             redirectUrl = UriComponentsBuilder.fromUriString(oAuth2Properties.getOauth2RedirectUrl())
-                .queryParam("accessToken", accessToken)
+                .queryParam("code", code)
                 .queryParam("type", "login")
                 .build().toUriString();
         }
-        // 생성된 URL로 리다이렉트
+
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-    }
-
-    /**
-     * Refresh Token 쿠키 설정 메서드
-     */
-    private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        // ResponseCookie 빌더를 사용하여 SameSite 속성을 명시적으로 설정
-        ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, refreshToken)
-            .httpOnly(true)    // HttpOnly 설정
-            .secure(false)      // Secure 설정 (HTTPS 필수)
-            .path("/")         // Path 설정
-            .domain(".meeteam.alom-sejong.com") // 도메인 설정 (점 포함)
-            .sameSite("None")                   // 서브도메인 간 공유를 허용
-            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000) // MaxAge 설정
-            .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
-        log.info("Refresh Token 쿠키 설정 완료");
     }
 }

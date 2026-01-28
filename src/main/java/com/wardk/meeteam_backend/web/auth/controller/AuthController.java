@@ -2,19 +2,24 @@ package com.wardk.meeteam_backend.web.auth.controller;
 
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
+import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
+import com.wardk.meeteam_backend.web.auth.dto.oauth.TokenExchangeRequest;
+import com.wardk.meeteam_backend.web.auth.dto.oauth.TokenExchangeResponse;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
+import com.wardk.meeteam_backend.global.response.SuccessCode;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
 import com.wardk.meeteam_backend.global.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -35,30 +40,6 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtil jwtUtil;
 
-    /**
-     * 요청 형식
-     * {
-     * "name": "홍길동",
-     * "age": 27,
-     * "email": "meeteam@naver.com",
-     * "gender": "MALE",
-     * "password": "qwer1234",
-     * "subCategories": [
-     * { "subcategory": "웹서버" },
-     * { "subcategory": "AI" },
-     * { "subcategory": "DBA/빅데이터/DS" }
-     * ],
-     * "skills": [
-     * { "skillName": "Java" },
-     * { "skillName": "Spring Boot" },
-     * { "skillName": "MySQL" }
-     * ]
-     * }
-     *
-     * @param request
-     * @param file
-     * @return
-     */
     @Operation(summary = "회원가입", description = "회원 정보를 입력받아 계정을 생성합니다.")
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<RegisterResponse> response(
@@ -69,33 +50,60 @@ public class AuthController {
         return SuccessResponse.onSuccess(authService.register(request, file));
     }
 
-    @Operation(summary = "OAuth2 회원가입", description = "OAuth2 회원가입 전용 페이지에서 회원 정보를 입력받아 계정을 생성 후, 로그인 처리를 합니다. 헤더에 액세스 토큰을 반환합니다.")
+    @Operation(summary = "OAuth2 회원가입", description = "OAuth2 회원가입 전용 페이지에서 일회용 코드와 회원 정보를 입력받아 계정을 생성 후, 로그인 처리를 합니다.")
     @PostMapping(value = "/register/oauth2", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public SuccessResponse<RegisterResponse> oAuth2Register(
+    public SuccessResponse<OAuth2RegisterResponse> oAuth2Register(
         HttpServletResponse response,
-        @RequestPart("request") OAuth2RegisterRequest request,
+        @RequestPart("request") @Valid OAuth2RegisterRequest request,
         @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        log.info("OAuth2 회원가입={}", request.getName());
+        log.info("OAuth2 회원가입 요청 - name: {}", request.getName());
+
         OAuth2RegisterResult result = authService.oauth2Register(request, file);
-        // ResponseCookie 빌더를 사용하여 SameSite 속성을 명시적으로 설정
+
+        // Refresh Token 쿠키 설정
         ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken())
-            .httpOnly(true)    // HttpOnly 설정
-            .secure(true)      // Secure 설정 (HTTPS 필수)
-            .path("/")         // Path 설정
-            .domain(".meeteam.alom-sejong.com") // 도메인 설정 (점 포함)
-            .sameSite("None")                   // 서브도메인 간 공유를 허용
-            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000) // MaxAge 설정
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .domain(".meeteam.alom-sejong.com")
+            .sameSite("None")
+            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000)
             .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
         log.info("Refresh Token 쿠키 설정 완료");
 
-        // 로그인에 성공하면 유저 정보 반환
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
         Member member = result.getMember();
-        return SuccessResponse.onSuccess(new RegisterResponse(member.getRealName(), member.getId()));
+        return SuccessResponse.onSuccess(
+            new OAuth2RegisterResponse(member.getRealName(), member.getId(), result.getAccessToken())
+        );
+    }
+
+    @Operation(summary = "OAuth2 토큰 교환", description = "OAuth2 로그인 후 전달받은 일회용 코드를 사용하여 Access Token과 Refresh Token을 교환합니다.")
+    @PostMapping("/token/exchange")
+    public SuccessResponse<TokenExchangeResponse> exchangeToken(
+        HttpServletResponse response,
+        @RequestBody @Valid TokenExchangeRequest request
+    ) {
+        log.info("OAuth2 토큰 교환 요청");
+
+        TokenExchangeResult result = authService.exchangeToken(request.getCode());
+
+        // Refresh Token 쿠키 설정
+        ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken())
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .domain(".meeteam.alom-sejong.com")
+            .sameSite("None")
+            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000)
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+        log.info("토큰 교환 완료 - Refresh Token 쿠키 설정");
+
+        return SuccessResponse.of(SuccessCode._TOKEN_EXCHANGE_SUCCESS, new TokenExchangeResponse(result.getAccessToken()));
     }
 
     @Operation(summary = "자기소개 등록", description = "회원가입 후 자기소개.")
@@ -107,21 +115,6 @@ public class AuthController {
         RegisterResponse registerResponse = authService.registDesciption(memberId, descriptionRequest);
         return SuccessResponse.onSuccess(registerResponse);
     }
-    /*@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public SuccessResponse<RegisterResponse> response(
-            @RequestPart("request") String requestJson,
-            @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws JsonProcessingException {
-        RegisterRequest request = new ObjectMapper().readValue(requestJson, RegisterRequest.class);
-        log.info("회원가입={}", request.getName());
-
-        String name = authService.register(request, file);
-
-        return SuccessResponse.onSuccess(RegisterResponse.responseDto(name));
-
-    }*/
-
-
 
     @Operation(summary = "이메일 중복 체크", description = "입력한 이메일이 이미 존재하는지 확인합니다.")
     @PostMapping("/email")

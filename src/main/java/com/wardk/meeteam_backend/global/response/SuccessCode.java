@@ -9,6 +9,7 @@ public enum SuccessCode {
     //가장 일반적인 응답
     _OK(HttpStatus.OK,"COMMON200", "요청에 성공했습니다."),
     _LOGIN_SUCCESS(HttpStatus.OK, "LOGIN200", "로그인에 성공했습니다"),
+    _TOKEN_EXCHANGE_SUCCESS(HttpStatus.OK, "TOKEN200", "토큰 교환에 성공했습니다."),
 
     // PROJECT MEMBER
     _PROJECT_MEMBER_LISTED(HttpStatus.OK, "PROJECT_MEMBER200", "프로젝트 멤버 목록이 조회되었습니다."),

@@ -1,9 +1,7 @@
 package com.wardk.meeteam_backend.global.util;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
-import com.wardk.meeteam_backend.global.auth.service.dto.SignupTokenInfo;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -37,13 +35,9 @@ public class JwtUtil {
   @Value("${jwt.refresh-exp-time}")
   private Long refreshTokenExpTime; // RefreshToken 만료 시간
 
-  @Value("${jwt.oauth2-signup-exp-time}")
-  private Long oauth2SignupTokenExpTime; // OAuth2 회원가입 토큰 만료 시간
-
   public static final String ACCESS_CATEGORY = "access";
   public static final String REFRESH_CATEGORY = "refresh";
   public static final String REFRESH_COOKIE_NAME = "refreshToken";
-  private static final String OAUTH2_REGISTER = "register";
 
   // 토큰에서 username 파싱
   public String getUsername(String token) {
@@ -245,75 +239,4 @@ public class JwtUtil {
     return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
   }
 
-  /**
-   * OAuth2 사용자를 위한 회원가입 전용 JWT 토큰 생성
-   * @return JWT AccessToken
-   */
-
-  public String createOAuth2SignupToken(Member member) {
-    if (member == null) {
-      throw new IllegalArgumentException("Member cannot be null");
-    }
-    if (member.getEmail() == null || member.getEmail().isEmpty()) {
-      throw new IllegalArgumentException("Member email cannot be null or empty");
-    }
-    if (member.getRole() == null) {
-      throw new IllegalArgumentException("Member role cannot be null");
-    }
-
-    log.info("OAuth2 엑세스 토큰 생성 중: 회원: {}", member.getEmail());
-
-    return Jwts.builder()
-            .subject(member.getEmail())
-            .claim("category", OAUTH2_REGISTER)
-            .claim("email", member.getEmail())
-            .claim("role", member.getRole().name())
-            .claim("providerId", member.getProviderId())
-            .claim("provider", member.getProvider())
-            .issuedAt(new Date(System.currentTimeMillis()))
-            .expiration(new Date(System.currentTimeMillis() + oauth2SignupTokenExpTime))
-            .signWith(getSignKey())
-            .compact();
-  }
-
-  public SignupTokenInfo getParsedSignupTokenInfo(String token) {
-    try {
-      Claims claims = getClaims(token);
-
-      // 필수 클레임 추출
-      String email = claims.get("email", String.class);
-      String role = claims.get("role", String.class);
-      String providerId = claims.get("providerId", String.class);
-      String provider = claims.get("provider", String.class);
-      String category = claims.get("category", String.class);
-
-      // 필수 정보 검증
-      if (email == null || role == null || providerId == null || provider == null || category == null) {
-        log.error("OAuth2 회원가입 토큰에 필요한 정보가 누락되었습니다: {}", claims);
-        throw new IllegalArgumentException("Invalid OAuth2 signup token");
-      }
-
-      // Role이 OAUTH2_GUEST 인지 확인
-      if (!role.equals(UserRole.OAUTH2_GUEST.name())) {
-        log.error("OAuth2 회원가입 토큰의 Role이 올바르지 않습니다: {}", role);
-        throw new IllegalArgumentException("Invalid OAuth2 signup token role");
-      }
-
-      // Category가 register 인지 확인
-      if(!category.equals(OAUTH2_REGISTER)) {
-        log.error("OAuth2 회원가입 토큰의 Category가 올바르지 않습니다: {}", getCategory(token));
-        throw new IllegalArgumentException("Invalid OAuth2 signup token category");
-      }
-
-      // 모든 검증 통과 시 SignupTokenInfo 객체 반환
-      return SignupTokenInfo.builder()
-          .provider(provider)
-          .email(email)
-          .providerId(providerId)
-          .build();
-    } catch (JwtException e) {
-      log.error("OAuth2 회원가입 토큰 파싱 중 오류 발생: {}", e.getMessage());
-      throw new IllegalArgumentException("Invalid OAuth2 signup token", e);
-    }
-  }
 }

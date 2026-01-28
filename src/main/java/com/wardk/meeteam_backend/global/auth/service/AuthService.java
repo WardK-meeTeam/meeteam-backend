@@ -7,8 +7,11 @@ import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
+import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
-import com.wardk.meeteam_backend.global.auth.service.dto.SignupTokenInfo;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
+import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
@@ -18,7 +21,6 @@ import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
-import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final OAuthTokenRevokeService oAuthTokenRevokeService;
+    private final OAuthCodeRepository oAuthCodeRepository;
 
 
     @Transactional
@@ -75,9 +78,11 @@ public class AuthService {
 
     @Transactional
     public OAuth2RegisterResult oauth2Register(OAuth2RegisterRequest registerRequest, MultipartFile file) {
-        // 회원가입 전용 토큰 검증 및 파싱
-        SignupTokenInfo signupTokenInfo = jwtUtil.getParsedSignupTokenInfo(registerRequest.getToken());
-        memberRepository.findByProviderAndProviderId(signupTokenInfo.getProvider(), signupTokenInfo.getProviderId())
+        // 일회용 코드로 Redis에서 신규 회원 정보 조회
+        OAuthRegisterInfo registerInfo = oAuthCodeRepository.consumeRegisterInfo(registerRequest.getCode())
+            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OAUTH_CODE));
+
+        memberRepository.findByProviderAndProviderId(registerInfo.getProvider(), registerInfo.getProviderId())
             .ifPresent(register -> {
                 throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
             });
@@ -93,15 +98,49 @@ public class AuthService {
             .storeFileName(imageUrl)
             .isParticipating(true)
             .role(UserRole.USER)
-            .email(signupTokenInfo.getEmail())          // 회원가입 전용 토큰에서 파싱한 email
-            .provider(signupTokenInfo.getProvider())
-            .providerId(signupTokenInfo.getProviderId())
+            .email(registerInfo.getEmail())
+            .provider(registerInfo.getProvider())
+            .providerId(registerInfo.getProviderId())
             .build();
+
+        saveMemberAndSubCategoriesAndSkills(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+
+        // OAuth Access Token 저장 (로그아웃 시 토큰 철회용)
+        if (registerInfo.getOauthAccessToken() != null) {
+            member.setOauthAccessToken(registerInfo.getOauthAccessToken());
+            memberRepository.save(member);
+        }
 
         String accessToken = jwtUtil.createAccessToken(member);
         String refreshToken = jwtUtil.createRefreshToken(member);
-        saveMemberAndSubCategoriesAndSkills(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
         return new OAuth2RegisterResult(member, accessToken, refreshToken);
+    }
+
+    /**
+     * OAuth 일회용 코드를 사용하여 기존 회원의 토큰을 교환하는 메서드
+     *
+     * @param code 일회용 UUID 코드
+     * @return 토큰 교환 결과 (accessToken, refreshToken)
+     */
+    @Transactional
+    public TokenExchangeResult exchangeToken(String code) {
+        OAuthLoginInfo loginInfo = oAuthCodeRepository.consumeLoginInfo(code)
+            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OAUTH_CODE));
+
+        Member member = memberRepository.findById(loginInfo.getMemberId())
+            .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // OAuth Access Token 저장 (로그아웃 시 토큰 철회용)
+        if (loginInfo.getOauthAccessToken() != null) {
+            member.setOauthAccessToken(loginInfo.getOauthAccessToken());
+            memberRepository.save(member);
+            log.info("OAuth Access Token 저장 완료");
+        }
+
+        String accessToken = jwtUtil.createAccessToken(member);
+        String refreshToken = jwtUtil.createRefreshToken(member);
+
+        return new TokenExchangeResult(accessToken, refreshToken);
     }
 
     private void saveMemberAndSubCategoriesAndSkills(Member member, List<SubCategoryDto> subCategories, List<SkillDto> skills, MultipartFile file) {
@@ -196,9 +235,10 @@ public class AuthService {
                     .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
             // 새로운 Access Token 생성
-            CustomSecurityUserDetails userDetails = new CustomSecurityUserDetails(member);
             return jwtUtil.createAccessToken(member);
 
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            throw new CustomException(ErrorCode.REFRESH_TOKEN_EXPIRED);
         } catch (Exception e) {
             // JWT 파싱 오류나 기타 오류 시
             if (e instanceof CustomException) {

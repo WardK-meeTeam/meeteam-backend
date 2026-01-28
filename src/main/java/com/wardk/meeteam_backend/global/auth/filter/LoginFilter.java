@@ -48,6 +48,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
             String username = loginRequest.getUsername();
             String password = loginRequest.getPassword();
 
+            if (username == null || username.trim().isEmpty()) {
+                throw new AuthenticationServiceException("EMPTY_EMAIL");
+            }
+            if (password == null || password.trim().isEmpty()) {
+                throw new AuthenticationServiceException("EMPTY_PASSWORD");
+            }
+
             // 스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password, null);
 
@@ -120,8 +127,17 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         // 실패 원인에 따라 코드 분기 (원하면 세분화)
         ErrorCode ec;
-        if (failed instanceof AuthenticationServiceException && "INVALID_REQUEST".equals(failed.getMessage())) {
-            ec = ErrorCode.INVALID_REQUEST;          // 바디 파싱 등 요청 자체가 잘못된 경우
+        if (failed instanceof AuthenticationServiceException) {
+            String message = failed.getMessage();
+            if ("INVALID_REQUEST".equals(message)) {
+                ec = ErrorCode.INVALID_REQUEST;
+            } else if ("EMPTY_EMAIL".equals(message)) {
+                ec = ErrorCode.EMPTY_EMAIL;
+            } else if ("EMPTY_PASSWORD".equals(message)) {
+                ec = ErrorCode.EMPTY_PASSWORD;
+            } else {
+                ec = ErrorCode.BAD_CREDENTIALS;
+            }
         } else if (failed instanceof BadCredentialsException) {
             ec = ErrorCode.BAD_CREDENTIALS;             // 아이디/비번 불일치 (원하면 BAD_CREDENTIALS 등 별도 코드)
         } else {

@@ -74,7 +74,6 @@ jwt:
   secret-key: dGhpc2lzYXverybG9uZ3NlY3JldGtleXRvc2F0aXNmeWhtYWNzaGEyNTZyZXF1aXJlbWVudHM= # Base64 encoded dummy key
   access-exp-time: 3600000
   refresh-exp-time: 86400000
-  oauth2-signup-exp-time: 600000
 
 github:
   app:

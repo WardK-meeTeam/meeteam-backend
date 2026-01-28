@@ -76,7 +76,6 @@ jwt:
     secret-key: ${JWT_SECRET_KEY}
     access-exp-time: ${JWT_ACCESS_EXP_TIME:36000000}                # 액세스 토큰 만료 시간
     refresh-exp-time: ${JWT_REFRESH_EXP_TIME:604800000}             # 리프레시 토큰 만료 시간
-    oauth2-signup-exp-time: ${JWT_OAUTH2_SIGNUP_EXP_TIME:300000}    # 회원가입 인증 토큰 만료 시간
 
 
 # AWS S3 설정

@@ -13,9 +13,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class OAuth2RegisterRequest {
-  @Schema(description = "회원가입용 토큰", example = "asxzmcvnsadkflsdafjsadnfksdajf", requiredMode = Schema.RequiredMode.REQUIRED)
+  @Schema(description = "회원가입용 일회용 코드", example = "550e8400-e29b-41d4-a716-446655440000", requiredMode = Schema.RequiredMode.REQUIRED)
   @NotEmpty
-  private String token;
+  private String code;
 
   @Schema(description = "이름", example = "홍길동", requiredMode = Schema.RequiredMode.REQUIRED)
   @NotEmpty
