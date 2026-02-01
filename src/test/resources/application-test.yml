@@ -69,10 +69,10 @@ cloud:
 file:
   dir: /tmp/meeteam-test
   upload:
-    allowed-extensions: jpg,png,jpeg
-    max-size: 5242880 # 5MB
+    allowed-extensions: jpg,jpeg,png,gif,webp
+    max-size: 5MB
     s3:
-      base-url: https://test-bucket.s3.us-east-1.amazonaws.com
+      base-url: http://localhost/test-bucket
 
 jwt:
   secret-key: dGhpc2lzYXverybG9uZ3NlY3JldGtleXRvc2F0aXNmeWhtYWNzaGEyNTZyZXF1aXJlbWVudHM= # Base64 encoded dummy key
