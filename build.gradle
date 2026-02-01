@@ -119,6 +119,9 @@ dependencies {
 	// Embedded Redis for testing
 	testImplementation 'com.github.codemonstur:embedded-redis:1.4.3'
 
+	// WireMock for S3 mocking
+	testImplementation 'org.wiremock:wiremock-standalone:3.3.1'
+
 
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'org.ehcache:ehcache:3.10.8'   // 최신 버전
