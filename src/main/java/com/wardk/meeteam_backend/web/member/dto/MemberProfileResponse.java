@@ -31,7 +31,7 @@ public class MemberProfileResponse {
 
     private List<CategoryResponse> categories;
 
-    private List<SkillResponse> skills;
+    private List<String> skills;
 
 
     private Boolean isParticipating;
@@ -71,9 +71,7 @@ public class MemberProfileResponse {
                 })
                 .toList();
         this.skills = member.getMemberSkills().stream()
-                .map(memberSkill -> {
-                    return new SkillResponse(memberSkill.getSkill().getSkillName());
-                })
+                .map(memberSkill -> memberSkill.getSkill().getSkillName())
                 .toList();
         this.isParticipating = member.getIsParticipating();
         this.projectCount = member.getProjectMembers().size();

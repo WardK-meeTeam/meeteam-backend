@@ -109,7 +109,7 @@ public class ProjectSearchAcceptanceTest extends AcceptanceTest {
             // when - 카테고리 필터로 검색 (EDUCATION)
             Map<String, Object> searchParams = new HashMap<>();
             searchParams.put("projectCategory", "EDUCATION");
-            ExtractableResponse<Response> response = 메인_페이지_프로젝트_목록_조회를_요청한다(searchParams);
+            var response = 메인_페이지_프로젝트_목록_조회를_요청한다(searchParams);
 
             // then - EDUCATION 카테고리 프로젝트만 반환
             assertThat(response.statusCode()).isEqualTo(HttpStatus.OK.value());

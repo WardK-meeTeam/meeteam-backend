@@ -44,6 +44,7 @@ public class CucumberSpringConfiguration {
         databaseCleaner.execute();
         fakeS3Server.reset();
 
+        // 초기 데이터 설정
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("data.sql"));
         populator.execute(dataSource);

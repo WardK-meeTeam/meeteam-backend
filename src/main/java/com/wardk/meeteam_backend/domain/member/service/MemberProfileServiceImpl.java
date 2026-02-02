@@ -138,13 +138,13 @@ public class MemberProfileServiceImpl implements MemberProfileService {
 
         log.info("QueryDSL을 사용한 회원 검색 - 대분류: {}, 기술스택: {}, 정렬: {}",
                 searchRequest.getBigCategories(),
-                searchRequest.getSkillList(),
+                searchRequest.getSkills(),
                 pageable.getSort());
 
         // QueryDSL로 조회
         Page<Member> memberPage = memberRepository.searchMembers(
                 searchRequest.getBigCategories(),
-                searchRequest.getSkillList(),
+                searchRequest.getSkills(),
                 pageable
         );
 

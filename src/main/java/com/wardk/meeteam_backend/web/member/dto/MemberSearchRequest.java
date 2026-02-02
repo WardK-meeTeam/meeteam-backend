@@ -13,5 +13,5 @@ public class MemberSearchRequest {
     private List<String> bigCategories;
 
     @Schema(description = "기술 스택", example = "Java, Spring, ...")
-    private List<String> skillList;
+    private List<String> skills;
 }

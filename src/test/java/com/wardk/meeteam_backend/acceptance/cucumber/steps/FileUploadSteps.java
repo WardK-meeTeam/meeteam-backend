@@ -28,6 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 파일 업로드 관련 Step 정의
+ * <p>
+ * 실제 API:
+ * - PUT /api/members (프로필 수정 + 프로필 사진 업로드, 인증 필요)
+ * - POST /api/projects/{projectId} (프로젝트 수정 + 썸네일 업로드, 인증 필요)
  */
 public class FileUploadSteps {
 
@@ -114,27 +118,6 @@ public class FileUploadSteps {
         // 시나리오 문맥 제공용 스텝
     }
 
-    @먼저("{string}이 로그인하지 않은 상태이다")
-    @먼저("{string}가 로그인하지 않은 상태이다")
-    public void 로그인하지_않은_상태이다(String name) {
-        MemberContext memberContext = new MemberContext();
-        memberContext.setName(name);
-        testContext.addMember(name, memberContext);
-    }
-
-    @먼저("{string} 회원이 존재한다")
-    public void 회원이_존재한다(String name) {
-        Member member = memberFactory.createMember(name);
-
-        MemberContext memberContext = new MemberContext();
-        memberContext.setId(member.getId());
-        memberContext.setName(name);
-        memberContext.setEmail(member.getEmail());
-        memberContext.setPassword(memberFactory.getDefaultPassword());
-
-        testContext.addMember(name, memberContext);
-    }
-
     // ==========================================================================
     // 파일 업로드 액션 Steps
     // ==========================================================================
@@ -167,28 +150,9 @@ public class FileUploadSteps {
         testContext.setResponse(response);
     }
 
-    @만약("{string}이 {string} 파일을 업로드하면")
-    @만약("{string}가 {string} 파일을 업로드하면")
-    public void 파일을_업로드하면(String name, String fileName) {
-        MemberContext member = testContext.getMember(name);
-        byte[] content = fileFactory.createDefaultFileContent();
-        String contentType = fileFactory.getContentType(fileName);
-        Map<String, Object> memberInfo = fileFactory.createDefaultMemberInfo(name);
-
-        ExtractableResponse<Response> response;
-        if (member.getAccessToken() != null) {
-            response = api.getFile().프로필_사진_업로드(
-                    member.getAccessToken(), memberInfo, content, fileName, contentType);
-        } else {
-            response = api.getFile().비인증_프로필_사진_업로드(
-                    memberInfo, content, fileName, contentType);
-        }
-        testContext.setResponse(response);
-    }
-
-    @만약("{string}이 {int}MB 크기의 {string} 파일을 업로드하면")
-    @만약("{string}가 {int}MB 크기의 {string} 파일을 업로드하면")
-    public void MB_크기의_파일을_업로드하면(String name, int sizeMB, String fileName) {
+    @만약("{string}이 {int}MB 크기의 {string} 파일을 프로필 사진으로 업로드하면")
+    @만약("{string}가 {int}MB 크기의 {string} 파일을 프로필 사진으로 업로드하면")
+    public void MB_크기의_파일을_프로필_사진으로_업로드하면(String name, int sizeMB, String fileName) {
         MemberContext member = testContext.getMember(name);
         byte[] content = fileFactory.createFileContent(sizeMB * 1024L * 1024L);
         String contentType = fileFactory.getContentType(fileName);
@@ -196,33 +160,6 @@ public class FileUploadSteps {
 
         ExtractableResponse<Response> response = api.getFile().프로필_사진_업로드(
                 member.getAccessToken(), memberInfo, content, fileName, contentType);
-        testContext.setResponse(response);
-    }
-
-    @만약("{string}이 {int}KB 크기의 {string} 파일을 업로드하면")
-    @만약("{string}가 {int}KB 크기의 {string} 파일을 업로드하면")
-    public void KB_크기의_파일을_업로드하면(String name, int sizeKB, String fileName) {
-        MemberContext member = testContext.getMember(name);
-        byte[] content = fileFactory.createFileContent(sizeKB * 1024L);
-        String contentType = fileFactory.getContentType(fileName);
-        Map<String, Object> memberInfo = fileFactory.createDefaultMemberInfo(name);
-
-        ExtractableResponse<Response> response = api.getFile().프로필_사진_업로드(
-                member.getAccessToken(), memberInfo, content, fileName, contentType);
-        testContext.setResponse(response);
-    }
-
-    @만약("{string}이 {string}의 프로필 사진을 변경하려고 하면")
-    @만약("{string}가 {string}의 프로필 사진을 변경하려고 하면")
-    public void 타인의_프로필_사진을_변경하려고_하면(String name, String targetName) {
-        MemberContext member = testContext.getMember(name);
-        MemberContext target = testContext.getMember(targetName);
-
-        byte[] content = fileFactory.createDefaultFileContent();
-        Map<String, Object> memberInfo = fileFactory.createDefaultMemberInfo(targetName);
-
-        ExtractableResponse<Response> response = api.getFile().타인_프로필_사진_변경(
-                member.getAccessToken(), target.getId(), memberInfo, content, "profile.jpg", "image/jpeg");
         testContext.setResponse(response);
     }
 

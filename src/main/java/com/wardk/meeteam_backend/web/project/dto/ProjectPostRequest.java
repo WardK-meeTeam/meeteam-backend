@@ -57,13 +57,12 @@ public class ProjectPostRequest {
 
     // 프로젝트 기술스택들
     @NotNull(message = "기술 스택은 필수입니다.")
-    @Valid
     @Size(min = 1, message = "최소 한 개 이상의 기술 스택을 입력 해주세요.")
     @Schema(
             description = "기술 스택 리스트",
-            example = "[{\"skillName\": \"Java\"}, {\"skillName\": \"Spring\"}]"
+            example = "[\"Java\", \"Spring\"]"
     )
-    private List<ProjectSkillDto> projectSkills = new ArrayList<>();
+    private List<String> skills = new ArrayList<>();
 
     @NotNull(message = "프로젝트 마감일을 입력 해주세요.")
     @Schema(description = "프로젝트 마감일")

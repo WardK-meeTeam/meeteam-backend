@@ -15,7 +15,10 @@ import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
-import com.wardk.meeteam_backend.web.auth.dto.register.*;
+import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
+import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
+import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
+import com.wardk.meeteam_backend.web.auth.dto.register.SubCategoryDto;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
@@ -147,15 +150,15 @@ public class AuthService {
         return new TokenExchangeResult(accessToken, refreshToken);
     }
 
-    private void saveMemberAndSubCategoriesAndSkills(Member member, List<SubCategoryDto> subCategories, List<SkillDto> skills, MultipartFile file) {
+    private void saveMemberAndSubCategoriesAndSkills(Member member, List<SubCategoryDto> subCategories, List<String> skills, MultipartFile file) {
         memberRepository.save(member);
         subCategories.forEach(e -> {
                 SubCategory subCategory = subCategoryRepository.findByName(e.getSubcategory())
                     .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
                 member.addSubCategory(subCategory);
             });
-        skills.forEach(e -> {
-                Skill skill = skillRepository.findBySkillName(e.getSkillName())
+        skills.forEach(skillName -> {
+                Skill skill = skillRepository.findBySkillName(skillName)
                     .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
                 member.addMemberSkill(skill);
             });

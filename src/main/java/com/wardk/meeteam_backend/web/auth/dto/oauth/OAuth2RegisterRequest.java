@@ -1,7 +1,6 @@
 package com.wardk.meeteam_backend.web.auth.dto.oauth;
 
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
-import com.wardk.meeteam_backend.web.auth.dto.register.SkillDto;
 import com.wardk.meeteam_backend.web.auth.dto.register.SubCategoryDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
@@ -32,6 +31,6 @@ public class OAuth2RegisterRequest {
   @Schema(description = "분야(소분류) 목록")
   private List<SubCategoryDto> subCategories;
 
-  @Schema(description = "기술스택")
-  private List<SkillDto> skills;
+  @Schema(description = "기술스택", example = "[\"Java\", \"Spring\", \"MySQL\"]")
+  private List<String> skills;
 }

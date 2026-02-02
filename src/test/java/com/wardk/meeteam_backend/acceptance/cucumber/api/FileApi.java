@@ -11,6 +11,10 @@ import static io.restassured.RestAssured.given;
 
 /**
  * 파일 업로드 관련 API 호출 클래스
+ * <p>
+ * 실제 존재하는 API:
+ * - PUT /api/members (프로필 수정, 인증 필요)
+ * - POST /api/projects/{projectId} (프로젝트 수정, 인증 필요)
  */
 @Component
 public class FileApi {
@@ -19,7 +23,8 @@ public class FileApi {
     private static final String PROJECTS_PATH = "/api/projects";
 
     /**
-     * 프로필 사진 업로드 (인증된 사용자)
+     * 프로필 수정 (프로필 사진 포함)
+     * PUT /api/members - 인증 필요
      */
     public ExtractableResponse<Response> 프로필_사진_업로드(String accessToken, Map<String, Object> memberInfo, byte[] fileContent, String fileName, String contentType) {
         return given().log().all()
@@ -34,36 +39,8 @@ public class FileApi {
     }
 
     /**
-     * 프로필 사진 업로드 (비인증)
-     */
-    public ExtractableResponse<Response> 비인증_프로필_사진_업로드(Map<String, Object> memberInfo, byte[] fileContent, String fileName, String contentType) {
-        return given().log().all()
-                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
-                .multiPart("memberInfo", memberInfo, MediaType.APPLICATION_JSON_VALUE)
-                .multiPart("profileImage", fileName, fileContent, contentType)
-                .when()
-                .put(MEMBERS_PATH)
-                .then().log().all()
-                .extract();
-    }
-
-    /**
-     * 타인 프로필 사진 변경 시도
-     */
-    public ExtractableResponse<Response> 타인_프로필_사진_변경(String accessToken, Long targetMemberId, Map<String, Object> memberInfo, byte[] fileContent, String fileName, String contentType) {
-        return given().log().all()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
-                .multiPart("memberInfo", memberInfo, MediaType.APPLICATION_JSON_VALUE)
-                .multiPart("profileImage", fileName, fileContent, contentType)
-                .when()
-                .put(MEMBERS_PATH + "/" + targetMemberId)
-                .then().log().all()
-                .extract();
-    }
-
-    /**
-     * 프로젝트 썸네일 업로드
+     * 프로젝트 수정 (썸네일 포함)
+     * POST /api/projects/{projectId} - 인증 필요
      */
     public ExtractableResponse<Response> 프로젝트_썸네일_업로드(String accessToken, Long projectId, Map<String, Object> projectInfo, byte[] fileContent, String fileName, String contentType) {
         return given().log().all()
