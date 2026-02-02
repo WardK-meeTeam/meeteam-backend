@@ -49,7 +49,7 @@ public class DatabaseCleaner {
         if (tableAnnotation != null && !tableAnnotation.name().isEmpty()) {
             return tableAnnotation.name();
         }
-        // @Table 어노테이션이 없거나 name이 비어있으면 엔티티 이름을 snake_case로 변환
+
         return camelToSnake(entity.getName());
     }
 

@@ -112,8 +112,8 @@ public class ProjectServiceImpl implements ProjectService {
             project.addRecruitment(projectCategoryApplication);
         });
 
-        projectPostRequest.getProjectSkills().forEach(skillDto -> {
-            Skill skill = skillRepository.findBySkillName(skillDto.getSkillName())
+        projectPostRequest.getSkills().forEach(skillName -> {
+            Skill skill = skillRepository.findBySkillName(skillName)
                     .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
 
             ProjectSkill projectSkill = ProjectSkill.createProjectSkill(skill);
@@ -212,8 +212,8 @@ public class ProjectServiceImpl implements ProjectService {
                 }).toList();
 
         List<ProjectSkill> skills = request.getSkills().stream()
-                .map(skillDto -> {
-                    Skill skill = skillRepository.findBySkillName(skillDto.getSkillName())
+                .map(skillName -> {
+                    Skill skill = skillRepository.findBySkillName(skillName)
                             .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
 
                     return ProjectSkill.createProjectSkill(skill);

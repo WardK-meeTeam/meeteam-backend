@@ -15,7 +15,7 @@ import java.util.List;
 @Data
 @JsonPropertyOrder(
         {
-                "projectId","projectCategory", "platformCategory", "projectSkills"
+                "projectId","projectCategory", "platformCategory", "skills"
                 ,"projectName", "creatorName", "localDate"
         }
 )
@@ -28,7 +28,7 @@ public class ProjectSearchResponse {
 
     private PlatformCategory platformCategory;
 
-    private List<ProjectSkillRequest> projectSkills;
+    private List<String> skills;
 
     private String projectName;
 
@@ -37,9 +37,9 @@ public class ProjectSearchResponse {
     private LocalDate localDate;
 
     public void settingSkills(Project project) {
-        projectSkills = project.getProjectSkills()
+        skills = project.getProjectSkills()
                 .stream()
-                .map(projectSkill -> new ProjectSkillRequest(projectSkill))
+                .map(projectSkill -> projectSkill.getSkill().getSkillName())
                 .toList();
     }
 

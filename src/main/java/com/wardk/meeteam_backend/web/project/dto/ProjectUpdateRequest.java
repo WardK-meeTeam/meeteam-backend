@@ -61,8 +61,7 @@ public class ProjectUpdateRequest {
 
     @Schema(
             description = "기술 스택 리스트",
-            example = "[{\"skillName\": \"Java\"}, {\"skillName\": \"Spring\"}]"
+            example = "[\"Java\", \"Spring\"]"
     )
-    @Valid
-    private List<ProjectSkillDto> skills;
+    private List<String> skills;
 }

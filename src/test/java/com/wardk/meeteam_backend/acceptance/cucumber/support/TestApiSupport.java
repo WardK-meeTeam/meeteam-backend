@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.support;
 
 import com.wardk.meeteam_backend.acceptance.cucumber.api.AuthApi;
+import com.wardk.meeteam_backend.acceptance.cucumber.api.FileApi;
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectApi;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +18,9 @@ public class TestApiSupport {
 
     private final AuthApi auth;
     private final ProjectApi project;
-
+    private final FileApi file;
 
     // 필요한 도메인 API가 추가되면 여기에 추가
     // private final ApplicationApi application;
-    // private final FileApi file;
     // private final NotificationApi notification;
 }

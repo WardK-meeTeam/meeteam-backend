@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface MemberRepositoryCustom {
 
-    Page<Member> searchMembers(List<String> bigCategories, List<String> skillList, Pageable pageable);
+    Page<Member> searchMembers(List<String> bigCategories, List<String> skills, Pageable pageable);
 }
 

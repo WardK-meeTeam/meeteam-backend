@@ -86,13 +86,13 @@ public class MemberController {
     @GetMapping("api/members/search")
     public SuccessResponse<Page<MemberCardResponse>> searchMembers (
             @RequestParam(value = "bigCategories", required = false) List<String> bigCategories,
-            @RequestParam(value = "skillList", required = false) List<String> skillList,
+            @RequestParam(value = "skills", required = false) List<String> skills,
             @ParameterObject Pageable pageable
             ) {
 
         MemberSearchRequest searchRequest = new MemberSearchRequest();
         searchRequest.setBigCategories(bigCategories);
-        searchRequest.setSkillList(skillList);
+        searchRequest.setSkills(skills);
 
         Page<MemberCardResponse> searchResults = memberProfileService.searchMembers(searchRequest, pageable);
         return SuccessResponse.onSuccess(searchResults);

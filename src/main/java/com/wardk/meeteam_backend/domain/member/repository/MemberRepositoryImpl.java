@@ -36,7 +36,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     }
 
     @Override
-    public Page<Member> searchMembers(List<String> bigCategories, List<String> skillList, Pageable pageable) {
+    public Page<Member> searchMembers(List<String> bigCategories, List<String> skills, Pageable pageable) {
 
         // projectCount 정렬이 있는지 확인
         boolean hasProjectCountSort = pageable.getSort().stream()
@@ -44,7 +44,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
 
         if (hasProjectCountSort) {
             // projectCount 정렬이 있으면 수동 처리
-            return searchWithProjectCountSort(bigCategories, skillList, pageable);
+            return searchWithProjectCountSort(bigCategories, skills, pageable);
         }
 
         // 일반 정렬은 applyPagination이 자동 처리
@@ -53,7 +53,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                         .from(member)
                         .where(
                                 bigCategoryExists(bigCategories),
-                                skillExists(skillList)
+                                skillExists(skills)
                         )
         );
     }
@@ -62,7 +62,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
      * projectCount 정렬 처리 (수동 페이징 및 정렬)
      */
     private Page<Member> searchWithProjectCountSort(List<String> bigCategories,
-                                                    List<String> skillList,
+                                                    List<String> skills,
                                                     Pageable pageable) {
 
         JPAQuery<Member> query = queryFactory
@@ -70,7 +70,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                 .from(member)
                 .where(
                         bigCategoryExists(bigCategories),
-                        skillExists(skillList)
+                        skillExists(skills)
                 );
 
         // 정렬 적용
@@ -103,7 +103,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                 .from(member)
                 .where(
                         bigCategoryExists(bigCategories),
-                        skillExists(skillList)
+                        skillExists(skills)
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -134,15 +134,15 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
      * 기술스택 조건 (AND 조건)
      * 요청한 모든 스킬을 가지고 있어야 매칭
      */
-    private BooleanExpression skillExists(List<String> skillList) {
-        if (skillList == null || skillList.isEmpty()) {
+    private BooleanExpression skillExists(List<String> skills) {
+        if (skills == null || skills.isEmpty()) {
             return null;
         }
 
         // 각 스킬마다 EXISTS 조건을 만들어서 AND로 연결
         BooleanExpression result = null;
 
-        for (String skillName : skillList) {
+        for (String skillName : skills) {
             BooleanExpression skillExpr = JPAExpressions
                     .selectOne()
                     .from(memberSkill)

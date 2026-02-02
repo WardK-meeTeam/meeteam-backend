@@ -11,7 +11,7 @@ import java.util.List;
 public class ProjectCardMainResponse {
     private PlatformCategory platformCategory;
 
-    private List<ProjectStackRequest> projectSkills;
+    private List<String> skills;
 
     private String projectName;
 

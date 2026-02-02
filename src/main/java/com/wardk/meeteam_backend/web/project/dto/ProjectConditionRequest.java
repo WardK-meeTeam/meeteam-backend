@@ -21,7 +21,7 @@ public class ProjectConditionRequest {
     private Long projectId;
     private ProjectCategory projectCategory;
     private PlatformCategory platformCategory;
-    private List<String> projectSkills; // 프로젝트 스킬
+    private List<String> skills; // 프로젝트 스킬
     private String projectName; // 프로젝트 이름
     private String creatorName; // 팀장 이름
     private LocalDate startDate; // 프로젝트 생성일
@@ -46,7 +46,7 @@ public class ProjectConditionRequest {
         this.projectId = project.getId();
         this.projectCategory = project.getProjectCategory();
         this.platformCategory = project.getPlatformCategory();
-        this.projectSkills = project.getProjectSkills()
+        this.skills = project.getProjectSkills()
                 .stream()
                 .map(projectSkill -> projectSkill.getSkill().getSkillName())
                 .toList();

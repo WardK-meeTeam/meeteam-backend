@@ -15,7 +15,7 @@ public class MemberCardResponse {
     private String storeFileName;
     private double temperature;
     private Long projectCount;
-    private List<String> skillList;
+    private List<String> skills;
     private List<String> bigCategory; // 대분류 추가
 
 
@@ -26,8 +26,8 @@ public class MemberCardResponse {
                 .storeFileName(member.getStoreFileName())
                 .temperature(member.getTemperature())
                 .projectCount((long) member.getProjectMembers().size())
-                .skillList(member.getMemberSkills().stream()
-                        .map(memberSkill -> memberSkill.getSkill().getSkillName()) // Skill 이름만 추출
+                .skills(member.getMemberSkills().stream()
+                        .map(memberSkill -> memberSkill.getSkill().getSkillName())
                         .toList())
                 .bigCategory(member.getSubCategories().stream()
                         .map(memberSubCategory -> memberSubCategory.getSubCategory().getBigCategory().getName())
