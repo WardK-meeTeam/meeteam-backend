@@ -9,7 +9,7 @@ import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import static com.wardk.meeteam_backend.domain.applicant.entity.QProjectCategoryApplication.*;
+import static com.wardk.meeteam_backend.domain.applicant.entity.QRecruitmentState.*;
 import static com.wardk.meeteam_backend.domain.category.entity.QBigCategory.*;
 import static com.wardk.meeteam_backend.domain.category.entity.QSubCategory.*;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
@@ -76,11 +76,11 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         if (bigCategoryName == null || bigCategoryName.isBlank()) return null;
         return JPAExpressions
                 .selectOne()
-                .from(projectCategoryApplication)
-                .join(projectCategoryApplication.subCategory, subCategory)
+                .from(recruitmentState)
+                .join(recruitmentState.subCategory, subCategory)
                 .join(subCategory.bigCategory, bigCategory)
                 .where(
-                        projectCategoryApplication.project.eq(project),
+                        recruitmentState.project.eq(project),
                         bigCategory.name.eq(bigCategoryName)
                 )
                 .exists();

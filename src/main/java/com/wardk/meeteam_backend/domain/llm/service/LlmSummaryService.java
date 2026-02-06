@@ -1,7 +1,5 @@
 package com.wardk.meeteam_backend.domain.llm.service;
 
-import com.wardk.meeteam_backend.domain.chat.entity.ChatMessage;
-import com.wardk.meeteam_backend.domain.chat.service.ChatService;
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewFinding;
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewJob;
 import com.wardk.meeteam_backend.domain.codereview.repository.PrReviewFindingRepository;
@@ -33,13 +31,9 @@ public class LlmSummaryService {
     private final ChatClient chatClient;
     private final LlmTaskResultRepository taskResultRepository;
     private final PrReviewFindingRepository findingRepository;
-    private final ChatService chatService;
 
     /**
      * PR에 대한 요약을 생성합니다.
-     *
-     * @param summaryTask 요약 태스크
-     * @return 요약 태스크 결과
      */
     @Transactional
     public LlmTaskResult createPrSummary(LlmTask summaryTask) {
@@ -72,29 +66,11 @@ public class LlmSummaryService {
                 : "요약 생성 중 오류가 발생했습니다.";
             log.info("PR #{} 요약 생성 완료", reviewJob.getPrNumber());
 
-            // 채팅 메시지로 저장
-            ChatMessage chatMessage = null;
-            if (reviewJob.getChatRoom() != null) {
-                try {
-//                    chatMessage = chatService.createSystemMessage(
-//                        reviewJob.getChatThread().getId(),
-//                        summaryContent,
-//                        "gpt-4", // 모델명 - 실제 사용한 모델명으로 수정 필요
-//                        response.getMetadata().getUsage().getTotalTokens()
-//                    );
-                    log.info("PR #{} 요약이 채팅방에 저장되었습니다. 메시지 ID: {}",
-                            reviewJob.getPrNumber(), chatMessage.getId());
-                } catch (Exception e) {
-                    log.error("PR #{} 요약을 채팅방에 저장하는 중 오류 발생", reviewJob.getPrNumber(), e);
-                }
-            }
-
             // 요약 결과 저장
             LlmTaskResult result = LlmTaskResult.builder()
                     .resultType("PR_SUMMARY")
                     .content(summaryContent)
                     .tokenUsage(response.getMetadata().getUsage().getTotalTokens())
-                    .chatMessageId(chatMessage != null ? chatMessage.getId() : null)
                     .build();
 
             return taskResultRepository.save(result);
@@ -118,29 +94,10 @@ public class LlmSummaryService {
     public LlmTaskResult createEmptySummaryResult(LlmTask summaryTask) {
         String emptyContent = "이 PR에 대한 리뷰 결과가 없습니다.";
 
-        // 채팅 메시지로 저장
-        ChatMessage chatMessage = null;
-        if (summaryTask.getPrReviewJob().getChatRoom() != null) {
-            try {
-//                chatMessage = chatService.saveSystemMessage(
-//                    summaryTask.getPrReviewJob().getChatThread().getId(),
-//                    emptyContent,
-//                    null, // 모델명 없음
-//                    null  // 토큰 사용량 없음
-//                );
-                log.info("PR #{} 빈 요약이 채팅방에 저장되었습니다. 메시지 ID: {}",
-                        summaryTask.getPrReviewJob().getPrNumber(), chatMessage.getId());
-            } catch (Exception e) {
-                log.error("PR #{} 빈 요약을 채팅방에 저장하는 중 오류 발생",
-                         summaryTask.getPrReviewJob().getPrNumber(), e);
-            }
-        }
-
         // 요약 결과 저장
         LlmTaskResult result = LlmTaskResult.builder()
                 .resultType("PR_SUMMARY_EMPTY")
                 .content(emptyContent)
-                .chatMessageId(chatMessage != null ? chatMessage.getId() : null)
                 .build();
 
         return taskResultRepository.save(result);

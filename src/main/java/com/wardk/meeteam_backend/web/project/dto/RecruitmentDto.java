@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.web.project.dto;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
+import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,7 +14,7 @@ public class RecruitmentDto {
     private int currentCount;
     private boolean isClosed;
 
-    public static RecruitmentDto responseDto(ProjectCategoryApplication recruitment) {
+    public static RecruitmentDto responseDto(RecruitmentState recruitment) {
         return RecruitmentDto.builder()
                 .bigCategory(recruitment.getSubCategory().getBigCategory().getName())
                 .subCategory(recruitment.getSubCategory().getName())

@@ -2,7 +2,7 @@ package com.wardk.meeteam_backend.domain.llm.service;
 
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewJob;
 import com.wardk.meeteam_backend.domain.codereview.repository.PrReviewJobRepository;
-import com.wardk.meeteam_backend.domain.codereview.service.CodeReviewChatService;
+
 import com.wardk.meeteam_backend.domain.llm.LlmConcurrencyLimiter;
 import com.wardk.meeteam_backend.domain.llm.entity.LlmTask;
 import com.wardk.meeteam_backend.domain.llm.entity.LlmTaskResult;
@@ -33,7 +33,6 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
     private final PrReviewJobRepository prReviewJobRepository;
     private final LlmReviewService llmReviewService;
     private final LlmSummaryService llmSummaryService;
-    private final CodeReviewChatService codeReviewChatService;
     // 기존 Executor를 Virtual Thread Executor로 교체
     // private final Executor asyncTaskExecutor = Executors.newVirtualThreadPerTaskExecutor();
     // 플랫폼 스레드 기반 Executor로 변경
@@ -315,41 +314,10 @@ public class LlmOrchestratorImpl implements LlmOrchestrator {
         if (task != null) {
             task.completeWithSuccess(result);
             llmTaskRepository.save(task);
-
-            // 파일 리뷰 완료 시 채팅방에 메시지 추가
-            addFileReviewMessageToChat(task, result);
         }
     }
 
-    /**
-     * 파일 리뷰 결과를 채팅방에 메시지로 추가합니다.
-     */
-    private void addFileReviewMessageToChat(LlmTask task, LlmTaskResult result) {
-        try {
-            PrReviewJob reviewJob = task.getPrReviewJob();
-            if (reviewJob.getChatRoom() != null) {
-                String reviewContent = result.getContent();
 
-                log.info("파일 리뷰 메시지 채팅방 저장 시도 - 파일: {}, 채팅방 ID: {}",
-                        task.getPullRequestFileName(), reviewJob.getChatRoom().getId());
-
-                codeReviewChatService.addFileReviewMessage(
-                    reviewJob.getChatRoom().getId(),
-                    task.getPullRequestFileName(),
-                    reviewContent
-                );
-
-                log.info("파일 리뷰 메시지 채팅방 저장 완료 - 파일: {}", task.getPullRequestFileName());
-            } else {
-                log.warn("채팅방이 없어서 파일 리뷰 메시지를 저장할 수 없음 - 파일: {}, PR Job ID: {}",
-                        task.getPullRequestFile().getFileName(), reviewJob.getId());
-            }
-        } catch (Exception e) {
-            log.error("파일 리뷰 메시지 채팅방 저장 실패 - 파일: {}, 오류: {}",
-                    task.getPullRequestFile().getFileName(), e.getMessage(), e);
-            // 메시지 저장 실패해도 리뷰 프로세스는 계속 진행
-        }
-    }
 
     /**
      * 트랜잭션 내에서 파일 태스크 실패 처리

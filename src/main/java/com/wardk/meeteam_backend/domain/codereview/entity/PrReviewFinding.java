@@ -1,6 +1,5 @@
 package com.wardk.meeteam_backend.domain.codereview.entity;
 
-import com.wardk.meeteam_backend.domain.chat.entity.ChatMessage;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -108,11 +107,6 @@ public class PrReviewFinding extends BaseEntity {
     @Column
     private Integer score;
 
-    /** 채팅 메시지 */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_message_id")
-    private ChatMessage chatMessage;
-
     // 많은양의 텍스트를 저장할 수 있도록 함
     @Column(name = "chat_response", columnDefinition = "LONGTEXT")
     private String chatResponse;
@@ -136,14 +130,4 @@ public class PrReviewFinding extends BaseEntity {
         this.status = newStatus;
     }
 
-    /**
-     * 채팅 메시지 설정
-     * 
-     * @param chatMessage 채팅 메시지
-     */
-    public void setChatMessage(ChatMessage chatMessage) {
-        this.chatMessage = chatMessage;
-    }
-
-    
 }

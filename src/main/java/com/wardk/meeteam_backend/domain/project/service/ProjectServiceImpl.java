@@ -1,8 +1,8 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
-import com.wardk.meeteam_backend.domain.applicant.repository.ProjectCategoryApplicationRepository;
+import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.applicant.repository.RecruitmentStateRepository;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -30,7 +30,7 @@ import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
 import com.wardk.meeteam_backend.web.mainpage.dto.ProjectConditionMainPageResponse;
 import com.wardk.meeteam_backend.web.project.dto.*;
-import com.wardk.meeteam_backend.web.projectCategoryApplication.dto.ProjectCounts;
+import com.wardk.meeteam_backend.web.recruitmentState.dto.ProjectCounts;
 import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectMemberListResponse;
 import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
@@ -70,7 +70,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final GithubAppAuthService githubAppAuthService;
     private final ProjectLikeRepository projectLikeRepository;
-    private final ProjectCategoryApplicationRepository projectCategoryApplicationRepository;
+    private final RecruitmentStateRepository recruitmentStateRepository;
     private final ProjectMemberServiceImpl projectMemberServiceImpl;
     private final WebClient.Builder webClientBuilder;
     private final ApplicationEventPublisher eventPublisher;
@@ -108,8 +108,8 @@ public class ProjectServiceImpl implements ProjectService {
             SubCategory subCategory = subCategoryRepository.findByName(recruitment.getSubCategory())
                     .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
-            ProjectCategoryApplication projectCategoryApplication = ProjectCategoryApplication.createProjectCategoryApplication(subCategory, recruitment.getRecruitmentCount());
-            project.addRecruitment(projectCategoryApplication);
+            RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(subCategory, recruitment.getRecruitmentCount());
+            project.addRecruitment(recruitmentState);
         });
 
         projectPostRequest.getSkills().forEach(skillName -> {
@@ -203,12 +203,12 @@ public class ProjectServiceImpl implements ProjectService {
                 endDate
         );
 
-        List<ProjectCategoryApplication> recruitments = request.getRecruitments().stream()
+        List<RecruitmentState> recruitments = request.getRecruitments().stream()
                 .map(recruitment -> {
                     SubCategory subCategory = subCategoryRepository.findByName(recruitment.getSubCategory())
                             .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
-                    return ProjectCategoryApplication.createProjectCategoryApplication(subCategory, recruitment.getRecruitmentCount());
+                    return RecruitmentState.createRecruitmentState(subCategory, recruitment.getRecruitmentCount());
                 }).toList();
 
         List<ProjectSkill> skills = request.getSkills().stream()
@@ -338,7 +338,7 @@ public class ProjectServiceImpl implements ProjectService {
         Page<ProjectConditionRequest> map = content.map(
                 project -> {
 
-                    ProjectCounts totalCountsByProject = projectCategoryApplicationRepository.findTotalCountsByProject(project);
+                    ProjectCounts totalCountsByProject = recruitmentStateRepository.findTotalCountsByProject(project);
                     List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
 
                     Long currentCount = totalCountsByProject != null ? totalCountsByProject.getCurrentCount() : 0L;
@@ -366,7 +366,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         Page<ProjectConditionMainPageResponse> map = content.map(
                 project -> {
-                    ProjectCounts totalCountsByProject = projectCategoryApplicationRepository.findTotalCountsByProject(project);
+                    ProjectCounts totalCountsByProject = recruitmentStateRepository.findTotalCountsByProject(project);
                     List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
 
                     Long currentCount = totalCountsByProject != null ? totalCountsByProject.getCurrentCount() : 0L;

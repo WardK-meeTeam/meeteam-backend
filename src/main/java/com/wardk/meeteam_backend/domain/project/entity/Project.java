@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.project.entity;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
+import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.projectLike.entity.ProjectLike;
@@ -86,7 +86,7 @@ public class Project extends BaseEntity {
     private List<Review> reviews = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectCategoryApplication> recruitments = new ArrayList<>();
+    private List<RecruitmentState> recruitments = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectRepo> repos = new ArrayList<>();
@@ -143,7 +143,7 @@ public class Project extends BaseEntity {
         projectMember.assignProject(this);
     }
 
-    public void addRecruitment(ProjectCategoryApplication recruitment) {
+    public void addRecruitment(RecruitmentState recruitment) {
         this.recruitments.add(recruitment);
         recruitment.assignProject(this);
     }
@@ -171,12 +171,12 @@ public class Project extends BaseEntity {
         this.endDate = endDate;
     }
 
-    public void updateRecruitments(List<ProjectCategoryApplication> recruitments) {
-        Map<Long, ProjectCategoryApplication> current = this.recruitments.stream()
+    public void updateRecruitments(List<RecruitmentState> recruitments) {
+        Map<Long, RecruitmentState> current = this.recruitments.stream()
                 .collect(Collectors.toMap(r -> r.getSubCategory().getId(), r -> r));
 
-        for (ProjectCategoryApplication newPca : recruitments) {
-            ProjectCategoryApplication existing = current.get(newPca.getSubCategory().getId());
+        for (RecruitmentState newPca : recruitments) {
+            RecruitmentState existing = current.get(newPca.getSubCategory().getId());
 
             if(existing != null) {
                 int oldCurrentCount = existing.getCurrentCount();

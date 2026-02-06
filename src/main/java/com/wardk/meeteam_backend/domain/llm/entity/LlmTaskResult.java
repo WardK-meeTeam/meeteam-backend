@@ -28,7 +28,4 @@ public class LlmTaskResult extends BaseEntity {
 
     @Column(name = "token_usage")
     private Integer tokenUsage;
-    
-    @Column(name = "chat_message_id")
-    private Long chatMessageId;
 }

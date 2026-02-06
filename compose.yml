@@ -10,8 +10,6 @@ services:
         depends_on:
             redis:
                 condition: service_healthy
-            rabbitmq:
-                condition: service_healthy
         volumes:
             - ./files:/app/files
         networks:
@@ -58,42 +56,8 @@ services:
         networks:
             - meeteam-network
 
-    # RabbitMQ 메시지 브로커 (WebSocket용)
-    rabbitmq:
-        image: rabbitmq:3.12-management
-        container_name: meeteam-rabbitmq
-        ports:
-            - "5672:5672"   # AMQP 포트
-            - "15672:15672" # 관리 UI 포트
-            - "61613:61613" # STOMP 포트
-        environment:
-            # 기본 관리자 계정 생성
-            - RABBITMQ_DEFAULT_USER=meeteam
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-meeteam123}
-            # 추가 보안 설정
-            - RABBITMQ_DEFAULT_VHOST=/
-        volumes:
-            - rabbitmq_data:/var/lib/rabbitmq
-        networks:
-            - meeteam-network
-        restart: unless-stopped
-        healthcheck:
-            test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
-            interval: 30s
-            timeout: 10s
-            retries: 5
-        # STOMP 플러그인 자동 활성화
-        command: >
-          bash -c "
-          rabbitmq-plugins enable --offline rabbitmq_stomp &&
-          rabbitmq-plugins enable --offline rabbitmq_web_stomp &&
-          rabbitmq-plugins enable --offline rabbitmq_management &&
-          rabbitmq-server
-          "
-
 volumes:
     grafana-storage:
-    rabbitmq_data:
     redis_data:
 
 networks:

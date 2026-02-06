@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.projectMember.service;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
+import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
@@ -64,12 +64,12 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         ProjectMember projectMember = ProjectMember.createProjectMember(member, subCategory);
         project.joinMember(projectMember);
 
-        ProjectCategoryApplication projectCategoryApplication = project.getRecruitments().stream()
+        RecruitmentState recruitmentState = project.getRecruitments().stream()
                 .filter(r -> r.getSubCategory().getId().equals(subCategory.getId()))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
 
-        projectCategoryApplication.increaseCurrentCount();
+        recruitmentState.increaseCurrentCount();
         project.updateRecruitmentsStatus();
 
         projectMemberRepository.save(projectMember);

@@ -13,10 +13,9 @@ public class MemberCardResponse {
     private Long memberId;
     private String realName;
     private String storeFileName;
-    private double temperature;
     private Long projectCount;
     private List<String> skills;
-    private List<String> bigCategory; // 대분류 추가
+    private List<String> bigCategory;
 
 
     public static MemberCardResponse responseToDto(Member member) {
@@ -24,7 +23,6 @@ public class MemberCardResponse {
                 .memberId(member.getId())
                 .realName(member.getRealName())
                 .storeFileName(member.getStoreFileName())
-                .temperature(member.getTemperature())
                 .projectCount((long) member.getProjectMembers().size())
                 .skills(member.getMemberSkills().stream()
                         .map(memberSkill -> memberSkill.getSkill().getSkillName())

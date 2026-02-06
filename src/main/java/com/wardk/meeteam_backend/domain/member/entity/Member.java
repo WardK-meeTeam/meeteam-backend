@@ -2,11 +2,14 @@ package com.wardk.meeteam_backend.domain.member.entity;
 
 
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
-import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
+import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
+import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
@@ -16,11 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@AllArgsConstructor
 @Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "member", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 public class Member extends BaseEntity {
 
@@ -37,7 +37,6 @@ public class Member extends BaseEntity {
 
     private String realName;
 
-    //image_URL
     private String storeFileName;
 
     @Enumerated(value = EnumType.STRING)
@@ -47,68 +46,46 @@ public class Member extends BaseEntity {
 
     private Boolean isParticipating;
 
-    // 추천 받은 횟수
-    @Builder.Default
-    private int recommendCount = 0;
-
-    @Builder.Default
-    private double temperature = 36.5;
-
     @Version
     private Long version;
 
-    public void increaseRecommendCount() {
-        this.recommendCount++;
-        this.temperature = 36.5 + recommendCount * 0.1;
-    }
-
-
-    //사용자가 회원가입 할때 넣은 소분류 항목들..
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    @BatchSize(size = 500) // N+1 문제 해결을 위한 배치 로딩
-    @Builder.Default
-    List<MemberSubCategory> subCategories = new ArrayList<>();
+    @BatchSize(size = 500)
+    private List<MemberSubCategory> subCategories = new ArrayList<>();
 
-    //연관관계 편의메서드
-    public void addSubCategory(SubCategory signupSubCategory) {
-        subCategories.add(new MemberSubCategory(this, signupSubCategory));
-    }
-
-    //사용자 기술 스택
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    @BatchSize(size = 500) // N+1 문제 해결을 위한 배치 로딩
-    @Builder.Default
-    List<MemberSkill> memberSkills = new ArrayList<>();
-
-    //연관관계 편의메서드
-    public void addMemberSkill(Skill skill) {
-        memberSkills.add(new MemberSkill(this, skill));
-    }
-
+    @BatchSize(size = 500)
+    private List<MemberSkill> memberSkills = new ArrayList<>();
 
     @OneToMany(mappedBy = "member")
-    @BatchSize(size = 500) // N+1 문제 해결을 위한 배치 로딩
-    @Builder.Default
-    List<ProjectMember> projectMembers = new ArrayList<>();
+    @BatchSize(size = 500)
+    private List<ProjectMember> projectMembers = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String introduction;
-
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
 
-    // 소셜 로그인 관련 필드 추가
-    private String provider; // 소셜 로그인 제공자 (예: "google", "github" 등)
-    private String providerId; // 소셜 로그인 한 유저의 고유 ID가 들어감
+    private String provider;
+    private String providerId;
 
     @Column(length = 2048)
-    private String oauthAccessToken; // OAuth 제공자의 Access Token (로그아웃 시 토큰 철회용)
+    private String oauthAccessToken;
 
+    private Integer projectExperienceCount;
 
+    private String githubUrl;
 
-    public Member(String email, Integer age, String password, String realName, String storeFileName, Gender gender, LocalDate birth) {
+    private String blogUrl;
+
+    @Builder(access = AccessLevel.PRIVATE)
+    private Member(String email, Integer age, String password, String realName,
+                   String storeFileName, Gender gender, LocalDate birth,
+                   Boolean isParticipating, UserRole role, String provider,
+                   String providerId, Integer projectExperienceCount,
+                   String githubUrl, String blogUrl) {
         this.email = email;
         this.age = age;
         this.password = password;
@@ -116,5 +93,113 @@ public class Member extends BaseEntity {
         this.storeFileName = storeFileName;
         this.gender = gender;
         this.birth = birth;
+        this.isParticipating = isParticipating;
+        this.role = role;
+        this.provider = provider;
+        this.providerId = providerId;
+        this.projectExperienceCount = projectExperienceCount != null ? projectExperienceCount : 0;
+        this.githubUrl = githubUrl;
+        this.blogUrl = blogUrl;
+    }
+
+    /**
+     * 일반 회원가입용 정적 팩토리 메서드
+     */
+    public static Member createMember(RegisterMemberCommand command, String encodedPassword, String imageUrl) {
+        return Member.builder()
+                .email(command.getEmail())
+                .password(encodedPassword)
+                .realName(command.getName())
+                .age(command.getAge())
+                .gender(command.getGender())
+                .storeFileName(imageUrl)
+                .isParticipating(true)
+                .role(UserRole.USER)
+                .projectExperienceCount(command.getProjectExperienceCount())
+                .githubUrl(command.getGithubUrl())
+                .blogUrl(command.getBlogUrl())
+                .build();
+    }
+
+    /**
+     * OAuth 회원가입용 정적 팩토리 메서드
+     */
+    public static Member createOAuthMember(OAuth2RegisterRequest request, OAuthRegisterInfo registerInfo,
+                                            String encodedPassword, String imageUrl) {
+        return Member.builder()
+                .email(registerInfo.getEmail())
+                .password(encodedPassword)
+                .realName(request.getName())
+                .age(request.getAge())
+                .gender(request.getGender())
+                .storeFileName(imageUrl)
+                .isParticipating(true)
+                .role(UserRole.USER)
+                .provider(registerInfo.getProvider())
+                .providerId(registerInfo.getProviderId())
+                .projectExperienceCount(request.getProjectExperienceCount())
+                .githubUrl(request.getGithubUrl())
+                .blogUrl(request.getBlogUrl())
+                .build();
+    }
+
+    /**
+     * OAuth2 인증 과정에서 임시 회원 생성용 (DB 저장 전)
+     */
+    public static Member createOAuth2Guest(String email, String realName, String provider, String providerId) {
+        return Member.builder()
+                .email(email)
+                .realName(realName)
+                .provider(provider)
+                .providerId(providerId)
+                .role(UserRole.OAUTH2_GUEST)
+                .build();
+    }
+
+    /**
+     * 테스트/시드 데이터용 정적 팩토리 메서드
+     */
+    public static Member createForTest(String email, String realName) {
+        return Member.builder()
+                .email(email)
+                .realName(realName)
+                .role(UserRole.USER)
+                .build();
+    }
+
+    public void addSubCategory(SubCategory signupSubCategory) {
+        subCategories.add(new MemberSubCategory(this, signupSubCategory));
+    }
+
+    public void addMemberSkill(Skill skill) {
+        memberSkills.add(new MemberSkill(this, skill));
+    }
+
+    public void setIntroduction(String introduction) {
+        this.introduction = introduction;
+    }
+
+    public void setOauthAccessToken(String oauthAccessToken) {
+        this.oauthAccessToken = oauthAccessToken;
+    }
+
+    public void setStoreFileName(String storeFileName) {
+        this.storeFileName = storeFileName;
+    }
+
+    public void setRealName(String realName) {
+        this.realName = realName;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public void setIsParticipating(Boolean isParticipating) {
+        this.isParticipating = isParticipating;
     }
 }

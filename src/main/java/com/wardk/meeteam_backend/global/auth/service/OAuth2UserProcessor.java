@@ -42,13 +42,12 @@ public class OAuth2UserProcessor {
             log.info("기존 회원입니다: {}", member.getEmail());
         } else {
             isNewMember = true;
-            member = Member.builder()
-                .email(userInfo.email())
-                .realName(userInfo.name())
-                .provider(providerName)
-                .providerId(userInfo.providerId())
-                .role(UserRole.OAUTH2_GUEST)
-                .build();
+            member = Member.createOAuth2Guest(
+                userInfo.email(),
+                userInfo.name(),
+                providerName,
+                userInfo.providerId()
+            );
             log.info("신규 회원입니다. 임시 회원 정보를 생성합니다: {}", userInfo.email());
         }
 

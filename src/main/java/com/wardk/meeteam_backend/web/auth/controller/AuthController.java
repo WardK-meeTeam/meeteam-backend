@@ -4,6 +4,7 @@ package com.wardk.meeteam_backend.web.auth.controller;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
+import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResponse;
@@ -47,8 +48,9 @@ public class AuthController {
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
         log.info("회원가입={}", request.getName());
-        return SuccessResponse.onSuccess(authService.register(request, file));
+        return SuccessResponse.onSuccess(authService.register(RegisterMemberCommand.from(request), file));
     }
+
 
     @Operation(summary = "OAuth2 회원가입", description = "OAuth2 회원가입 전용 페이지에서 일회용 코드와 회원 정보를 입력받아 계정을 생성 후, 로그인 처리를 합니다.")
     @PostMapping(value = "/register/oauth2", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
