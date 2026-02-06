@@ -63,9 +63,6 @@ public class ReviewServiceImpl implements ReviewService {
                 ReviewRecommendation reviewRecommendation = ReviewRecommendation.createReviewRecommendation(recommended);
 
                 review.addRecommendation(reviewRecommendation);
-
-                // TODO: 온도 수정
-                recommended.increaseRecommendCount();
             }
         }
 

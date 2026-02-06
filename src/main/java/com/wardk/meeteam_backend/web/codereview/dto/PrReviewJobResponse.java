@@ -15,7 +15,6 @@ public class PrReviewJobResponse {
     private String repoFullName;
     private String headSha;
     private String status;
-    private Long chatRoomId;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
     private String errorMessage;
@@ -29,7 +28,6 @@ public class PrReviewJobResponse {
                 .repoFullName(reviewJob.getProjectRepo().getRepoFullName())
                 .headSha(reviewJob.getHeadSha())
                 .status(reviewJob.getStatus().name())
-                .chatRoomId(reviewJob.getChatRoom() != null ? reviewJob.getChatRoom().getId() : null)
                 .startedAt(reviewJob.getStartedAt())
                 .completedAt(reviewJob.getCompletedAt())
                 .errorMessage(reviewJob.getErrorMessage())

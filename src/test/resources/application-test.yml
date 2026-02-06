@@ -22,13 +22,6 @@ spring:
     openai:
       api-key: dummy-api-key
       model: gpt-4o-mini
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    stomp:
-      port: 61613
   security:
     oauth2:
       client:

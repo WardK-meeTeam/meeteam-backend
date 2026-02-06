@@ -61,16 +61,6 @@ spring:
         redis:
             host: redis
             port: 6379
-    rabbitmq:
-        host: ${SPRING_RABBITMQ_HOST:rabbitmq}  # Docker Compose 서비스명
-        port: ${SPRING_RABBITMQ_PORT:5672}      # AMQP 포트
-        username: ${SPRING_RABBITMQ_USERNAME:meeteam}
-        password: ${SPRING_RABBITMQ_PASSWORD:meeteam123}
-        virtual-host: /
-        connection-timeout: 60000
-        # STOMP 플러그인 포트 (WebSocket용)
-        stomp:
-            port: 61613
 
 jwt:
     secret-key: ${JWT_SECRET_KEY}

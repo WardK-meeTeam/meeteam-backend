@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.codereview.entity;
 
-import com.wardk.meeteam_backend.domain.chat.entity.ChatRoom;
+
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.wardk.meeteam_backend.domain.chat.entity.ChatThread;
+
 import com.wardk.meeteam_backend.domain.llm.entity.LlmTask;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
@@ -68,10 +68,7 @@ public class PrReviewJob extends BaseEntity {
     @JoinColumn(name = "pull_request_id", nullable = false)
     private PullRequest pullRequest;
 
-    /** 이 작업과 연결된 채팅방 */
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_thread_id")
-    private ChatRoom chatRoom;
+
 
     /** PR의 HEAD SHA */
     @Column(name = "head_sha", nullable = false)

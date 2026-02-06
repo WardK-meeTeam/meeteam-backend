@@ -33,4 +33,13 @@ public class OAuth2RegisterRequest {
 
   @Schema(description = "기술스택", example = "[\"Java\", \"Spring\", \"MySQL\"]")
   private List<String> skills;
+
+  @Schema(description = "프로젝트 경험 횟수", example = "3", minimum = "0")
+  private Integer projectExperienceCount;
+
+  @Schema(description = "GitHub URL", example = "https://github.com/username")
+  private String githubUrl;
+
+  @Schema(description = "블로그 URL", example = "https://blog.example.com")
+  private String blogUrl;
 }

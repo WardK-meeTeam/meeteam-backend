@@ -13,11 +13,12 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
-public class ProjectCategoryApplication {//project_대분류_모집
+@Table(name = "recruitment_state")
+public class RecruitmentState {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "project_category_application_id")
+    @Column(name = "recruitment_state_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -70,16 +71,16 @@ public class ProjectCategoryApplication {//project_대분류_모집
     }
 
     @Builder
-    public ProjectCategoryApplication(SubCategory subCategory, Integer recruitmentCount) {
+    public RecruitmentState(SubCategory subCategory, Integer recruitmentCount) {
         this.subCategory = subCategory;
         this.recruitmentCount = recruitmentCount;
         this.currentCount = 0;
     }
 
-    public static ProjectCategoryApplication createProjectCategoryApplication(SubCategory subCategory, Integer recruitmentCount) {
-        return ProjectCategoryApplication.builder()
+    public static RecruitmentState createRecruitmentState(SubCategory subCategory, Integer recruitmentCount) {
+        return RecruitmentState.builder()
                 .subCategory(subCategory)
-                .recruitmentCount(recruitmentCount).
-                build();
+                .recruitmentCount(recruitmentCount)
+                .build();
     }
 }

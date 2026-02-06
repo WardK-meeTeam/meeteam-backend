@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
+import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
@@ -42,6 +43,7 @@ import java.util.UUID;
 @Slf4j
 public class AuthService {
 
+    public static final int PASSWORD_LIMIT_LENGTH = 8;
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final S3FileService s3FileService;
@@ -54,32 +56,24 @@ public class AuthService {
 
 
     @Transactional
-    public RegisterResponse register(RegisterRequest registerRequest, MultipartFile file) {
+    public RegisterResponse register(RegisterMemberCommand command, MultipartFile file) {
         // 이메일 중복 불가능
-        memberRepository.findOptionByEmail(registerRequest.getEmail())
+        memberRepository.findOptionByEmail(command.getEmail())
                 .ifPresent(email -> {
                     throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
                 });
 
-        if (registerRequest.getPassword().length() < 8) {
+        if (command.getPassword().length() < PASSWORD_LIMIT_LENGTH) {
             throw new CustomException(ErrorCode.INVALID_PASSWORD_PATTERN);
         }
 
-        String imageUrl = null;
-        if (file != null && !file.isEmpty()) {
-            imageUrl = s3FileService.uploadFile(file, "images");
-        }
-        Member member = Member.builder()
-                .realName(registerRequest.getName())
-                .age(registerRequest.getAge())
-                .gender(registerRequest.getGender())
-                .email(registerRequest.getEmail())
-                .password(bCryptPasswordEncoder.encode(registerRequest.getPassword()))
-                .storeFileName(imageUrl)
-                .isParticipating(true)
-                .role(UserRole.USER)
-                .build();
-        saveMemberAndSubCategoriesAndSkills(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+        String imageUrl = uploadFile(file);
+        Member member = Member.createMember(
+                command,
+                bCryptPasswordEncoder.encode(command.getPassword()),
+                imageUrl
+        );
+        saveMemberWithDetails(member, command.getSubCategories(), command.getSkills(), file);
         return new RegisterResponse(member.getRealName(), member.getId());
     }
 
@@ -93,24 +87,15 @@ public class AuthService {
             .ifPresent(register -> {
                 throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
             });
-        String imageUrl = null;
-        if (file != null && !file.isEmpty()) {
-            imageUrl = s3FileService.uploadFile(file, "images");
-        }
-        Member member = Member.builder()
-            .realName(registerRequest.getName())
-            .age(registerRequest.getAge())
-            .gender(registerRequest.getGender())
-            .password(bCryptPasswordEncoder.encode(UUID.randomUUID().toString()))
-            .storeFileName(imageUrl)
-            .isParticipating(true)
-            .role(UserRole.USER)
-            .email(registerInfo.getEmail())
-            .provider(registerInfo.getProvider())
-            .providerId(registerInfo.getProviderId())
-            .build();
+        String imageUrl = uploadFile(file);
+        Member member = Member.createOAuthMember(
+            registerRequest,
+            registerInfo,
+            bCryptPasswordEncoder.encode(UUID.randomUUID().toString()),
+            imageUrl
+        );
 
-        saveMemberAndSubCategoriesAndSkills(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+        saveMemberWithDetails(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
 
         // OAuth Access Token 저장 (로그아웃 시 토큰 철회용)
         if (registerInfo.getOauthAccessToken() != null) {
@@ -150,7 +135,7 @@ public class AuthService {
         return new TokenExchangeResult(accessToken, refreshToken);
     }
 
-    private void saveMemberAndSubCategoriesAndSkills(Member member, List<SubCategoryDto> subCategories, List<String> skills, MultipartFile file) {
+    private void saveMemberWithDetails(Member member, List<SubCategoryDto> subCategories, List<String> skills, MultipartFile file) {
         memberRepository.save(member);
         subCategories.forEach(e -> {
                 SubCategory subCategory = subCategoryRepository.findByName(e.getSubcategory())
@@ -289,6 +274,14 @@ public class AuthService {
         }
 
         return null;
+    }
+
+    private String uploadFile(MultipartFile file) {
+        String imageUrl = null;
+        if (file != null && !file.isEmpty()) {
+            imageUrl = s3FileService.uploadFile(file, "images");
+        }
+        return imageUrl;
     }
 
     @Transactional

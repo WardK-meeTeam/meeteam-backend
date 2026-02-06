@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.global.support.service;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.ProjectCategoryApplication;
+import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
@@ -88,8 +88,8 @@ public class SeedSevice {
                 for (int k = 0; k < slots; k++) {
                     SubCategory sc = subDict.get(shuffled.get(k));
                     int need = faker.number().numberBetween(1, 4);
-                    ProjectCategoryApplication pca = ProjectCategoryApplication.createProjectCategoryApplication(sc, need);
-                    project.addRecruitment(pca);
+                    RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(sc, need);
+                    project.addRecruitment(recruitmentState);
                 }
 
                 javaOpt.ifPresent(s -> project.addProjectSkill(ProjectSkill.createProjectSkill(s)));
@@ -142,10 +142,10 @@ public class SeedSevice {
 
         List<Member> newbies = new ArrayList<>();
         for (int i = 0; i < n; i++) {
-            newbies.add(Member.builder()
-                    .email(faker.internet().emailAddress())
-                    .realName(faker.name().fullName())
-                    .build());
+            newbies.add(Member.createForTest(
+                    faker.internet().emailAddress(),
+                    faker.name().fullName()
+            ));
         }
         return memberRepository.saveAll(newbies);
     }

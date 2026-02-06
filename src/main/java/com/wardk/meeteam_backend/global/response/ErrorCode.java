@@ -51,20 +51,6 @@ public enum ErrorCode {
     PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "이미 종료된 프로젝트입니다."),
     PROJECT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "아직 종료되지 않은 프로젝트입니다."),
 
-    // CHAT
-    CHAT_THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT404", "해당 쓰레드를 찾을 수 없습니다."),
-    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM404", "채팅방을 찾을 수 없습니다."),
-    CHAT_ROOM_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "CHAT_ROOM400", "이미 존재하는 채팅방입니다."),
-    CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CHAT_ROOM403", "채팅방 접근 권한이 없습니다."),
-    MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "MESSAGE404", "메시지를 찾을 수 없습니다."),
-    MESSAGE_EDIT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MESSAGE403", "메시지 수정 권한이 없습니다."),
-    MESSAGE_DELETE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "MESSAGE403", "메시지 삭제 권한이 없습니다."),
-    MESSAGE_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "MESSAGE400", "이미 삭제된 메시지입니다."),
-    CANNOT_CHAT_WITH_YOURSELF(HttpStatus.BAD_REQUEST, "CHAT400", "자기 자신과는 채팅할 수 없습니다."),
-    PROJECT_ID_REQUIRED(HttpStatus.BAD_REQUEST, "CHAT401", "프로젝트 ID가 필요합니다."),
-
-    NOT_THREAD_MEMBER(HttpStatus.FORBIDDEN, "CHAT403", "해당 쓰레드 멤버가 아닙니다."),
-
     // PROJECT MEMBER
     PROJECT_MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "이미 프로젝트에 참여 중입니다."),
     PROJECT_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_MEMBER404", "프로젝트 멤버가 존재하지 않습니다."),
@@ -149,15 +135,13 @@ public enum ErrorCode {
     // 일반 처리 오류
     CODE_REVIEW_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "코드 리뷰 생성에 실패했습니다."),
     CODE_REVIEW_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "코드 리뷰 처리 중 오류가 발생했습니다."),
-    CODE_REVIEW_CHAT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "코드 리뷰 채팅 처리 중 오류가 발생했습니다."),
 
     UNSUPPORTED_TASK_TYPE(HttpStatus.BAD_REQUEST, "AI400", "지원하지 않는 태스크 유형입니다."),
 
     //DB
     DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반"), DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST,"EMAIL_400","이미 존재하는 이메일 입니다." ),
 
-    // chat
-    CHAT_ROOM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM_MEMBER404", "채팅방 멤버를 찾을 수 없습니다."), INVALID_PASSWORD_PATTERN(HttpStatus.BAD_REQUEST, "PASSWORD_SHORT","비밀번호는 최소 8자 이상이어야 합니다");
+    INVALID_PASSWORD_PATTERN(HttpStatus.BAD_REQUEST, "PASSWORD_SHORT","비밀번호는 최소 8자 이상이어야 합니다");
 
     ErrorCode(HttpStatus status, String code, String message) {
         this.status = status;

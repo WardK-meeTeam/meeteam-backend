@@ -1,17 +1,10 @@
 package com.wardk.meeteam_backend.domain.codereview.service;
 
-import com.wardk.meeteam_backend.domain.chat.entity.ChatRoom;
-import com.wardk.meeteam_backend.domain.chat.entity.ChatRoomMember;
-import com.wardk.meeteam_backend.domain.chat.entity.ChatRoomRole;
-import com.wardk.meeteam_backend.domain.chat.entity.ChatRoomType;
-import com.wardk.meeteam_backend.domain.chat.repository.ChatRoomRepository;
-import com.wardk.meeteam_backend.domain.chat.repository.ChatRoomMemberRepository;
+
 import com.wardk.meeteam_backend.domain.codereview.entity.PrReviewJob;
 import com.wardk.meeteam_backend.domain.codereview.repository.PrReviewJobRepository;
-import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +31,6 @@ import static org.springframework.transaction.annotation.Propagation.REQUIRES_NE
 public class PrReviewJobService {
 
     private final PrReviewJobRepository prReviewJobRepository;
-    private final ChatRoomRepository chatRoomRepository;
-    private final ChatRoomMemberRepository chatRoomMemberRepository;
-    private final ProjectMemberRepository projectMemberRepository;
 
     /**
      * PR 리뷰 작업을 생성하거나 기존 작업을 재사용합니다.
@@ -101,82 +91,22 @@ public class PrReviewJobService {
     protected PrReviewJob createNewReviewJob(PullRequest pullRequest, Long memberId) {
         log.info("새로운 리뷰 작업 생성: pr=#{}", pullRequest.getPrNumber());
 
-        // 채팅 방 생성
-        ChatRoom chatRoom = createChatRoom(pullRequest, memberId);
-
         // 리뷰 작업 생성
         PrReviewJob reviewJob = PrReviewJob.builder()
                 .pullRequest(pullRequest)
                 .headSha(pullRequest.getHeadSha())
                 .status(PrReviewJob.Status.QUEUED)
-                .chatRoom(chatRoom)
                 .build();
 
         PrReviewJob savedJob = prReviewJobRepository.save(reviewJob);
         // DB에 즉시 반영하여 다른 트랜잭션에서 조회 가능하도록
         prReviewJobRepository.flush();
 
-        log.info("리뷰 작업 생성 완료: id={}, chatThreadId={}", savedJob.getId(), chatRoom.getId());
+        log.info("리뷰 작업 생성 완료: id={}", savedJob.getId());
         return savedJob;
     }
 
-    /**
-     * PR과 연결된 채팅방 생성 및 프로젝트 멤버들을 채팅방에 추가
-     */
-    private ChatRoom createChatRoom(PullRequest pullRequest, Long creatorId) {
-        // 채팅방 생성
-        ChatRoom chatRoom = ChatRoom.builder()
-                .type(ChatRoomType.PR_REVIEW)
-                .name("PR Review: " + pullRequest.getTitle())
-                .creatorId(creatorId)
-                .build();
 
-        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-        log.info("채팅방 생성 완료: id={}, name={}", savedChatRoom.getId(), savedChatRoom.getName());
-
-        // 프로젝트의 모든 멤버를 채팅방에 추가
-        addProjectMembersToChatRoom(savedChatRoom, pullRequest.getProjectRepo().getProject().getId(), creatorId);
-
-        return savedChatRoom;
-    }
-
-    /**
-     * 프로젝트의 모든 멤버를 채팅방에 추가합니다.
-     */
-    private void addProjectMembersToChatRoom(ChatRoom chatRoom, Long projectId, Long creatorId) {
-        try {
-            // 프로젝트의 모든 멤버 조회
-            List<ProjectMember> projectMembers = projectMemberRepository.findAllByProjectIdWithMember(projectId);
-            
-            log.info("프로젝트 멤버 {}명을 채팅방 {}에 추가합니다", projectMembers.size(), chatRoom.getId());
-
-            // 각 프로젝트 멤버를 채팅방 멤버로 추가
-            for (ProjectMember projectMember : projectMembers) {
-                Member member = projectMember.getMember();
-                
-                // 채팅방 멤버 생성
-                ChatRoomMember chatRoomMember = ChatRoomMember.builder()
-                        .chatRoom(chatRoom)
-                        .member(member)
-                        .joinedAt(LocalDateTime.now())
-                        .notificationEnabled(true)
-                        .role(member.getId().equals(creatorId) ? ChatRoomRole.OWNER : ChatRoomRole.MEMBER)
-                        .build();
-
-                chatRoomMemberRepository.save(chatRoomMember);
-                
-                log.debug("채팅방 멤버 추가: 채팅방={}, 멤버={}, 역할={}", 
-                         chatRoom.getId(), member.getId(), chatRoomMember.getRole());
-            }
-
-            log.info("채팅방 멤버 추가 완료: 채팅방={}, 총 {}명", chatRoom.getId(), projectMembers.size());
-
-        } catch (Exception e) {
-            log.error("채팅방 멤버 추가 중 오류 발생: 채팅방={}, 프로젝트={}", chatRoom.getId(), projectId, e);
-            // 채팅방 멤버 추가 실패해도 채팅방 생성은 계속 진행
-            // 필요시 나중에 수동으로 멤버 추가 가능
-        }
-    }
 
     /**
      * 리뷰 작업 상태 업데이트 (재시도 로직 포함)
