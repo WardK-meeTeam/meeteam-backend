@@ -50,10 +50,10 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
     List<Project> findProjectsWithSkills(@Param("projects") List<Project> projects);
 
     @Query("""
-       SELECT new com.wardk.meeteam_backend.web.projectlike.dto.ProjectWithLikeDto(p, COUNT(pl))
+       SELECT new com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto(p, COUNT(pl))
        FROM Project p
        LEFT JOIN p.projectLikes pl
-       WHERE p.id = :projectId AND p.isDeleted = false 
+       WHERE p.id = :projectId AND p.isDeleted = false
        GROUP BY p
        """)
     Optional<ProjectWithLikeDto> findProjectWithLikeCount(@Param("projectId") Long projectId);
