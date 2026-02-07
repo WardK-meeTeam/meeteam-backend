@@ -9,7 +9,7 @@ import com.wardk.meeteam_backend.domain.pr.repository.PullRequestRepository;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.codereview.dto.PrReviewJobResponse;
+import com.wardk.meeteam_backend.web.codereview.dto.response.PrReviewJobResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

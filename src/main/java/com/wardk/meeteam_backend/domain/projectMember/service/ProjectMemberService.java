@@ -1,15 +1,16 @@
-package com.wardk.meeteam_backend.domain.projectMember.service;
+package com.wardk.meeteam_backend.domain.projectmember.service;
 
-import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
-import com.wardk.meeteam_backend.web.projectMember.dto.*;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 
 import java.util.List;
 
 public interface ProjectMemberService {
 
-    public void addCreator(Long projectId, Long memberId, SubCategory subCategory);
-    public void addMember(Long projectId, Long memberId, SubCategory subCategory);
-    public List<ProjectMemberListResponse> getProjectMembers(Long projectId);
-    public DeleteResponse deleteProjectMember(DeleteRequest request, String requesterEmail);
-    public WithdrawResponse withdraw(WithdrawRequest request, String requesterEmail);
+    void addCreator(Long projectId, Long memberId, JobPosition jobPosition);
+    void addMember(Long projectId, Long memberId, JobPosition jobPosition);
+    List<ProjectMemberListResponse> getProjectMembers(Long projectId);
+    DeleteResponse deleteProjectMember(DeleteRequest request, String requesterEmail);
+    WithdrawResponse withdraw(WithdrawRequest request, String requesterEmail);
 }

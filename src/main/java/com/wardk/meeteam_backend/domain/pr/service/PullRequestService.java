@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.pr.service;
 
-import com.wardk.meeteam_backend.web.pr.dto.PullRequestResponse;
+import com.wardk.meeteam_backend.web.pr.dto.response.PullRequestResponse;
 
 import java.util.List;
 

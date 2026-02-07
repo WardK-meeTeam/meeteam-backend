@@ -1,11 +1,11 @@
-package com.wardk.meeteam_backend.web.projectLike.controller;
+package com.wardk.meeteam_backend.web.projectlike.controller;
 
-import com.wardk.meeteam_backend.domain.projectLike.service.ProjectLikeService;
+import com.wardk.meeteam_backend.domain.projectlike.service.ProjectLikeService;
 import com.wardk.meeteam_backend.global.aop.aspect.OptimisticLockRetryAspect;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.web.projectLike.dto.LikeStatusResponse;
-import com.wardk.meeteam_backend.web.projectLike.dto.ToggleLikeResponse;
+import com.wardk.meeteam_backend.web.projectlike.dto.response.LikeStatusResponse;
+import com.wardk.meeteam_backend.web.projectlike.dto.response.ToggleLikeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 프로젝트 좋아요(Like) 토글 API 컨트롤러.
  *
  * <h2>동시성 · 무결성 보장 — Lost Update 방지</h2>
- * <p>이 컨트롤러는 {@link com.wardk.meeteam_backend.domain.projectLike.service.ProjectLikeService#toggle(Long, String)}
+ * <p>이 컨트롤러는 {@link com.wardk.meeteam_backend.domain.projectlike.service.ProjectLikeService#toggle(Long, String)}
  * 를 호출하며, 서비스 계층에서 <b>낙관적 락(@Version)</b>과 <b>Retry AOP(@Retry)</b>를 조합해
  * 좋아요 수 증감 연산에서 발생할 수 있는 <i>Lost Update</i>를 방지합니다.</p>
  *
@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
  * }</pre>
  * 응답은 현재 좋아요 상태와 집계 수를 포함합니다.
  *
- * @see com.wardk.meeteam_backend.domain.projectLike.service.ProjectLikeService
+ * @see com.wardk.meeteam_backend.domain.projectlike.service.ProjectLikeService
  * @see OptimisticLockRetryAspect
  * @see com.wardk.meeteam_backend.global.aop.Retry
  */

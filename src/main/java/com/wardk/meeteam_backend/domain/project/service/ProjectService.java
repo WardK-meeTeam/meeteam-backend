@@ -2,11 +2,13 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
-import com.wardk.meeteam_backend.web.mainpage.dto.ProjectConditionMainPageResponse;
-import com.wardk.meeteam_backend.web.project.dto.*;
-import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
-import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectConditionMainPageResponse;
+import com.wardk.meeteam_backend.web.project.dto.request.*;
+import com.wardk.meeteam_backend.web.project.dto.response.*;
+import com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;

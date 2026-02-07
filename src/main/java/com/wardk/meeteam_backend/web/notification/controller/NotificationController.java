@@ -4,8 +4,8 @@ import com.wardk.meeteam_backend.domain.notification.service.NotificationService
 import com.wardk.meeteam_backend.domain.notification.service.NotificationSubscribeService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.web.notification.dto.NotificationResponse;
-import com.wardk.meeteam_backend.web.notification.dto.NotificationUnreadCountResponse;
+import com.wardk.meeteam_backend.web.notification.dto.response.NotificationResponse;
+import com.wardk.meeteam_backend.web.notification.dto.response.NotificationUnreadCountResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;

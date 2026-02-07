@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.domain.review.service;
 
-import com.wardk.meeteam_backend.web.review.dto.ReviewRequest;
-import com.wardk.meeteam_backend.web.review.dto.ReviewResponse;
+import com.wardk.meeteam_backend.web.review.dto.request.ReviewRequest;
+import com.wardk.meeteam_backend.web.review.dto.response.ReviewResponse;
 
 public interface ReviewService {
 

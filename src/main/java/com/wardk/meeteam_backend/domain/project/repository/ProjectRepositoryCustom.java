@@ -1,9 +1,11 @@
 package com.wardk.meeteam_backend.domain.project.repository;
 
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
-import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
-import com.wardk.meeteam_backend.web.project.dto.ProjectSearchResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
+import com.wardk.meeteam_backend.web.project.dto.request.*;
+import com.wardk.meeteam_backend.web.project.dto.response.*;
+import com.wardk.meeteam_backend.web.project.dto.request.*;
+import com.wardk.meeteam_backend.web.project.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;

@@ -1,16 +1,16 @@
-package com.wardk.meeteam_backend.domain.projectLike.service;
+package com.wardk.meeteam_backend.domain.projectlike.service;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectLike.entity.ProjectLike;
-import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
+import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
+import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.global.aop.Retry;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.projectLike.dto.LikeStatusResponse;
-import com.wardk.meeteam_backend.web.projectLike.dto.ToggleLikeResponse;
+import com.wardk.meeteam_backend.web.projectlike.dto.response.LikeStatusResponse;
+import com.wardk.meeteam_backend.web.projectlike.dto.response.ToggleLikeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;

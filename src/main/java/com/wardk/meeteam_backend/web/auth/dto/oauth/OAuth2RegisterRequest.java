@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.web.auth.dto.oauth;
 
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
-import com.wardk.meeteam_backend.web.auth.dto.register.SubCategoryDto;
+import com.wardk.meeteam_backend.web.auth.dto.register.JobPositionRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -28,8 +28,8 @@ public class OAuth2RegisterRequest {
   @Schema(description = "성별", example = "MALE", allowableValues = {"MALE","FEMALE"})
   private Gender gender;
 
-  @Schema(description = "분야(소분류) 목록")
-  private List<SubCategoryDto> subCategories;
+  @Schema(description = "직무 포지션 목록")
+  private List<JobPositionRequest> jobPositions;
 
   @Schema(description = "기술스택", example = "[\"Java\", \"Spring\", \"MySQL\"]")
   private List<String> skills;

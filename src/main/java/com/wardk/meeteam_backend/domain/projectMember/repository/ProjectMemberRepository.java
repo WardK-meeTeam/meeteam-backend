@@ -1,6 +1,6 @@
-package com.wardk.meeteam_backend.domain.projectMember.repository;
+package com.wardk.meeteam_backend.domain.projectmember.repository;
 
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -17,7 +17,6 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
 
     @Query("SELECT pm FROM ProjectMember pm " +
             "JOIN FETCH pm.project p " +
-            "JOIN FETCH pm.subCategory s " +
             "WHERE pm.member.id = :memberId AND p.isDeleted = false")
     List<ProjectMember> findAllByMemberId(Long memberId);
 

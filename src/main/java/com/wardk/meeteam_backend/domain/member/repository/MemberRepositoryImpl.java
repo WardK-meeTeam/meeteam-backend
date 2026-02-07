@@ -7,6 +7,8 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.wardk.meeteam_backend.domain.job.JobField;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.repository.Querydsl4RepositorySupport;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +19,11 @@ import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.List;
 
-import static com.wardk.meeteam_backend.domain.category.entity.QBigCategory.bigCategory;
-import static com.wardk.meeteam_backend.domain.category.entity.QSubCategory.subCategory;
+import static java.util.Arrays.stream;
+import static com.wardk.meeteam_backend.domain.job.JobPosition.values;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.member;
-import static com.wardk.meeteam_backend.domain.member.entity.QMemberSubCategory.memberSubCategory;
-import static com.wardk.meeteam_backend.domain.projectMember.entity.QProjectMember.projectMember;
+import static com.wardk.meeteam_backend.domain.member.entity.QMemberJobPosition.memberJobPosition;
+import static com.wardk.meeteam_backend.domain.projectmember.entity.QProjectMember.projectMember;
 import static com.wardk.meeteam_backend.domain.skill.entity.QMemberSkill.memberSkill;
 import static com.wardk.meeteam_backend.domain.skill.entity.QSkill.skill;
 
@@ -36,7 +38,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     }
 
     @Override
-    public Page<Member> searchMembers(List<String> bigCategories, List<String> skills, Pageable pageable) {
+    public Page<Member> searchMembers(List<JobField> jobFields, List<String> skills, Pageable pageable) {
 
         // projectCount 정렬이 있는지 확인
         boolean hasProjectCountSort = pageable.getSort().stream()
@@ -44,7 +46,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
 
         if (hasProjectCountSort) {
             // projectCount 정렬이 있으면 수동 처리
-            return searchWithProjectCountSort(bigCategories, skills, pageable);
+            return searchWithProjectCountSort(jobFields, skills, pageable);
         }
 
         // 일반 정렬은 applyPagination이 자동 처리
@@ -52,7 +54,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                 qf.select(member)
                         .from(member)
                         .where(
-                                bigCategoryExists(bigCategories),
+                                jobFieldExists(jobFields),
                                 skillExists(skills)
                         )
         );
@@ -61,7 +63,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     /**
      * projectCount 정렬 처리 (수동 페이징 및 정렬)
      */
-    private Page<Member> searchWithProjectCountSort(List<String> bigCategories,
+    private Page<Member> searchWithProjectCountSort(List<JobField> jobFields,
                                                     List<String> skills,
                                                     Pageable pageable) {
 
@@ -69,7 +71,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                 .select(member)
                 .from(member)
                 .where(
-                        bigCategoryExists(bigCategories),
+                        jobFieldExists(jobFields),
                         skillExists(skills)
                 );
 
@@ -102,7 +104,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                 .select(member.count())
                 .from(member)
                 .where(
-                        bigCategoryExists(bigCategories),
+                        jobFieldExists(jobFields),
                         skillExists(skills)
                 );
 
@@ -110,22 +112,29 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     }
 
     /**
-     * 대분류 조건 (서브쿼리 EXISTS)
+     * 대분류(JobField) 조건 (서브쿼리 EXISTS)
      * OR 조건: 여러 대분류 중 하나라도 가지고 있으면 매칭
      */
-    private BooleanExpression bigCategoryExists(List<String> bigCategories) {
-        if (bigCategories == null || bigCategories.isEmpty()) {
+    private BooleanExpression jobFieldExists(List<JobField> jobFields) {
+        if (jobFields == null || jobFields.isEmpty()) {
             return null;
+        }
+
+        List<JobPosition> validPositions = stream(values())
+                .filter(p -> jobFields.contains(p.getJobField()))
+                .toList();
+
+        if (validPositions.isEmpty()) {
+             // If no positions match the fields (which is unlikely if fields are valid), return false
+             return com.querydsl.core.types.dsl.Expressions.asBoolean(false).isTrue();
         }
 
         return JPAExpressions
                 .selectOne()
-                .from(memberSubCategory)
-                .join(memberSubCategory.subCategory, subCategory)
-                .join(subCategory.bigCategory, bigCategory)
+                .from(memberJobPosition)
                 .where(
-                        memberSubCategory.member.eq(member),
-                        bigCategory.name.in(bigCategories)
+                        memberJobPosition.member.eq(member),
+                        memberJobPosition.jobPosition.in(validPositions)
                 )
                 .exists();
     }

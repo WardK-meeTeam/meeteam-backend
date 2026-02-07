@@ -1,7 +1,8 @@
-package com.wardk.meeteam_backend.domain.projectMember.service;
+package com.wardk.meeteam_backend.domain.projectmember.service;
 
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.web.projectMember.dto.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 
 import java.util.List;
 

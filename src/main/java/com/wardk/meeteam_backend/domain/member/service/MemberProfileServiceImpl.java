@@ -1,15 +1,15 @@
 package com.wardk.meeteam_backend.domain.member.service;
 
-import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.member.dto.*;
+import com.wardk.meeteam_backend.web.member.dto.request.*;
+import com.wardk.meeteam_backend.web.member.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,7 +26,6 @@ import java.util.List;
 public class MemberProfileServiceImpl implements MemberProfileService {
 
     private final MemberRepository memberRepository;
-    private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
     private final S3FileService s3FileService;
 
@@ -40,10 +39,6 @@ public class MemberProfileServiceImpl implements MemberProfileService {
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         MemberProfileResponse memberProfileResponse = new MemberProfileResponse(member, memberId);
-
-//        List<ReviewResponse> reviewResponses = reviewRepositoryCustom.getReview(member.getId());
-//        memberProfileResponse.setReviewList(reviewResponses);
-//        memberProfileResponse.setReviewCount(reviewResponses.size());
 
         // 프로필 사진 처리
         if (member.getStoreFileName() != null && !member.getStoreFileName().trim().isEmpty()) {
@@ -101,7 +96,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         member.setIntroduction(request.getIntroduction());
 
         // 기존 관심 분야 삭제 후 새로 추가
-        updateMemberSubCategories(member, request.getSubCategories());
+        updateMemberJobPositions(member, request.getJobPositions());
 
         // 기존 기술 스택 삭제 후 새로 추가
         updateMemberSkills(member, request.getSkills());
@@ -137,13 +132,13 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     public Page<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
 
         log.info("QueryDSL을 사용한 회원 검색 - 대분류: {}, 기술스택: {}, 정렬: {}",
-                searchRequest.getBigCategories(),
+                searchRequest.getJobFields(),
                 searchRequest.getSkills(),
                 pageable.getSort());
 
         // QueryDSL로 조회
         Page<Member> memberPage = memberRepository.searchMembers(
-                searchRequest.getBigCategories(),
+                searchRequest.getJobFields(),
                 searchRequest.getSkills(),
                 pageable
         );
@@ -157,17 +152,15 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     /**
      * 회원 관심 분야 업데이트
      */
-    private void updateMemberSubCategories(Member member, List<String> subCategoryNames) {
-        member.getSubCategories().clear();
+    private void updateMemberJobPositions(Member member, List<JobPosition> jobPositions) {
+        member.getJobPositions().clear();
 
-        List<SubCategory> subCategories = subCategoryRepository.findByNameIn(subCategoryNames);
-
-        if (subCategories.size() != subCategoryNames.size()) {
-            throw new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND);
+        if (jobPositions == null || jobPositions.isEmpty()) {
+            return;
         }
 
-        for (SubCategory subCategory : subCategories) {
-            member.addSubCategory(subCategory);
+        for (JobPosition jobPosition : jobPositions) {
+            member.addJobPosition(jobPosition);
         }
     }
 

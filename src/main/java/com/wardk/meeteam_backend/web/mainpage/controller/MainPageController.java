@@ -4,8 +4,8 @@ import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
-import com.wardk.meeteam_backend.web.mainpage.dto.ProjectConditionMainPageResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectConditionMainPageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;

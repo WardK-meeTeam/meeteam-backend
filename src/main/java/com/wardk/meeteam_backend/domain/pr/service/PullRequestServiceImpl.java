@@ -4,7 +4,7 @@ import com.wardk.meeteam_backend.domain.pr.entity.PullRequest;
 import com.wardk.meeteam_backend.domain.pr.repository.PullRequestRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.pr.dto.PullRequestResponse;
+import com.wardk.meeteam_backend.web.pr.dto.response.PullRequestResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

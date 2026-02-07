@@ -2,8 +2,8 @@ package com.wardk.meeteam_backend.domain.pr.service.fetcher;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wardk.meeteam_backend.global.github.GithubClient;
-import com.wardk.meeteam_backend.web.pr.dto.PrData;
-import com.wardk.meeteam_backend.web.pr.dto.PrFileData;
+import com.wardk.meeteam_backend.web.pr.dto.response.PrData;
+import com.wardk.meeteam_backend.web.pr.dto.response.PrFileData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

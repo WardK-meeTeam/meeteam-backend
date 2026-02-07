@@ -2,7 +2,7 @@ package com.wardk.meeteam_backend.domain.pr.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
-import com.wardk.meeteam_backend.web.pr.dto.PrData;
+import com.wardk.meeteam_backend.web.pr.dto.response.PrData;
 import jakarta.persistence.*;
 import lombok.*;
 

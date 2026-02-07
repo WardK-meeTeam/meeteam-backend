@@ -4,8 +4,8 @@ import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
-import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto;
 import jakarta.persistence.Entity;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.OneToMany;
@@ -26,7 +26,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
 
     @Query("SELECT DISTINCT p FROM Project p " +
             "JOIN FETCH p.recruitments r " +
-            "JOIN FETCH r.subCategory " +
             "WHERE p.id = :projectId AND p.isDeleted = false")
     Optional<Project> findByIdWithRecruitment(Long projectId);
 
@@ -43,22 +42,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
             "WHERE p.id = :projectId AND p.isDeleted = false")
     Optional<Project> findByIdWithMembers(Long projectId);
 
-    // 특정 대분류들을 모집하고 있는 프로젝트 조회 (Slice) - 메인페이지용, recruitmentStatus 파라미터 추가
-
-    @Query("SELECT DISTINCT p FROM Project p " +
-            "LEFT JOIN FETCH p.creator " +           // ToOne 관계만
-            "LEFT JOIN FETCH p.recruitments r " +    // 컬렉션 1개만
-            "LEFT JOIN FETCH r.subCategory sc " +    // ToOne 관계
-            "LEFT JOIN FETCH sc.bigCategory bc " +   // ToOne 관계
-            "WHERE bc.id = :bigCategoryId " +
-            "AND p.recruitmentStatus = :recruitmentStatus " +
-            "AND p.isDeleted = false")
-    Slice<Project> findRecruitingProjectsByBigCategory(
-            @Param("bigCategoryId") Long bigCategoryId,
-            @Param("recruitmentStatus") Recruitment recruitmentStatus,
-            Pageable pageable
-    );
-
     // 필요시 추가로 skills 조회하는 별도 메서드
     @Query("SELECT p FROM Project p " +
             "JOIN FETCH p.projectSkills ps " +
@@ -67,7 +50,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
     List<Project> findProjectsWithSkills(@Param("projects") List<Project> projects);
 
     @Query("""
-       SELECT new com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto(p, COUNT(pl))
+       SELECT new com.wardk.meeteam_backend.web.projectlike.dto.ProjectWithLikeDto(p, COUNT(pl))
        FROM Project p
        LEFT JOIN p.projectLikes pl
        WHERE p.id = :projectId AND p.isDeleted = false 

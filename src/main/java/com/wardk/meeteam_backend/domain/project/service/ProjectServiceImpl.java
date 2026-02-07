@@ -3,11 +3,10 @@ package com.wardk.meeteam_backend.domain.project.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.applicant.repository.RecruitmentStateRepository;
-import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
@@ -16,24 +15,27 @@ import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
-import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
-import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberServiceImpl;
+import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectmember.service.ProjectMemberService;
+import com.wardk.meeteam_backend.domain.projectmember.service.ProjectMemberServiceImpl;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
-import com.wardk.meeteam_backend.web.mainpage.dto.ProjectConditionMainPageResponse;
-import com.wardk.meeteam_backend.web.project.dto.*;
-import com.wardk.meeteam_backend.web.recruitmentState.dto.ProjectCounts;
-import com.wardk.meeteam_backend.web.projectLike.dto.ProjectWithLikeDto;
-import com.wardk.meeteam_backend.web.projectMember.dto.ProjectMemberListResponse;
-import com.wardk.meeteam_backend.web.projectMember.dto.ProjectUpdateResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectConditionMainPageResponse;
+import com.wardk.meeteam_backend.web.project.dto.request.*;
+import com.wardk.meeteam_backend.web.project.dto.response.*;
+import com.wardk.meeteam_backend.web.recruitmentState.dto.response.ProjectCounts;
+import com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,11 +61,9 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProjectServiceImpl implements ProjectService {
 
-//    private final FileUtil fileUtil;
     private final S3FileService s3FileService;
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
-    private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
     private final ProjectMemberService projectMemberService;
     private final ProjectRepoRepository projectRepoRepository;
@@ -76,7 +76,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ApplicationEventPublisher eventPublisher;
 
 
-    @CacheEvict(value = "mainPageProjects", allEntries = true) // 프로젝트 등록 시 캐시삭제
+    @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Counted("post.project")
     @Override
     public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
@@ -105,10 +105,8 @@ public class ProjectServiceImpl implements ProjectService {
 
 
         projectPostRequest.getRecruitments().forEach(recruitment -> {
-            SubCategory subCategory = subCategoryRepository.findByName(recruitment.getSubCategory())
-                    .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
-
-            RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(subCategory, recruitment.getRecruitmentCount());
+            RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
+                    recruitment.jobPosition(), recruitment.recruitmentCount());
             project.addRecruitment(recruitmentState);
         });
 
@@ -122,10 +120,8 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.save(project);
 
-        SubCategory subCategory = subCategoryRepository.findByName(projectPostRequest.getSubCategory())
-                .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
-
-        projectMemberService.addCreator(project.getId(), creator.getId(), subCategory);
+        JobPosition creatorJobPosition = projectPostRequest.getJobPosition();
+        projectMemberService.addCreator(project.getId(), creator.getId(), creatorJobPosition);
 
         return ProjectPostResponse.from(project);
     }
@@ -140,17 +136,6 @@ public class ProjectServiceImpl implements ProjectService {
                 .toList();
     }
 
-//    @Override
-//    public ProjectResponse getProjectV1(Long projectId) {
-//
-//        Project project = projectRepository.findById(projectId)
-//                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-//
-//
-//        return ProjectResponse.responseDto(project);
-//    }
-
-
     @Override
     public ProjectWithLikeDto getProjectV2(Long projectId) {
 
@@ -161,7 +146,7 @@ public class ProjectServiceImpl implements ProjectService {
         return projectWithLikeDto;
     }
 
-    @CacheEvict(value = "mainPageProjects", allEntries = true) //수정시에 캐시 삭제
+    @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Override
     public ProjectUpdateResponse updateProject(Long projectId, ProjectUpdateRequest request, MultipartFile file, String requesterEmail) {
 
@@ -204,12 +189,9 @@ public class ProjectServiceImpl implements ProjectService {
         );
 
         List<RecruitmentState> recruitments = request.getRecruitments().stream()
-                .map(recruitment -> {
-                    SubCategory subCategory = subCategoryRepository.findByName(recruitment.getSubCategory())
-                            .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
-
-                    return RecruitmentState.createRecruitmentState(subCategory, recruitment.getRecruitmentCount());
-                }).toList();
+                .map(recruitment -> RecruitmentState.createRecruitmentState(
+                        recruitment.jobPosition(), recruitment.recruitmentCount()))
+                .toList();
 
         List<ProjectSkill> skills = request.getSkills().stream()
                 .map(skillName -> {
@@ -288,13 +270,11 @@ public class ProjectServiceImpl implements ProjectService {
             String owner = parts[0];
             String repo = parts[1];
 
-            // 설치 토큰 발급
             if (installationId == null) {
                 throw new CustomException(ErrorCode.GITHUB_APP_NOT_INSTALLED);
             }
             String installationToken = githubAppAuthService.getInstallationToken(installationId);
 
-            // 레포 정보 조회
             JsonNode repoInfo = webClientBuilder.baseUrl("https://api.github.com").build()
                     .get()
                     .uri("/repos/{owner}/{repo}", owner, repo)
@@ -310,7 +290,6 @@ public class ProjectServiceImpl implements ProjectService {
             LocalDateTime pushedAt = LocalDateTime.parse(repoInfo.get("pushed_at").asText().replace("Z", ""));
             String language = repoInfo.get("language").asText();
 
-            //로그
             log.info("description={}, starCount={}, watcherCount={}, pushedAt={}, language={}",
                     description, starCount, watcherCount, pushedAt, language);
 
@@ -333,8 +312,6 @@ public class ProjectServiceImpl implements ProjectService {
 
         Page<Project> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
 
-
-        // 비로그인 -> isLiked 여부 항상 false;
         Page<ProjectConditionRequest> map = content.map(
                 project -> {
 
@@ -344,8 +321,8 @@ public class ProjectServiceImpl implements ProjectService {
                     Long currentCount = totalCountsByProject != null ? totalCountsByProject.getCurrentCount() : 0L;
                     Long recruitmentCount = totalCountsByProject != null ? totalCountsByProject.getRecruitmentCount() : 0L;
                     log.info("userDetails={}",userDetails);
-                    boolean isLiked = false; // 비로그인인 경우 isLiked 무조건 false;
-                    if (userDetails != null) { // 로그인이 경우
+                    boolean isLiked = false;
+                    if (userDetails != null) {
                         isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
                     }
                     return new ProjectConditionRequest(project, isLiked, currentCount, recruitmentCount, projectMembers);
@@ -394,15 +371,6 @@ public class ProjectServiceImpl implements ProjectService {
                 .map(MyProjectResponse::responseDto)
                 .toList();
     }
-
-//    private String getStoreFileName(MultipartFile file) {
-//        String storeFileName = null;
-//        if (file != null && !file.isEmpty()) {
-//            storeFileName = fileUtil.storeFile(file).getStoreFileName();
-//        }
-//
-//        return storeFileName;
-//    }
 
     private String getImageUrl(MultipartFile file, Long uploaderId) {
         String imageUrl = null;
