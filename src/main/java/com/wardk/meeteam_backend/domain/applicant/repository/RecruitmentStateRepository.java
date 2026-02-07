@@ -11,9 +11,8 @@ import org.springframework.data.repository.query.Param;
 public interface RecruitmentStateRepository extends JpaRepository<RecruitmentState, Long> {
 
     @Query("""
-    select new com.wardk.meeteam_backend.web.
-    recruitmentState.
-    dto.ProjectCounts(sum(pc.currentCount), sum(pc.recruitmentCount)
+    select new com.wardk.meeteam_backend.web.recruitmentState.dto.response.ProjectCounts(
+        sum(pc.currentCount), sum(pc.recruitmentCount)
     )
     from RecruitmentState pc
     where pc.project = :project
