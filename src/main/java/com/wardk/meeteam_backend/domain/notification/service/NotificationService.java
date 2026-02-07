@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.domain.notification.service;
 
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
-import com.wardk.meeteam_backend.web.notification.dto.NotificationResponse;
+import com.wardk.meeteam_backend.web.notification.dto.response.NotificationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;

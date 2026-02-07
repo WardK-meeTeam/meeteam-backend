@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.domain.applicant.repository;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.web.recruitmentState.dto.ProjectCounts;
+import com.wardk.meeteam_backend.web.recruitmentState.dto.response.ProjectCounts;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

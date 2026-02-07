@@ -1,9 +1,10 @@
-package com.wardk.meeteam_backend.web.projectMember.controller;
+package com.wardk.meeteam_backend.web.projectmember.controller;
 
-import com.wardk.meeteam_backend.domain.projectMember.service.ProjectApplicationService;
+import com.wardk.meeteam_backend.domain.projectmember.service.ProjectApplicationService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.web.projectMember.dto.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

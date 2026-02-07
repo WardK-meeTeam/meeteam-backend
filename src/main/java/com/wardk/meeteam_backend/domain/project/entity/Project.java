@@ -1,11 +1,12 @@
 package com.wardk.meeteam_backend.domain.project.entity;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
-import com.wardk.meeteam_backend.domain.projectLike.entity.ProjectLike;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
+import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectApplication;
 import com.wardk.meeteam_backend.domain.review.entity.Review;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -74,7 +75,7 @@ public class Project extends BaseEntity {
     private List<ProjectMember> members = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectMemberApplication> applications = new ArrayList<>();
+    private List<ProjectApplication> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectSkill> projectSkills = new ArrayList<>();
@@ -172,11 +173,11 @@ public class Project extends BaseEntity {
     }
 
     public void updateRecruitments(List<RecruitmentState> recruitments) {
-        Map<Long, RecruitmentState> current = this.recruitments.stream()
-                .collect(Collectors.toMap(r -> r.getSubCategory().getId(), r -> r));
+        Map<JobPosition, RecruitmentState> current = this.recruitments.stream()
+                .collect(Collectors.toMap(RecruitmentState::getJobPosition, r -> r));
 
         for (RecruitmentState newPca : recruitments) {
-            RecruitmentState existing = current.get(newPca.getSubCategory().getId());
+            RecruitmentState existing = current.get(newPca.getJobPosition());
 
             if(existing != null) {
                 int oldCurrentCount = existing.getCurrentCount();
@@ -199,8 +200,7 @@ public class Project extends BaseEntity {
         }
 
         this.recruitments.removeIf(existing -> recruitments.stream()
-                .noneMatch(n -> n.getSubCategory().getId().equals(existing.getSubCategory().getId())
-                )
+                .noneMatch(n -> n.getJobPosition() == existing.getJobPosition())
                 && existing.getCurrentCount() == 0
         );
     }

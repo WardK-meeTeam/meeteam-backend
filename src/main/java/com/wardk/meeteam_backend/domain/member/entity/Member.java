@@ -1,8 +1,7 @@
 package com.wardk.meeteam_backend.domain.member.entity;
 
-
-import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
@@ -51,7 +50,7 @@ public class Member extends BaseEntity {
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 500)
-    private List<MemberSubCategory> subCategories = new ArrayList<>();
+    private List<MemberJobPosition> jobPositions = new ArrayList<>();
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 500)
@@ -107,17 +106,17 @@ public class Member extends BaseEntity {
      */
     public static Member createMember(RegisterMemberCommand command, String encodedPassword, String imageUrl) {
         return Member.builder()
-                .email(command.getEmail())
+                .email(command.email())
                 .password(encodedPassword)
-                .realName(command.getName())
-                .age(command.getAge())
-                .gender(command.getGender())
+                .realName(command.name())
+                .age(command.age())
+                .gender(command.gender())
                 .storeFileName(imageUrl)
                 .isParticipating(true)
                 .role(UserRole.USER)
-                .projectExperienceCount(command.getProjectExperienceCount())
-                .githubUrl(command.getGithubUrl())
-                .blogUrl(command.getBlogUrl())
+                .projectExperienceCount(command.projectExperienceCount())
+                .githubUrl(command.githubUrl())
+                .blogUrl(command.blogUrl())
                 .build();
     }
 
@@ -167,8 +166,8 @@ public class Member extends BaseEntity {
                 .build();
     }
 
-    public void addSubCategory(SubCategory signupSubCategory) {
-        subCategories.add(new MemberSubCategory(this, signupSubCategory));
+    public void addJobPosition(JobPosition jobPosition) {
+        jobPositions.add(new MemberJobPosition(this, jobPosition));
     }
 
     public void addMemberSkill(Skill skill) {

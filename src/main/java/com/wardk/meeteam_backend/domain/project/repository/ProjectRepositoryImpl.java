@@ -3,15 +3,18 @@ package com.wardk.meeteam_backend.domain.project.repository;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.wardk.meeteam_backend.domain.job.JobField;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.project.entity.*;
-import com.wardk.meeteam_backend.web.mainpage.dto.CategoryCondition;
-import com.wardk.meeteam_backend.web.project.dto.ProjectSearchCondition;
+import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
+import com.wardk.meeteam_backend.web.project.dto.request.*;
+import com.wardk.meeteam_backend.web.project.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
+import static java.util.Arrays.stream;
+import static com.wardk.meeteam_backend.domain.job.JobPosition.values;
 import static com.wardk.meeteam_backend.domain.applicant.entity.QRecruitmentState.*;
-import static com.wardk.meeteam_backend.domain.category.entity.QBigCategory.*;
-import static com.wardk.meeteam_backend.domain.category.entity.QSubCategory.*;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProject.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProjectSkill.*;
@@ -37,7 +40,7 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
                                 platformCategoryEq(condition.getPlatformCategory()),
                                 recruitmentEq(condition.getRecruitment()),
                                 projectTechNameExists(condition.getTechStack()),
-                                bigCategoryExists(condition.getBigCategory()),
+                                jobFieldExists(condition.getJobField()),
                                 projectCategoryEq(condition.getProjectCategory())
                         )
         );
@@ -72,16 +75,23 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
     }
 
 
-    private BooleanExpression bigCategoryExists(String bigCategoryName) {
-        if (bigCategoryName == null || bigCategoryName.isBlank()) return null;
+    private BooleanExpression jobFieldExists(JobField jobField) {
+        if (jobField == null) return null;
+
+        List<JobPosition> validPositions = stream(values())
+                .filter(p -> p.getJobField() == jobField)
+                .toList();
+
+        if (validPositions.isEmpty()) {
+            return com.querydsl.core.types.dsl.Expressions.asBoolean(false).isTrue();
+        }
+
         return JPAExpressions
                 .selectOne()
                 .from(recruitmentState)
-                .join(recruitmentState.subCategory, subCategory)
-                .join(subCategory.bigCategory, bigCategory)
                 .where(
                         recruitmentState.project.eq(project),
-                        bigCategory.name.eq(bigCategoryName)
+                        recruitmentState.jobPosition.in(validPositions)
                 )
                 .exists();
     }

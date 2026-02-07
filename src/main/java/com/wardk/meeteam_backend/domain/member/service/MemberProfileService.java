@@ -1,10 +1,15 @@
 package com.wardk.meeteam_backend.domain.member.service;
 
-import com.wardk.meeteam_backend.web.member.dto.MemberCardResponse;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileResponse;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateRequest;
-import com.wardk.meeteam_backend.web.member.dto.MemberProfileUpdateResponse;
-import com.wardk.meeteam_backend.web.member.dto.MemberSearchRequest;
+import com.wardk.meeteam_backend.web.member.dto.request.*;
+import com.wardk.meeteam_backend.web.member.dto.response.*;
+import com.wardk.meeteam_backend.web.member.dto.request.*;
+import com.wardk.meeteam_backend.web.member.dto.response.*;
+import com.wardk.meeteam_backend.web.member.dto.request.*;
+import com.wardk.meeteam_backend.web.member.dto.response.*;
+import com.wardk.meeteam_backend.web.member.dto.request.*;
+import com.wardk.meeteam_backend.web.member.dto.response.*;
+import com.wardk.meeteam_backend.web.member.dto.request.*;
+import com.wardk.meeteam_backend.web.member.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;

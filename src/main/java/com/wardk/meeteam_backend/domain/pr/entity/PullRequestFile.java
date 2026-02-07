@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.domain.pr.entity;
 
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
-import com.wardk.meeteam_backend.web.pr.dto.PrFileData;
+import com.wardk.meeteam_backend.web.pr.dto.response.PrFileData;
 import jakarta.persistence.*;
 import lombok.*;
 

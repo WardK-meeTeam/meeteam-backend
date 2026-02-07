@@ -1,10 +1,8 @@
 package com.wardk.meeteam_backend.global.auth.service;
 
-
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
-import com.wardk.meeteam_backend.domain.member.entity.UserRole;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
@@ -17,13 +15,11 @@ import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
-import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
-import com.wardk.meeteam_backend.web.auth.dto.register.SubCategoryDto;
+import com.wardk.meeteam_backend.web.auth.dto.register.JobPositionRequest;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
@@ -47,7 +43,6 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final S3FileService s3FileService;
-    private final SubCategoryRepository subCategoryRepository;
     private final SkillRepository skillRepository;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistRepository tokenBlacklistRepository;
@@ -58,22 +53,22 @@ public class AuthService {
     @Transactional
     public RegisterResponse register(RegisterMemberCommand command, MultipartFile file) {
         // 이메일 중복 불가능
-        memberRepository.findOptionByEmail(command.getEmail())
+        memberRepository.findOptionByEmail(command.email())
                 .ifPresent(email -> {
                     throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
                 });
 
-        if (command.getPassword().length() < PASSWORD_LIMIT_LENGTH) {
+        if (command.password().length() < PASSWORD_LIMIT_LENGTH) {
             throw new CustomException(ErrorCode.INVALID_PASSWORD_PATTERN);
         }
 
         String imageUrl = uploadFile(file);
         Member member = Member.createMember(
                 command,
-                bCryptPasswordEncoder.encode(command.getPassword()),
+                bCryptPasswordEncoder.encode(command.password()),
                 imageUrl
         );
-        saveMemberWithDetails(member, command.getSubCategories(), command.getSkills(), file);
+        saveMemberWithDetails(member, command.jobPositions(), command.skills(), file);
         return new RegisterResponse(member.getRealName(), member.getId());
     }
 
@@ -95,7 +90,7 @@ public class AuthService {
             imageUrl
         );
 
-        saveMemberWithDetails(member, registerRequest.getSubCategories(), registerRequest.getSkills(), file);
+        saveMemberWithDetails(member, registerRequest.getJobPositions(), registerRequest.getSkills(), file);
 
         // OAuth Access Token 저장 (로그아웃 시 토큰 철회용)
         if (registerInfo.getOauthAccessToken() != null) {
@@ -135,13 +130,9 @@ public class AuthService {
         return new TokenExchangeResult(accessToken, refreshToken);
     }
 
-    private void saveMemberWithDetails(Member member, List<SubCategoryDto> subCategories, List<String> skills, MultipartFile file) {
+    private void saveMemberWithDetails(Member member, List<JobPositionRequest> jobPositions, List<String> skills, MultipartFile file) {
         memberRepository.save(member);
-        subCategories.forEach(e -> {
-                SubCategory subCategory = subCategoryRepository.findByName(e.getSubcategory())
-                    .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
-                member.addSubCategory(subCategory);
-            });
+        jobPositions.forEach(dto -> member.addJobPosition(dto.jobPosition()));
         skills.forEach(skillName -> {
                 Skill skill = skillRepository.findBySkillName(skillName)
                     .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));

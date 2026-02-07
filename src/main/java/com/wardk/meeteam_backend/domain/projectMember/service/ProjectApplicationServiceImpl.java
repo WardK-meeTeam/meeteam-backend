@@ -1,26 +1,25 @@
-package com.wardk.meeteam_backend.domain.projectMember.service;
+package com.wardk.meeteam_backend.domain.projectmember.service;
 
-import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.member.repository.SubCategoryRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
-import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ApplicationStatus;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberApplication;
-import com.wardk.meeteam_backend.domain.projectMember.entity.WeekDay;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectApplicationRepository;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ApplicationStatus;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectApplication;
+import com.wardk.meeteam_backend.domain.projectmember.entity.WeekDay;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectApplicationRepository;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.web.projectMember.dto.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -40,7 +39,6 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
-    private final SubCategoryRepository subCategoryRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -65,24 +63,23 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        SubCategory subCategory = subCategoryRepository.findByName(request.getSubCategory())
-                .orElseThrow(() -> new CustomException(ErrorCode.SUBCATEGORY_NOT_FOUND));
+        JobPosition jobPosition = request.getJobPosition();
 
         List<WeekDay> weekDays = Arrays.stream(request.getAvailableDays().split(","))
                 .map(String::trim)
                 .map(WeekDay::valueOf)
                 .toList();
 
-        ProjectMemberApplication application = ProjectMemberApplication.createApplication
-                        (project,
-                        member,
-                        subCategory,
-                        request.getMotivation(),
-                        request.getAvailableHoursPerWeek(),
-                        weekDays,
-                        request.getOfflineAvailable());
+        ProjectApplication application = ProjectApplication.createApplication(
+                project,
+                member,
+                jobPosition,
+                request.getMotivation(),
+                request.getAvailableHoursPerWeek(),
+                weekDays,
+                request.getOfflineAvailable());
 
-        ProjectMemberApplication memberApplication = applicationRepository.save(application);
+        ProjectApplication memberApplication = applicationRepository.save(application);
 
         Long receiverId = project.getCreator().getId();
         Long actorId = member.getId();
@@ -162,7 +159,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        ProjectMemberApplication application = applicationRepository.findByIdWithApplicantAndSubCategory(projectId, applicationId)
+        ProjectApplication application = applicationRepository.findByIdWithApplicant(projectId, applicationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
         return ApplicationDetailResponse.responseDto(application);
@@ -171,7 +168,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Override
     public ApplicationDecisionResponse decide(ApplicationDecisionRequest request, String requesterEmail) {
 
-        ProjectMemberApplication application = applicationRepository.findById(request.getApplicationId())
+        ProjectApplication application = applicationRepository.findById(request.getApplicationId())
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
         if (application.getProject().getStatus() == ProjectStatus.COMPLETED) {
@@ -198,7 +195,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             projectMemberService.addMember(
                     projectId,
                     applicantId,
-                    application.getSubCategory()
+                    application.getJobPosition()
             );
 
             // 승인 알림 저장
@@ -253,7 +250,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Override
     public List<AppliedProjectResponse> getAppliedProjects(CustomSecurityUserDetails userDetails) {
 
-        List<ProjectMemberApplication> applications = applicationRepository.findAllByApplicantId(userDetails.getMemberId());
+        List<ProjectApplication> applications = applicationRepository.findAllByApplicantId(userDetails.getMemberId());
 
         return applications.stream()
                 .filter(application -> application.getStatus() == ApplicationStatus.PENDING)

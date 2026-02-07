@@ -1,8 +1,8 @@
-package com.wardk.meeteam_backend.domain.projectLike.repository;
+package com.wardk.meeteam_backend.domain.projectlike.repository;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.domain.projectLike.entity.ProjectLike;
+import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

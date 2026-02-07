@@ -1,18 +1,19 @@
-package com.wardk.meeteam_backend.domain.projectMember.service;
+package com.wardk.meeteam_backend.domain.projectmember.service;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
-import com.wardk.meeteam_backend.domain.category.entity.SubCategory;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.global.aop.Retry;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.web.projectMember.dto.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     private final ProjectMemberRepository projectMemberRepository;
 
     @Override
-    public void addCreator(Long projectId, Long memberId, SubCategory subCategory) {
+    public void addCreator(Long projectId, Long memberId, JobPosition jobPosition) {
 
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
@@ -41,7 +42,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        ProjectMember projectMember = ProjectMember.createProjectMember(member, subCategory);
+        ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition);
         project.joinMember(projectMember);
 
         projectMemberRepository.save(projectMember);
@@ -49,7 +50,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Retry
     @Override
-    public void addMember(Long projectId, Long memberId, SubCategory subCategory) {
+    public void addMember(Long projectId, Long memberId, JobPosition jobPosition) {
 
         Project project = projectRepository.findByIdWithRecruitment(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
@@ -61,11 +62,11 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        ProjectMember projectMember = ProjectMember.createProjectMember(member, subCategory);
+        ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition);
         project.joinMember(projectMember);
 
         RecruitmentState recruitmentState = project.getRecruitments().stream()
-                .filter(r -> r.getSubCategory().getId().equals(subCategory.getId()))
+                .filter(r -> r.getJobPosition() == jobPosition)
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
 

@@ -35,8 +35,8 @@ public class RegisterRequest {
     private String password;
 
 
-    @Schema(description = "분야(소분류) 목록")
-    private List<SubCategoryDto> subCategories;
+    @Schema(description = "직무 포지션 목록")
+    private List<JobPositionRequest> jobPositions;
 
     @Schema(description = "기술스택", example = "[\"Java\", \"Spring\", \"MySQL\"]")
     private List<String> skills;

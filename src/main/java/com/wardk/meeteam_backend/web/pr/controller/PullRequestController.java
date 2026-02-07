@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.web.pr.controller;
 import com.wardk.meeteam_backend.domain.pr.service.PullRequestService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
-import com.wardk.meeteam_backend.web.pr.dto.PullRequestResponse;
+import com.wardk.meeteam_backend.web.pr.dto.response.PullRequestResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
