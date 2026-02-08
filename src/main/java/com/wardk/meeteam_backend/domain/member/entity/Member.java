@@ -68,6 +68,7 @@ public class Member extends BaseEntity {
     private UserRole role;
 
     private String provider;
+
     private String providerId;
 
     @Column(length = 2048)
@@ -78,6 +79,7 @@ public class Member extends BaseEntity {
     private String githubUrl;
 
     private String blogUrl;
+
 
     @Builder(access = AccessLevel.PRIVATE)
     private Member(String email, Integer age, String password, String realName,
@@ -104,7 +106,7 @@ public class Member extends BaseEntity {
     /**
      * 일반 회원가입용 정적 팩토리 메서드
      */
-    public static Member createMember(RegisterMemberCommand command, String encodedPassword, String imageUrl) {
+    public static Member createMember(RegisterMemberCommand command, String encodedPassword, String imageUrl ) {
         return Member.builder()
                 .email(command.email())
                 .password(encodedPassword)
@@ -172,6 +174,14 @@ public class Member extends BaseEntity {
 
     public void addMemberSkill(Skill skill) {
         memberSkills.add(new MemberSkill(this, skill));
+    }
+
+    /**
+     * 회원가입 시 직무와 스킬을 일괄 초기화
+     */
+    public void initializeDetails(List<JobPosition> jobPositions, List<Skill> skills) {
+        jobPositions.forEach(jobPosition -> addJobPosition(jobPosition));
+        skills.forEach(skill -> addMemberSkill(skill));
     }
 
     public void setIntroduction(String introduction) {

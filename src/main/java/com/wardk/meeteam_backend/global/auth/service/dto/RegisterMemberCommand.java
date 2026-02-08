@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.global.auth.service.dto;
 
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.JobPositionRequest;
@@ -12,7 +13,7 @@ public record RegisterMemberCommand(
         String name,
         Integer age,
         Gender gender,
-        List<JobPositionRequest> jobPositions,
+        List<JobPosition> jobPositions,
         List<String> skills,
         Integer projectExperienceCount,
         String githubUrl,
