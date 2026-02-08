@@ -16,7 +16,6 @@ import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
-import com.wardk.meeteam_backend.web.auth.dto.register.JobPositionRequest;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
@@ -52,51 +51,45 @@ public class AuthService {
 
     @Transactional
     public RegisterResponse register(RegisterMemberCommand command, MultipartFile file) {
-        // 이메일 중복 불가능
-        memberRepository.findOptionByEmail(command.email())
-                .ifPresent(email -> {
-                    throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
-                });
+        validateEmailNotDuplicated(command.email());
+        validatePassword(command.password());
 
-        if (command.password().length() < PASSWORD_LIMIT_LENGTH) {
-            throw new CustomException(ErrorCode.INVALID_PASSWORD_PATTERN);
-        }
-
+        List<Skill> skills = fetchSkillsByNames(command.skills());
         String imageUrl = uploadFile(file);
+
         Member member = Member.createMember(
                 command,
                 bCryptPasswordEncoder.encode(command.password()),
                 imageUrl
         );
-        saveMemberWithDetails(member, command.jobPositions(), command.skills(), file);
+        member.initializeDetails(command.jobPositions(), skills);
+        memberRepository.save(member);
+
         return new RegisterResponse(member.getRealName(), member.getId());
     }
 
     @Transactional
     public OAuth2RegisterResult oauth2Register(OAuth2RegisterRequest registerRequest, MultipartFile file) {
-        // 일회용 코드로 Redis에서 신규 회원 정보 조회
         OAuthRegisterInfo registerInfo = oAuthCodeRepository.consumeRegisterInfo(registerRequest.getCode())
             .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OAUTH_CODE));
 
-        memberRepository.findByProviderAndProviderId(registerInfo.getProvider(), registerInfo.getProviderId())
-            .ifPresent(register -> {
-                throw new CustomException(ErrorCode.DUPLICATE_MEMBER);
-            });
+        validateOAuthNotDuplicated(registerInfo.getProvider(), registerInfo.getProviderId());
+
+        List<Skill> skills = fetchSkillsByNames(registerRequest.getSkills());
         String imageUrl = uploadFile(file);
+
         Member member = Member.createOAuthMember(
             registerRequest,
             registerInfo,
             bCryptPasswordEncoder.encode(UUID.randomUUID().toString()),
             imageUrl
         );
+        member.initializeDetails(registerRequest.getJobPositions(), skills);
 
-        saveMemberWithDetails(member, registerRequest.getJobPositions(), registerRequest.getSkills(), file);
-
-        // OAuth Access Token 저장 (로그아웃 시 토큰 철회용)
         if (registerInfo.getOauthAccessToken() != null) {
             member.setOauthAccessToken(registerInfo.getOauthAccessToken());
-            memberRepository.save(member);
         }
+        memberRepository.save(member);
 
         String accessToken = jwtUtil.createAccessToken(member);
         String refreshToken = jwtUtil.createRefreshToken(member);
@@ -130,14 +123,28 @@ public class AuthService {
         return new TokenExchangeResult(accessToken, refreshToken);
     }
 
-    private void saveMemberWithDetails(Member member, List<JobPositionRequest> jobPositions, List<String> skills, MultipartFile file) {
-        memberRepository.save(member);
-        jobPositions.forEach(dto -> member.addJobPosition(dto.jobPosition()));
-        skills.forEach(skillName -> {
-                Skill skill = skillRepository.findBySkillName(skillName)
-                    .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
-                member.addMemberSkill(skill);
-            });
+    private void validateEmailNotDuplicated(String email) {
+        memberRepository.findOptionByEmail(email)
+            .ifPresent(e -> { throw new CustomException(ErrorCode.DUPLICATE_MEMBER); });
+    }
+
+    private void validateOAuthNotDuplicated(String provider, String providerId) {
+        memberRepository.findByProviderAndProviderId(provider, providerId)
+            .ifPresent(m -> { throw new CustomException(ErrorCode.DUPLICATE_MEMBER); });
+    }
+
+    private void validatePassword(String password) {
+        if (password.length() < PASSWORD_LIMIT_LENGTH) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD_PATTERN);
+        }
+    }
+
+    private List<Skill> fetchSkillsByNames(List<String> skillNames) {
+        List<Skill> skills = skillRepository.findBySkillNameIn(skillNames);
+        if (skills.size() != skillNames.size()) {
+            throw new CustomException(ErrorCode.SKILL_NOT_FOUND);
+        }
+        return skills;
     }
 
     @Transactional

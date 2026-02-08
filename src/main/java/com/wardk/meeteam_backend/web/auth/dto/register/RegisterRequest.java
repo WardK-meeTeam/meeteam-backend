@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.web.auth.dto.register;
 
 
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
@@ -34,9 +35,8 @@ public class RegisterRequest {
     @NotEmpty(message = "비밀번호는 최소 8자 이상이어야 합니다")
     private String password;
 
-
     @Schema(description = "직무 포지션 목록")
-    private List<JobPositionRequest> jobPositions;
+    private List<JobPosition> jobPositions;
 
     @Schema(description = "기술스택", example = "[\"Java\", \"Spring\", \"MySQL\"]")
     private List<String> skills;
