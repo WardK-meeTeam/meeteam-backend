@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.acceptance.cucumber;
 
+import com.wardk.meeteam_backend.acceptance.cucumber.support.DatabaseCleaner;
 import io.cucumber.java.Before;
 import io.cucumber.spring.CucumberContextConfiguration;
 import io.restassured.RestAssured;
@@ -34,7 +35,7 @@ public class CucumberSpringConfiguration {
     @Before
     public void setUp() {
         RestAssured.port = port;
-        databaseCleaner.execute();
+        databaseCleaner.clear();
 
 
         // 초기 데이터 설정
