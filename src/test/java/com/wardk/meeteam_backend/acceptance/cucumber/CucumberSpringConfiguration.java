@@ -1,8 +1,6 @@
 package com.wardk.meeteam_backend.acceptance.cucumber;
 
-import com.wardk.meeteam_backend.acceptance.common.DatabaseCleaner;
-import com.wardk.meeteam_backend.acceptance.cucumber.support.FakeS3Server;
-import com.wardk.meeteam_backend.acceptance.cucumber.support.TestS3Config;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.DatabaseCleaner;
 import io.cucumber.java.Before;
 import io.cucumber.spring.CucumberContextConfiguration;
 import io.restassured.RestAssured;
@@ -23,7 +21,6 @@ import javax.sql.DataSource;
 @CucumberContextConfiguration
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestS3Config.class)
 public class CucumberSpringConfiguration {
 
     @LocalServerPort
@@ -35,14 +32,11 @@ public class CucumberSpringConfiguration {
     @Autowired
     private DataSource dataSource;
 
-    @Autowired
-    private FakeS3Server fakeS3Server;
-
     @Before
     public void setUp() {
         RestAssured.port = port;
-        databaseCleaner.execute();
-        fakeS3Server.reset();
+        databaseCleaner.clear();
+
 
         // 초기 데이터 설정
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
