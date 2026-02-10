@@ -22,6 +22,7 @@ import io.restassured.response.Response;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Transactional
 public class ProjectLikeSteps {
 
     @Autowired
@@ -62,6 +64,8 @@ public class ProjectLikeSteps {
     private String currentProjectName;
     private String currentMemberName;
     private Integer currentExpectedLikeCount;
+    private Integer baseLikeCount;
+    private Boolean currentMemberLiked;
     private List<Member> concurrentMembers = new ArrayList<>();
     private List<Response> concurrentResponses = new ArrayList<>();
     private ConcurrentLinkedQueue<Throwable> concurrentErrors = new ConcurrentLinkedQueue<>();
@@ -72,6 +76,8 @@ public class ProjectLikeSteps {
         currentProjectName = null;
         currentMemberName = null;
         currentExpectedLikeCount = null;
+        baseLikeCount = null;
+        currentMemberLiked = null;
         concurrentMembers = new ArrayList<>();
         concurrentResponses = new ArrayList<>();
         concurrentErrors = new ConcurrentLinkedQueue<>();
@@ -81,7 +87,12 @@ public class ProjectLikeSteps {
     public void 프로젝트의_좋아요_수가_n개이다(String projectName, int likeCount) {
         currentProjectName = projectName;
         currentExpectedLikeCount = likeCount;
+        baseLikeCount = likeCount;
         Project project = createOrReplaceProjectWithLikes(projectName, likeCount);
+        if (currentMemberName != null && Boolean.TRUE.equals(currentMemberLiked) && likeCount > 0) {
+            Member member = createOrFindMember(currentMemberName);
+            resetProjectLikes(project, likeCount, member.getId());
+        }
         currentProjectId = project.getId();
     }
 
@@ -97,6 +108,7 @@ public class ProjectLikeSteps {
                 .orElseThrow(() -> new AssertionError("프로젝트를 찾을 수 없습니다."));
         int target = currentExpectedLikeCount != null ? currentExpectedLikeCount : Math.max(project.getLikeCount(), 1);
         resetProjectLikes(project, target, member.getId());
+        currentMemberLiked = true;
 
         String token = jwtUtil.createAccessToken(member);
         scenarioState.setAccessToken(token);
@@ -121,14 +133,15 @@ public class ProjectLikeSteps {
         scenarioState.setAccessToken(token);
 
         Response status = projectLikeApi.likeStatus(currentProjectId, token);
-        scenarioState.setLastResponse(status);
 
         assertEquals(200, status.statusCode());
-        boolean isLiked = status.jsonPath().getBoolean("result.status");
+        boolean isLiked = extractLikeStatus(status);
         if ("선택".equals(expectedStatus)) {
             assertTrue(isLiked);
+            currentMemberLiked = true;
         } else if ("미선택".equals(expectedStatus)) {
             assertFalse(isLiked);
+            currentMemberLiked = false;
         } else {
             fail("지원하지 않는 좋아요 버튼 상태: " + expectedStatus);
         }
@@ -147,6 +160,8 @@ public class ProjectLikeSteps {
 
         Response response = projectLikeApi.toggleLike(currentProjectId, token);
         scenarioState.setLastResponse(response);
+        Boolean liked = extractToggleLiked(response);
+        currentMemberLiked = liked;
     }
 
     @When("{string}가 같은 좋아요 버튼을 다시 누르면")
@@ -236,7 +251,8 @@ public class ProjectLikeSteps {
         assertNotNull(response);
         assertEquals(200, response.statusCode());
         assertEquals("COMMON200", response.jsonPath().getString("code"));
-        assertTrue(response.jsonPath().getBoolean("result.liked"));
+        Boolean liked = extractToggleLiked(response);
+        assertTrue(liked);
     }
 
     @Then("좋아요 취소에 성공한다")
@@ -245,7 +261,8 @@ public class ProjectLikeSteps {
         assertNotNull(response);
         assertEquals(200, response.statusCode());
         assertEquals("COMMON200", response.jsonPath().getString("code"));
-        assertFalse(response.jsonPath().getBoolean("result.liked"));
+        Boolean liked = extractToggleLiked(response);
+        assertFalse(liked);
     }
 
     @And("{string}의 좋아요 버튼 상태가 {string}으로 변경된다")
@@ -273,13 +290,14 @@ public class ProjectLikeSteps {
         String token = jwtUtil.createAccessToken(member);
         Response status = projectLikeApi.likeStatus(currentProjectId, token);
         assertEquals(200, status.statusCode());
-        boolean liked = status.jsonPath().getBoolean("result.status");
+        boolean liked = extractLikeStatus(status);
 
         int likeCount = currentLikeCountFromDetail();
+        int baseline = baseLikeCount != null ? baseLikeCount : 10;
         if (liked) {
-            assertEquals(11, likeCount);
+            assertEquals(baseline + 1, likeCount);
         } else {
-            assertEquals(10, likeCount);
+            assertEquals(baseline, likeCount);
         }
     }
 
@@ -412,6 +430,22 @@ public class ProjectLikeSteps {
             case "박지민" -> "park@example.com";
             default -> "user" + Math.abs(memberName.toLowerCase(Locale.ROOT).hashCode()) + "@example.com";
         };
+    }
+
+    private boolean extractLikeStatus(Response response) {
+        Boolean status = response.jsonPath().get("result.status");
+        assertNotNull(status, "좋아요 상태 응답이 비어 있습니다: " + response.asString());
+        return status;
+    }
+
+    private Boolean extractToggleLiked(Response response) {
+        try {
+            Boolean liked = response.jsonPath().get("result.liked");
+            assertNotNull(liked, "좋아요 토글 응답이 비어 있습니다: " + response.asString());
+            return liked;
+        } catch (RuntimeException e) {
+            throw new AssertionError("좋아요 토글 응답 파싱 실패: " + response.asString(), e);
+        }
     }
 
 }
