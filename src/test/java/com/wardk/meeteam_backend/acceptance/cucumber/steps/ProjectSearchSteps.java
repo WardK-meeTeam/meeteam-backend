@@ -451,7 +451,7 @@ public class ProjectSearchSteps {
         assertFalse(skills.isEmpty());
     }
 
-    @Then("{string}을 확인할 수 있다")
+    @Then("모집 현황 {string}을 확인할 수 있다")
     public void 포지션_현황을_확인할_수_있다(String recruitmentSummary) {
         List<Map<String, Object>> recruitments = lastResponse.jsonPath().getList("result.recruitments");
         assertNotNull(recruitments);
