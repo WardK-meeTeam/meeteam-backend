@@ -25,6 +25,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Transactional
 public class ProjectSearchSteps {
 
     @Autowired
@@ -195,7 +197,10 @@ public class ProjectSearchSteps {
 
     @Given("프로젝트에 다음 외부 채널이 등록되어 있다:")
     public void 프로젝트에_다음_외부_채널이_등록되어_있다(DataTable dataTable) {
-        externalChannels = dataTable.asMaps().get(0);
+        externalChannels = new LinkedHashMap<>();
+        for (Map<String, String> row : dataTable.asMaps()) {
+            externalChannels.put(row.get("항목"), row.get("값"));
+        }
         if (currentProjectId == null) {
             Project project = createProjectFixture(
                     "외부 채널 테스트 프로젝트", "AI/테크", "Web", "홍길동", "모집중",
@@ -236,6 +241,11 @@ public class ProjectSearchSteps {
         if (lastResultProjectNames.isEmpty()) {
             scenarioState.setLastMessage("검색 결과가 없습니다");
         }
+    }
+
+    @When("{string}으로 프로젝트를 검색하면")
+    public void 키워드으로_프로젝트를_검색하면(String keyword) {
+        키워드로_프로젝트를_검색하면(keyword);
     }
 
     @When("카테고리 {string}로 필터링하면")

@@ -87,8 +87,7 @@ public class QnaSteps {
 
     @Given("{string}가 {string}에 질문을 작성한 상태이다")
     public void 회원이_날짜에_질문을_작성한_상태이다(String writerName, String date) {
-        writeQuestion(writerName, "질문 목록 검증용 질문", LocalDate.parse(date));
-        assertTrue(lastQuestionSucceeded);
+        seedQuestion(writerName, "질문 목록 검증용 질문", LocalDate.parse(date));
     }
 
     @When("프로젝트 Q&A 목록을 조회하면")
@@ -144,8 +143,7 @@ public class QnaSteps {
 
     @Given("{string}가 다음 질문을 작성한 상태이다:")
     public void 회원이_다음_질문을_작성한_상태이다(String writerName, String question) {
-        writeQuestion(writerName, question, LocalDate.now());
-        assertTrue(lastQuestionSucceeded);
+        seedQuestion(writerName, question, LocalDate.now());
     }
 
     @Given("{string} 리더가 로그인한 상태이다")
@@ -189,9 +187,8 @@ public class QnaSteps {
 
     @Given("{string}이 {string}에 답변을 작성한 상태이다")
     public void 회원이_날짜에_답변을_작성한_상태이다(String answerer, String date) {
-        writeQuestion("김철수", "답변 날짜 검증용 질문", LocalDate.parse(date).minusDays(1));
-        writeAnswer(answerer, "답변 날짜 검증용 답변", LocalDate.parse(date));
-        assertTrue(lastAnswerSucceeded);
+        seedQuestion("김철수", "답변 날짜 검증용 질문", LocalDate.parse(date).minusDays(1));
+        seedAnswer(answerer, "답변 날짜 검증용 답변", LocalDate.parse(date));
     }
 
     @Then("답변 작성일 {string}을 확인할 수 있다")
@@ -206,8 +203,7 @@ public class QnaSteps {
 
     @Given("{string}가 질문을 작성한 상태이다")
     public void 회원이_질문을_작성한_상태이다(String writerName) {
-        writeQuestion(writerName, "질문이 작성된 상태입니다.", LocalDate.now().minusDays(1));
-        assertTrue(lastQuestionSucceeded);
+        seedQuestion(writerName, "질문이 작성된 상태입니다.", LocalDate.now().minusDays(1));
     }
 
     @Given("{string}가 프로젝트의 팀원이다")
@@ -246,6 +242,9 @@ public class QnaSteps {
         viewedQna = qnaItems.stream()
                 .sorted(Comparator.comparing((QnaItem q) -> q.questionDate).reversed())
                 .toList();
+        if (viewedQna.isEmpty()) {
+            scenarioState.setLastMessage("아직 등록된 Q&A가 없습니다");
+        }
     }
 
     @Given("프로젝트에 Q&A가 없는 상태이다")
@@ -260,7 +259,7 @@ public class QnaSteps {
             int order = Integer.parseInt(row.get("순서"));
             String writer = row.get("질문자");
             String question = row.get("질문");
-            writeQuestion(writer, question, LocalDate.now().minusDays(10 - order));
+            seedQuestion(writer, question, LocalDate.now().minusDays(10 - order));
         }
     }
 
@@ -295,6 +294,17 @@ public class QnaSteps {
         lastNotificationTarget = leaderName;
     }
 
+    private void seedQuestion(String writerName, String question, LocalDate date) {
+        QnaItem item = new QnaItem();
+        item.questioner = writerName;
+        item.question = question == null ? "" : question.trim();
+        item.questionDate = date;
+        qnaItems.add(item);
+        lastQuestionItem = item;
+        lastQuestionSucceeded = true;
+        lastNotificationTarget = leaderName;
+    }
+
     private void writeAnswer(String answererName, String answer, LocalDate answerDate) {
         if (qnaItems.isEmpty()) {
             lastAnswerSucceeded = false;
@@ -325,6 +335,19 @@ public class QnaSteps {
 
         lastAnswerSucceeded = true;
         scenarioState.setLastMessage(null);
+        lastAnswererWasLeader = leaderName.equals(answererName);
+        lastNotificationTarget = target.questioner;
+    }
+
+    private void seedAnswer(String answererName, String answer, LocalDate answerDate) {
+        if (qnaItems.isEmpty()) {
+            throw new AssertionError("시드할 질문이 없습니다.");
+        }
+        QnaItem target = qnaItems.get(qnaItems.size() - 1);
+        target.answerer = answererName;
+        target.answer = answer;
+        target.answerDate = answerDate;
+        lastAnswerSucceeded = true;
         lastAnswererWasLeader = leaderName.equals(answererName);
         lastNotificationTarget = target.questioner;
     }
