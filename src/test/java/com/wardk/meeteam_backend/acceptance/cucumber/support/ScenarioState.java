@@ -10,6 +10,7 @@ public class ScenarioState {
 
     private Response lastResponse;
     private String lastMessage;
+    private String accessToken;
 
     public Response getLastResponse() {
         return lastResponse;
@@ -30,5 +31,14 @@ public class ScenarioState {
     public void clear() {
         this.lastResponse = null;
         this.lastMessage = null;
+        this.accessToken = null;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 }

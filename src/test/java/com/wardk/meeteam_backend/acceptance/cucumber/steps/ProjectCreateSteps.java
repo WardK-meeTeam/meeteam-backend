@@ -67,11 +67,13 @@ public class ProjectCreateSteps {
     public void 회원이_로그인한_상태이다(String memberName) {
         Member member = createOrFindMember(memberName);
         accessToken = jwtUtil.createAccessToken(member);
+        scenarioState.setAccessToken(accessToken);
     }
 
     @Given("로그인하지 않은 상태이다")
     public void 로그인하지_않은_상태이다() {
         accessToken = null;
+        scenarioState.setAccessToken(null);
     }
 
     @When("다음 정보로 프로젝트 등록을 요청하면:")
