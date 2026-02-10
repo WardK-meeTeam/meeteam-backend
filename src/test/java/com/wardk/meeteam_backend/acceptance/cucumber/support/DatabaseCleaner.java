@@ -8,7 +8,10 @@ import jakarta.persistence.metamodel.EntityType;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 @Component
 public class DatabaseCleaner {
@@ -36,7 +39,11 @@ public class DatabaseCleaner {
     public void clear() {
         entityManager.flush();
         entityManager.createNativeQuery("SET REFERENTIAL_INTEGRITY FALSE").executeUpdate();
+        Set<String> existingTableNames = getExistingTableNames();
         for (String tableName : tableNames) {
+            if (!existingTableNames.contains(tableName.toUpperCase(Locale.ROOT))) {
+                continue;
+            }
             entityManager.createNativeQuery("TRUNCATE TABLE " + tableName).executeUpdate();
         }
         entityManager.createNativeQuery("SET REFERENTIAL_INTEGRITY TRUE").executeUpdate();
@@ -51,6 +58,14 @@ public class DatabaseCleaner {
             }
             result.append(Character.toLowerCase(c));
         }
-        return result.toString() + "s";
+        return result.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> getExistingTableNames() {
+        List<String> rows = entityManager.createNativeQuery(
+                "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC'"
+        ).getResultList();
+        return new HashSet<>(rows);
     }
 }
