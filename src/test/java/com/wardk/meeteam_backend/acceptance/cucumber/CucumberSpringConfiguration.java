@@ -7,15 +7,11 @@ import io.restassured.RestAssured;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.test.context.ActiveProfiles;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Locale;
 
 /**
  * Cucumber Spring 통합 설정
@@ -40,22 +36,9 @@ public class CucumberSpringConfiguration {
         RestAssured.port = port;
         databaseCleaner.clear();
 
-        // 초기 데이터 설정
+        // 스킬 초기 데이터 설정
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-        populator.addScript(new ClassPathResource(resolveSeedScript()));
+        populator.addScript(new ClassPathResource("data-h2.sql"));
         populator.execute(dataSource);
     }
-
-    private String resolveSeedScript() {
-        try (Connection connection = dataSource.getConnection()) {
-            String jdbcUrl = connection.getMetaData().getURL();
-            if (jdbcUrl != null && jdbcUrl.toLowerCase(Locale.ROOT).contains(":h2:")) {
-                return "data-h2.sql";
-            }
-            return "data.sql";
-        } catch (SQLException e) {
-            throw new IllegalStateException("초기 데이터 스크립트를 결정할 수 없습니다.", e);
-        }
-    }
-
 }
