@@ -104,10 +104,12 @@ dependencies {
 	testImplementation 'io.rest-assured:rest-assured:5.4.0'
 
 	// Cucumber BDD
-	testImplementation 'io.cucumber:cucumber-java:7.15.0'
-	testImplementation 'io.cucumber:cucumber-spring:7.15.0'
-	testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.15.0'
+	testImplementation 'io.cucumber:cucumber-java:7.31.0'
+	testImplementation 'io.cucumber:cucumber-spring:7.31.0'
+	testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.31.0'
 	testImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
+	testImplementation 'net.java.dev.jna:jna:5.13.0'
+	testImplementation 'net.java.dev.jna:jna-platform:5.13.0'
 
 	// Embedded Redis for testing
 	testImplementation 'com.github.codemonstur:embedded-redis:1.4.3'
