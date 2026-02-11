@@ -22,14 +22,15 @@ public class OAuth2RegisterRequest {
   @NotEmpty
   private String name;
 
-  @Schema(description = "나이", example = "27", minimum = "1", maximum = "120")
+  @Schema(description = "생년월일", example = "2000-01-01", requiredMode = Schema.RequiredMode.REQUIRED)
   @NotNull
-  private Integer age;
+  private java.time.LocalDate birthDate;
 
   @Schema(description = "성별", example = "MALE", allowableValues = {"MALE","FEMALE"})
   private Gender gender;
 
-  @Schema(description = "직무 포지션 목록")
+  @Schema(description = "관심분야 (직무 포지션 목록)", example = "[\"BACKEND\", \"FRONTEND\"]", requiredMode = Schema.RequiredMode.REQUIRED)
+  @NotEmpty(message = "관심분야는 최소 1개 이상 선택해야 합니다")
   private List<JobPosition> jobPositions;
 
   @Schema(description = "기술스택", example = "[\"Java\", \"Spring\", \"MySQL\"]")
