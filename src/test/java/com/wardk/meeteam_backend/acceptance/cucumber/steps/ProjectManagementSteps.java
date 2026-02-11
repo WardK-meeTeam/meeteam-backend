@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.steps;
 
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectManagementApi;
-import com.wardk.meeteam_backend.acceptance.cucumber.support.ScenarioState;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
@@ -64,7 +64,7 @@ public class ProjectManagementSteps {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private ScenarioState scenarioState;
+    private TestContext context;
 
     private Long currentProjectId;
     private String currentProjectName;
@@ -122,7 +122,7 @@ public class ProjectManagementSteps {
     @Given("{string} 팀원이 로그인한 상태이다")
     public void 팀원이_로그인한_상태이다(String memberName) {
         Member member = createOrFindMember(memberName);
-        scenarioState.setAccessToken(jwtUtil.createAccessToken(member));
+        context.setAccessToken(jwtUtil.createAccessToken(member));
     }
 
     @Given("{string}과 {string}가 프로젝트에 지원한 상태이다")
@@ -189,7 +189,7 @@ public class ProjectManagementSteps {
     public void 프로젝트_팀원_관리_페이지에_접근하면(String requester) {
         Project project = findCurrentProject();
         lastMembersResponse = projectManagementApi.getProjectMembers(project.getId());
-        lastApplicationsResponse = projectManagementApi.getApplications(project.getId(), scenarioState.getAccessToken());
+        lastApplicationsResponse = projectManagementApi.getApplications(project.getId(), context.getAccessToken());
     }
 
     @When("{string}이 {string}를 프로젝트에서 방출하면")
@@ -197,8 +197,8 @@ public class ProjectManagementSteps {
         Project project = findCurrentProject();
         Member targetMember = createOrFindMember(target);
         beforeFrontendMembersCount = countMembersByPosition(project.getId(), JobPosition.WEB_FRONTEND);
-        lastResponse = projectManagementApi.deleteProjectMember(project.getId(), targetMember.getId(), scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.deleteProjectMember(project.getId(), targetMember.getId(), context.getAccessToken());
+        context.setLastResponse(lastResponse);
         lastExpelSucceeded = lastResponse.statusCode() < 400;
     }
 
@@ -206,10 +206,10 @@ public class ProjectManagementSteps {
     public void 자신을_프로젝트에서_방출하려고_하면(String requester) {
         Project project = findCurrentProject();
         Member self = createOrFindMember(requester);
-        lastResponse = projectManagementApi.deleteProjectMember(project.getId(), self.getId(), scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.deleteProjectMember(project.getId(), self.getId(), context.getAccessToken());
+        context.setLastResponse(lastResponse);
         if (lastResponse.statusCode() >= 400) {
-            scenarioState.setLastMessage("리더는 방출할 수 없습니다");
+            context.setLastMessage("리더는 방출할 수 없습니다");
         }
         lastExpelSucceeded = false;
     }
@@ -218,10 +218,10 @@ public class ProjectManagementSteps {
     public void 팀원이_다른_팀원을_프로젝트에서_방출하려고_하면(String requester, String target) {
         Project project = findCurrentProject();
         Member targetMember = createOrFindMember(target);
-        lastResponse = projectManagementApi.deleteProjectMember(project.getId(), targetMember.getId(), scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.deleteProjectMember(project.getId(), targetMember.getId(), context.getAccessToken());
+        context.setLastResponse(lastResponse);
         if (lastResponse.statusCode() >= 400) {
-            scenarioState.setLastMessage("권한이 없습니다");
+            context.setLastMessage("권한이 없습니다");
         }
         lastExpelSucceeded = false;
     }
@@ -229,8 +229,8 @@ public class ProjectManagementSteps {
     @When("{string}이 지원자 관리 페이지에 접근하면")
     public void 지원자_관리_페이지에_접근하면(String requester) {
         Project project = findCurrentProject();
-        lastApplicationsResponse = projectManagementApi.getApplications(project.getId(), scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastApplicationsResponse);
+        lastApplicationsResponse = projectManagementApi.getApplications(project.getId(), context.getAccessToken());
+        context.setLastResponse(lastApplicationsResponse);
     }
 
     @When("{string}이 {string}의 지원서 상세를 조회하면")
@@ -243,8 +243,8 @@ public class ProjectManagementSteps {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("지원서를 찾을 수 없습니다."));
 
-        lastApplicationDetailResponse = projectManagementApi.getApplicationDetail(project.getId(), applicationId, scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastApplicationDetailResponse);
+        lastApplicationDetailResponse = projectManagementApi.getApplicationDetail(project.getId(), applicationId, context.getAccessToken());
+        context.setLastResponse(lastApplicationDetailResponse);
     }
 
     @When("{string}이 프로젝트 정보를 다음과 같이 수정하면:")
@@ -267,8 +267,8 @@ public class ProjectManagementSteps {
             }
         }
 
-        lastResponse = projectManagementApi.updateProject(findCurrentProject().getId(), request, scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.updateProject(findCurrentProject().getId(), request, context.getAccessToken());
+        context.setLastResponse(lastResponse);
         lastUpdateSucceeded = lastResponse.statusCode() < 400;
     }
 
@@ -285,8 +285,8 @@ public class ProjectManagementSteps {
             ));
         }
         request.put("recruitments", recruitments);
-        lastResponse = projectManagementApi.updateProject(project.getId(), request, scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.updateProject(project.getId(), request, context.getAccessToken());
+        context.setLastResponse(lastResponse);
         lastUpdateSucceeded = lastResponse.statusCode() < 400;
     }
 
@@ -311,8 +311,8 @@ public class ProjectManagementSteps {
         }
         request.put("recruitments", recruitments);
 
-        lastResponse = projectManagementApi.updateProject(project.getId(), request, scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.updateProject(project.getId(), request, context.getAccessToken());
+        context.setLastResponse(lastResponse);
         lastUpdateSucceeded = lastResponse.statusCode() < 400;
     }
 
@@ -322,10 +322,10 @@ public class ProjectManagementSteps {
         Map<String, Object> request = defaultUpdateRequest(project);
         request.put("description", "권한 없는 수정 시도");
 
-        lastResponse = projectManagementApi.updateProject(project.getId(), request, scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.updateProject(project.getId(), request, context.getAccessToken());
+        context.setLastResponse(lastResponse);
         if (lastResponse.statusCode() >= 400) {
-            scenarioState.setLastMessage("권한이 없습니다");
+            context.setLastMessage("권한이 없습니다");
         }
         lastUpdateSucceeded = false;
     }
@@ -336,7 +336,7 @@ public class ProjectManagementSteps {
         String requesterName = currentLoginMemberName();
         if (!project.getCreator().getRealName().equals(requesterName)) {
             lastStatusChangeSucceeded = false;
-            scenarioState.setLastMessage("권한이 없습니다");
+            context.setLastMessage("권한이 없습니다");
             return;
         }
         project.setRecruitmentStatus("모집완료".equals(targetStatus) ? Recruitment.CLOSED : Recruitment.RECRUITING);
@@ -352,8 +352,8 @@ public class ProjectManagementSteps {
     @When("{string}이 프로젝트 상태를 {string}으로 변경하면")
     public void 프로젝트_상태를_변경하면(String requester, String targetStatus) {
         Project project = findCurrentProject();
-        lastResponse = projectManagementApi.completeProject(project.getId(), scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.completeProject(project.getId(), context.getAccessToken());
+        context.setLastResponse(lastResponse);
         lastStatusChangeSucceeded = lastResponse.statusCode() < 400;
     }
 
@@ -363,7 +363,7 @@ public class ProjectManagementSteps {
         String requesterName = currentLoginMemberName();
         if (!project.getCreator().getRealName().equals(requesterName)) {
             lastStatusChangeSucceeded = false;
-            scenarioState.setLastMessage("권한이 없습니다");
+            context.setLastMessage("권한이 없습니다");
             return;
         }
         lastStatusChangeSucceeded = true;
@@ -372,18 +372,18 @@ public class ProjectManagementSteps {
     @When("{string}이 프로젝트 삭제를 요청하면")
     public void 리더가_프로젝트_삭제를_요청하면(String requester) {
         Project project = findCurrentProject();
-        lastResponse = projectManagementApi.deleteProject(project.getId(), scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.deleteProject(project.getId(), context.getAccessToken());
+        context.setLastResponse(lastResponse);
         lastDeleteSucceeded = lastResponse.statusCode() < 400;
     }
 
     @When("{string}가 프로젝트 삭제를 요청하면")
     public void 팀원이_프로젝트_삭제를_요청하면(String requester) {
         Project project = findCurrentProject();
-        lastResponse = projectManagementApi.deleteProject(project.getId(), scenarioState.getAccessToken());
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectManagementApi.deleteProject(project.getId(), context.getAccessToken());
+        context.setLastResponse(lastResponse);
         if (lastResponse.statusCode() >= 400) {
-            scenarioState.setLastMessage("권한이 없습니다");
+            context.setLastMessage("권한이 없습니다");
         }
         lastDeleteSucceeded = false;
     }
@@ -716,7 +716,7 @@ public class ProjectManagementSteps {
     }
 
     private String currentLoginMemberName() {
-        String accessToken = scenarioState.getAccessToken();
+        String accessToken = context.getAccessToken();
         if (accessToken == null) {
             return null;
         }
