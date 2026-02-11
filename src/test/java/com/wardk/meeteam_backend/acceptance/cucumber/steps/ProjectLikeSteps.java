@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.steps;
 
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectLikeApi;
-import com.wardk.meeteam_backend.acceptance.cucumber.support.ScenarioState;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -55,7 +55,7 @@ public class ProjectLikeSteps {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private ScenarioState scenarioState;
+    private TestContext context;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -111,7 +111,7 @@ public class ProjectLikeSteps {
         currentMemberLiked = true;
 
         String token = jwtUtil.createAccessToken(member);
-        scenarioState.setAccessToken(token);
+        context.setAccessToken(token);
     }
 
     @Given("좋아요를 누르지 않은 회원 {int}명이 존재한다")
@@ -130,7 +130,7 @@ public class ProjectLikeSteps {
 
         Member member = createOrFindMember(memberName);
         String token = jwtUtil.createAccessToken(member);
-        scenarioState.setAccessToken(token);
+        context.setAccessToken(token);
 
         Response status = projectLikeApi.likeStatus(currentProjectId, token);
 
@@ -151,15 +151,15 @@ public class ProjectLikeSteps {
     public void 회원이_해당_프로젝트에_좋아요를_누르면(String memberName) {
         currentMemberName = memberName;
         ensureProjectExists();
-        String token = scenarioState.getAccessToken();
+        String token = context.getAccessToken();
         if (token == null) {
             Member member = createOrFindMember(memberName);
             token = jwtUtil.createAccessToken(member);
-            scenarioState.setAccessToken(token);
+            context.setAccessToken(token);
         }
 
         Response response = projectLikeApi.toggleLike(currentProjectId, token);
-        scenarioState.setLastResponse(response);
+        context.setLastResponse(response);
         Boolean liked = extractToggleLiked(response);
         currentMemberLiked = liked;
     }
@@ -172,8 +172,8 @@ public class ProjectLikeSteps {
     @When("프로젝트에 좋아요를 누르면")
     public void 프로젝트에_좋아요를_누르면() {
         ensureProjectExists();
-        Response response = projectLikeApi.toggleLike(currentProjectId, scenarioState.getAccessToken());
-        scenarioState.setLastResponse(response);
+        Response response = projectLikeApi.toggleLike(currentProjectId, context.getAccessToken());
+        context.setLastResponse(response);
     }
 
     @When("{string}가 같은 프로젝트의 좋아요 버튼을 동시에 {int}번 누르면")
@@ -182,7 +182,7 @@ public class ProjectLikeSteps {
         ensureProjectExists();
         Member member = createOrFindMember(memberName);
         String token = jwtUtil.createAccessToken(member);
-        scenarioState.setAccessToken(token);
+        context.setAccessToken(token);
 
         concurrentResponses = new ArrayList<>();
         concurrentErrors = new ConcurrentLinkedQueue<>();
@@ -208,7 +208,7 @@ public class ProjectLikeSteps {
         }
 
         if (!concurrentResponses.isEmpty()) {
-            scenarioState.setLastResponse(concurrentResponses.get(concurrentResponses.size() - 1));
+            context.setLastResponse(concurrentResponses.get(concurrentResponses.size() - 1));
         }
     }
 
@@ -241,13 +241,13 @@ public class ProjectLikeSteps {
             pool.shutdownNow();
         }
         if (!concurrentResponses.isEmpty()) {
-            scenarioState.setLastResponse(concurrentResponses.get(concurrentResponses.size() - 1));
+            context.setLastResponse(concurrentResponses.get(concurrentResponses.size() - 1));
         }
     }
 
     @Then("좋아요 등록에 성공한다")
     public void 좋아요_등록에_성공한다() {
-        Response response = scenarioState.getLastResponse();
+        Response response = context.getLastResponse();
         assertNotNull(response);
         assertEquals(200, response.statusCode());
         assertEquals("COMMON200", response.jsonPath().getString("code"));
@@ -257,7 +257,7 @@ public class ProjectLikeSteps {
 
     @Then("좋아요 취소에 성공한다")
     public void 좋아요_취소에_성공한다() {
-        Response response = scenarioState.getLastResponse();
+        Response response = context.getLastResponse();
         assertNotNull(response);
         assertEquals(200, response.statusCode());
         assertEquals("COMMON200", response.jsonPath().getString("code"));
@@ -272,7 +272,7 @@ public class ProjectLikeSteps {
 
     @And("좋아요 수가 {int}개로 증가한다")
     public void 좋아요_수가_n개로_증가한다(int expectedLikeCount) {
-        Response response = scenarioState.getLastResponse();
+        Response response = context.getLastResponse();
         assertNotNull(response);
         assertEquals(expectedLikeCount, response.jsonPath().getInt("result.likeCount"));
         assertEquals(expectedLikeCount, currentLikeCountFromDetail());

@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.steps;
 
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectCreateApi;
-import com.wardk.meeteam_backend.acceptance.cucumber.support.ScenarioState;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
@@ -47,33 +47,18 @@ public class ProjectCreateSteps {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private ScenarioState scenarioState;
+    private TestContext context;
 
-    private String accessToken;
     private Response lastResponse;
     private Long createdProjectId;
     private Map<String, Object> pendingProjectRequest;
 
     @Before("@create")
     public void setUpScenarioState() {
-        accessToken = null;
         lastResponse = null;
         createdProjectId = null;
         pendingProjectRequest = null;
-        scenarioState.clear();
-    }
-
-    @Given("{string} 회원이 로그인한 상태이다")
-    public void 회원이_로그인한_상태이다(String memberName) {
-        Member member = createOrFindMember(memberName);
-        accessToken = jwtUtil.createAccessToken(member);
-        scenarioState.setAccessToken(accessToken);
-    }
-
-    @Given("로그인하지 않은 상태이다")
-    public void 로그인하지_않은_상태이다() {
-        accessToken = null;
-        scenarioState.setAccessToken(null);
+        context.clear();
     }
 
     @When("다음 정보로 프로젝트 등록을 요청하면:")
@@ -99,8 +84,8 @@ public class ProjectCreateSteps {
         }
 
         pendingProjectRequest.put("recruitments", recruitments);
-        lastResponse = projectCreateApi.createProject(accessToken, pendingProjectRequest);
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), pendingProjectRequest);
+        context.setLastResponse(lastResponse);
         createdProjectId = getCreatedProjectId(lastResponse);
     }
 
@@ -111,8 +96,8 @@ public class ProjectCreateSteps {
             // 현재 API는 endDate가 필수이므로 open-ended를 센티넬 날짜로 표현한다.
             request.put("endDate", OPEN_ENDED_DATE);
         }
-        lastResponse = projectCreateApi.createProject(accessToken, request);
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
+        context.setLastResponse(lastResponse);
         createdProjectId = getCreatedProjectId(lastResponse);
     }
 
@@ -120,23 +105,23 @@ public class ProjectCreateSteps {
     public void 프로젝트명을_입력하지_않고_등록을_요청하면() {
         Map<String, Object> request = defaultProjectRequest();
         request.put("projectName", null);
-        lastResponse = projectCreateApi.createProject(accessToken, request);
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
+        context.setLastResponse(lastResponse);
     }
 
     @When("모집 포지션을 추가하지 않고 등록을 요청하면")
     public void 모집_포지션을_추가하지_않고_등록을_요청하면() {
         Map<String, Object> request = defaultProjectRequest();
         request.put("recruitments", List.of());
-        lastResponse = projectCreateApi.createProject(accessToken, request);
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
+        context.setLastResponse(lastResponse);
     }
 
     @When("프로젝트 등록을 요청하면")
     public void 프로젝트_등록을_요청하면() {
         Map<String, Object> request = defaultProjectRequest();
-        lastResponse = projectCreateApi.createProject(accessToken, request);
-        scenarioState.setLastResponse(lastResponse);
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
+        context.setLastResponse(lastResponse);
     }
 
     @Then("프로젝트 등록에 성공한다")
@@ -151,16 +136,6 @@ public class ProjectCreateSteps {
     public void 프로젝트_등록에_실패한다() {
         assertNotNull(lastResponse, "응답이 존재해야 합니다.");
         assertTrue(lastResponse.statusCode() >= 400, "4xx 이상 응답이어야 합니다.");
-    }
-
-    @Then("요청이 거부된다")
-    public void 요청이_거부된다() {
-        Response response = lastResponse != null ? lastResponse : scenarioState.getLastResponse();
-        assertNotNull(response, "응답이 존재해야 합니다.");
-        assertTrue(response.statusCode() == 401 || response.statusCode() == 403,
-                "401 또는 403 응답이어야 합니다.");
-        String code = response.jsonPath().getString("code");
-        assertNotNull(code);
     }
 
     @And("{string}이 프로젝트 리더로 지정된다")
@@ -210,19 +185,6 @@ public class ProjectCreateSteps {
         } else {
             assertNotNull(endDate);
         }
-    }
-
-    @And("{string} 메시지를 확인한다")
-    public void 메시지를_확인한다(String expectedMessage) {
-        Response response = lastResponse != null ? lastResponse : scenarioState.getLastResponse();
-        String actualMessage = scenarioState.getLastMessage();
-        if (actualMessage == null && response != null) {
-            actualMessage = Optional.ofNullable(response.jsonPath().getString("message"))
-                    .orElse(response.asString());
-        }
-        assertNotNull(actualMessage, "메시지를 확인할 수 있는 응답 또는 상태가 필요합니다.");
-        assertTrue(matchesExpectedMessage(expectedMessage, actualMessage),
-                "기대 메시지 [" + expectedMessage + "] 실제 메시지 [" + actualMessage + "]");
     }
 
     private void ensurePendingRequestExists() {
@@ -337,32 +299,5 @@ public class ProjectCreateSteps {
             throw new IllegalArgumentException("모집 인원을 파싱할 수 없습니다: " + rawCount);
         }
         return Integer.parseInt(numeric);
-    }
-
-    private boolean matchesExpectedMessage(String expected, String actual) {
-        if (actual != null && actual.contains(expected)) {
-            return true;
-        }
-
-        List<String> aliases = new ArrayList<>();
-        if ("프로젝트명을 입력해주세요".equals(expected)) {
-            aliases.add("제목은 필수입니다.");
-        }
-        if ("최소 1개 이상의 모집 포지션을 추가해주세요".equals(expected)) {
-            aliases.add("최소 한 개 이상의 모집 분야를 입력해주세요.");
-        }
-        if ("로그인이 필요합니다".equals(expected)) {
-            aliases.add("로그인이 필요합니다.");
-        }
-        if ("검색 결과가 없습니다".equals(expected)) {
-            aliases.add("검색 결과가 없습니다");
-        }
-
-        for (String alias : aliases) {
-            if (actual != null && actual.contains(alias)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
