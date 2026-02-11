@@ -5,13 +5,14 @@ import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.JobPositionRequest;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public record RegisterMemberCommand(
         String email,
         String password,
         String name,
-        Integer age,
+        LocalDate birthDate,
         Gender gender,
         List<JobPosition> jobPositions,
         List<String> skills,
@@ -24,7 +25,7 @@ public record RegisterMemberCommand(
                 request.getEmail(),
                 request.getPassword(),
                 request.getName(),
-                request.getAge(),
+                request.getBirthDate(),
                 request.getGender(),
                 request.getJobPositions(),
                 request.getSkills(),
