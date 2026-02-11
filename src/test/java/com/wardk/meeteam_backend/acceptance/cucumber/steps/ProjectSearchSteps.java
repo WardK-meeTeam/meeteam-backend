@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.steps;
 
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectSearchApi;
-import com.wardk.meeteam_backend.acceptance.cucumber.support.ScenarioState;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -59,7 +59,7 @@ public class ProjectSearchSteps {
     private ProjectRepoRepository projectRepoRepository;
 
     @Autowired
-    private ScenarioState scenarioState;
+    private TestContext context;
 
     private Response lastResponse;
     private Long currentProjectId;
@@ -80,7 +80,7 @@ public class ProjectSearchSteps {
         expectedLeaderTechStack = null;
         expectedNewestProjectName = null;
         expectedMostLikedProjectName = null;
-        scenarioState.clear();
+        context.clear();
     }
 
     @Given("다음 프로젝트들이 등록되어 있다:")
@@ -221,7 +221,7 @@ public class ProjectSearchSteps {
     @When("{string}로 프로젝트를 검색하면")
     public void 키워드로_프로젝트를_검색하면(String keyword) {
         lastResponse = projectSearchApi.getProjectList();
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
 
         List<Map<String, Object>> all = lastResponse.jsonPath().getList("result");
         if (all == null) {
@@ -239,7 +239,7 @@ public class ProjectSearchSteps {
                 .collect(Collectors.toList());
 
         if (lastResultProjectNames.isEmpty()) {
-            scenarioState.setLastMessage("검색 결과가 없습니다");
+            context.setLastMessage("검색 결과가 없습니다");
         }
     }
 
@@ -255,7 +255,7 @@ public class ProjectSearchSteps {
                 "page", 0,
                 "size", 20
         ));
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         lastResultProjectNames = getProjectNamesFromConditionResponse(lastResponse);
     }
 
@@ -266,7 +266,7 @@ public class ProjectSearchSteps {
                 "page", 0,
                 "size", 20
         ));
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         lastResultProjectNames = getProjectNamesFromConditionResponse(lastResponse);
     }
 
@@ -277,7 +277,7 @@ public class ProjectSearchSteps {
                 "page", 0,
                 "size", 20
         ));
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         lastResultProjectNames = getProjectNamesFromConditionResponse(lastResponse);
     }
 
@@ -292,7 +292,7 @@ public class ProjectSearchSteps {
         params.put("size", 20);
 
         lastResponse = projectSearchApi.searchCondition(params);
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         lastResultProjectNames = getProjectNamesFromConditionResponse(lastResponse);
     }
 
@@ -303,7 +303,7 @@ public class ProjectSearchSteps {
                 "size", 8,
                 "sort", "createdAt,desc"
         ));
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         lastResultProjectNames = getProjectNamesFromConditionResponse(lastResponse);
     }
 
@@ -314,7 +314,7 @@ public class ProjectSearchSteps {
                 "size", 20,
                 "sort", "createdAt,desc"
         ));
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         lastResultProjectNames = getProjectNamesFromConditionResponse(lastResponse);
     }
 
@@ -325,7 +325,7 @@ public class ProjectSearchSteps {
                 "size", 20,
                 "sort", "likeCount,desc"
         ));
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         lastResultProjectNames = getProjectNamesFromConditionResponse(lastResponse);
     }
 
@@ -333,14 +333,14 @@ public class ProjectSearchSteps {
     public void 해당_프로젝트_상세를_조회하면() {
         assertNotNull(currentProjectId, "상세 조회 대상 프로젝트가 필요합니다.");
         lastResponse = projectSearchApi.getProjectDetail(currentProjectId);
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
     }
 
     @When("프로젝트 상세의 {string} 탭에 접근하면")
     public void 프로젝트_상세의_탭에_접근하면(String tabName) {
         assertNotNull(currentProjectId, "상세 조회 대상 프로젝트가 필요합니다.");
         lastResponse = projectSearchApi.getProjectDetail(currentProjectId);
-        scenarioState.setLastResponse(lastResponse);
+        context.setLastResponse(lastResponse);
         assertNotNull(tabName);
     }
 

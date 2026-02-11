@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.steps;
 
-import com.wardk.meeteam_backend.acceptance.cucumber.support.ScenarioState;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class QnaSteps {
 
     @Autowired
-    private ScenarioState scenarioState;
+    private TestContext context;
 
     @Autowired
     private MemberRepository memberRepository;
@@ -130,7 +130,7 @@ public class QnaSteps {
         String loginUser = currentLoginMemberName();
         if (loginUser == null) {
             lastQuestionSucceeded = false;
-            scenarioState.setLastMessage("로그인이 필요합니다");
+            context.setLastMessage("로그인이 필요합니다");
             return;
         }
         writeQuestion(loginUser, "질문입니다.", LocalDate.now());
@@ -151,7 +151,7 @@ public class QnaSteps {
         this.leaderName = leaderName;
         this.teamMembers.add(leaderName);
         Member leader = createOrFindMember(leaderName);
-        scenarioState.setAccessToken(jwtUtil.createAccessToken(leader));
+        context.setAccessToken(jwtUtil.createAccessToken(leader));
     }
 
     @When("{string}이 해당 질문에 다음과 같이 답변하면:")
@@ -243,7 +243,7 @@ public class QnaSteps {
                 .sorted(Comparator.comparing((QnaItem q) -> q.questionDate).reversed())
                 .toList();
         if (viewedQna.isEmpty()) {
-            scenarioState.setLastMessage("아직 등록된 Q&A가 없습니다");
+            context.setLastMessage("아직 등록된 Q&A가 없습니다");
         }
     }
 
@@ -273,12 +273,12 @@ public class QnaSteps {
         String loginUser = currentLoginMemberName();
         if (loginUser == null) {
             lastQuestionSucceeded = false;
-            scenarioState.setLastMessage("로그인이 필요합니다");
+            context.setLastMessage("로그인이 필요합니다");
             return;
         }
         if (question == null || question.trim().isEmpty()) {
             lastQuestionSucceeded = false;
-            scenarioState.setLastMessage("질문 내용을 입력해주세요");
+            context.setLastMessage("질문 내용을 입력해주세요");
             return;
         }
 
@@ -290,7 +290,7 @@ public class QnaSteps {
 
         lastQuestionItem = item;
         lastQuestionSucceeded = true;
-        scenarioState.setLastMessage(null);
+        context.setLastMessage(null);
         lastNotificationTarget = leaderName;
     }
 
@@ -308,23 +308,23 @@ public class QnaSteps {
     private void writeAnswer(String answererName, String answer, LocalDate answerDate) {
         if (qnaItems.isEmpty()) {
             lastAnswerSucceeded = false;
-            scenarioState.setLastMessage("답변할 질문이 없습니다");
+            context.setLastMessage("답변할 질문이 없습니다");
             return;
         }
         String loginUser = currentLoginMemberName();
         if (loginUser == null) {
             lastAnswerSucceeded = false;
-            scenarioState.setLastMessage("로그인이 필요합니다");
+            context.setLastMessage("로그인이 필요합니다");
             return;
         }
         if (answer == null || answer.trim().isEmpty()) {
             lastAnswerSucceeded = false;
-            scenarioState.setLastMessage("답변 내용을 입력해주세요");
+            context.setLastMessage("답변 내용을 입력해주세요");
             return;
         }
         if (!teamMembers.contains(answererName)) {
             lastAnswerSucceeded = false;
-            scenarioState.setLastMessage("프로젝트 팀원만 답변할 수 있습니다");
+            context.setLastMessage("프로젝트 팀원만 답변할 수 있습니다");
             return;
         }
 
@@ -334,7 +334,7 @@ public class QnaSteps {
         target.answerDate = answerDate;
 
         lastAnswerSucceeded = true;
-        scenarioState.setLastMessage(null);
+        context.setLastMessage(null);
         lastAnswererWasLeader = leaderName.equals(answererName);
         lastNotificationTarget = target.questioner;
     }
@@ -353,7 +353,7 @@ public class QnaSteps {
     }
 
     private String currentLoginMemberName() {
-        String token = scenarioState.getAccessToken();
+        String token = context.getAccessToken();
         if (token == null) {
             return null;
         }

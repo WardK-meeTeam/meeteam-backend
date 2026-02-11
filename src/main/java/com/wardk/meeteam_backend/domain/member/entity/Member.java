@@ -111,7 +111,7 @@ public class Member extends BaseEntity {
                 .email(command.email())
                 .password(encodedPassword)
                 .realName(command.name())
-                .age(command.age())
+                .birth(command.birthDate())
                 .gender(command.gender())
                 .storeFileName(imageUrl)
                 .isParticipating(true)
@@ -131,7 +131,7 @@ public class Member extends BaseEntity {
                 .email(registerInfo.getEmail())
                 .password(encodedPassword)
                 .realName(request.getName())
-                .age(request.getAge())
+                .birth(request.getBirthDate())
                 .gender(request.getGender())
                 .storeFileName(imageUrl)
                 .isParticipating(true)
@@ -165,6 +165,37 @@ public class Member extends BaseEntity {
                 .email(email)
                 .realName(realName)
                 .role(UserRole.USER)
+                .build();
+    }
+
+    /**
+     * 테스트용 일반 회원 생성 (비밀번호 포함)
+     */
+    public static Member createForTest(String email, String realName, String encodedPassword) {
+        return Member.builder()
+                .email(email)
+                .realName(realName)
+                .password(encodedPassword)
+                .birth(java.time.LocalDate.of(1998, 3, 15))
+                .gender(Gender.MALE)
+                .isParticipating(true)
+                .role(UserRole.USER)
+                .build();
+    }
+
+    /**
+     * 테스트용 OAuth 회원 생성
+     */
+    public static Member createOAuthForTest(String email, String realName, String provider, String providerId) {
+        return Member.builder()
+                .email(email)
+                .realName(realName)
+                .birth(java.time.LocalDate.of(2000, 1, 1))
+                .gender(Gender.MALE)
+                .isParticipating(true)
+                .role(UserRole.USER)
+                .provider(provider)
+                .providerId(providerId)
                 .build();
     }
 
