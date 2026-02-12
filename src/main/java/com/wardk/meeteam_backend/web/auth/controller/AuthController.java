@@ -44,7 +44,7 @@ public class AuthController {
     @Operation(summary = "회원가입", description = "회원 정보를 입력받아 계정을 생성합니다.")
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<RegisterResponse> response(
-            @RequestPart("request") RegisterRequest request,
+            @RequestPart("request") @Valid RegisterRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
         log.info("회원가입={}", request.getName());
