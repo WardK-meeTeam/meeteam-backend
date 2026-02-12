@@ -193,14 +193,19 @@ public class AuthSteps {
     @만약("다음 정보로 일반회원가입을 요청하면:")
     public void 다음_정보로_일반회원가입을_요청하면(DataTable dataTable) {
         Map<String, String> row = dataTable.asMaps().get(0);
-        
+
+        Integer projectExperienceCount = row.get("프로젝트경험횟수") != null
+                ? Integer.parseInt(row.get("프로젝트경험횟수").trim())
+                : 0;
+
         var response = api.auth().일반회원가입_요청(
                 row.get("이메일"),
                 row.get("비밀번호"),
                 row.get("이름"),
                 row.get("생년월일"),
                 row.get("성별"),
-                List.of(toJobPosition(row.get("직무")))
+                List.of(toJobPosition(row.get("직무"))),
+                projectExperienceCount
         );
         context.setResponse(response);
     }
@@ -273,13 +278,19 @@ public class AuthSteps {
     @만약("다음 추가 정보로 OAuth 회원가입을 완료하면:")
     public void 다음_추가_정보로_OAuth_회원가입을_완료하면(DataTable dataTable) {
         Map<String, String> row = dataTable.asMaps().get(0);
+
+        Integer projectExperienceCount = row.get("프로젝트경험횟수") != null
+                ? Integer.parseInt(row.get("프로젝트경험횟수").trim())
+                : 0;
+
         var response = api.auth().OAuth회원가입_요청(
                 context.member().getOauthCode(),
                 row.get("이름"),
                 row.get("생년월일"),
                 row.get("성별"),
                 List.of(toJobPosition(row.get("직무"))),
-                List.of()
+                List.of(),
+                projectExperienceCount
         );
         context.setResponse(response);
 

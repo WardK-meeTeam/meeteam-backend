@@ -28,6 +28,15 @@ public class AuthAPI {
     public ExtractableResponse<Response> 일반회원가입_요청(
             String email, String password, String name, String birthDate,
             String gender, List<JobPosition> jobPositions) {
+        return 일반회원가입_요청(email, password, name, birthDate, gender, jobPositions, 0);
+    }
+
+    /**
+     * 일반 회원가입 요청 (프로젝트 경험 횟수 포함)
+     */
+    public ExtractableResponse<Response> 일반회원가입_요청(
+            String email, String password, String name, String birthDate,
+            String gender, List<JobPosition> jobPositions, Integer projectExperienceCount) {
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("email", email);
@@ -36,6 +45,7 @@ public class AuthAPI {
         params.put("birthDate", birthDate);
         params.put("gender", toGender(gender));
         params.put("jobPositions", jobPositions.stream().map(Enum::name).toList());
+        params.put("projectExperienceCount", projectExperienceCount != null ? projectExperienceCount : 0);
 
         String jsonBody = toJson(params);
 
@@ -54,6 +64,15 @@ public class AuthAPI {
     public ExtractableResponse<Response> OAuth회원가입_요청(
             String oauthCode, String name, String birthDate,
             String gender, List<JobPosition> jobPositions, List<String> skills) {
+        return OAuth회원가입_요청(oauthCode, name, birthDate, gender, jobPositions, skills, 0);
+    }
+
+    /**
+     * OAuth2 회원가입 요청 (프로젝트 경험 횟수 포함)
+     */
+    public ExtractableResponse<Response> OAuth회원가입_요청(
+            String oauthCode, String name, String birthDate,
+            String gender, List<JobPosition> jobPositions, List<String> skills, Integer projectExperienceCount) {
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("code", oauthCode);
@@ -62,6 +81,7 @@ public class AuthAPI {
         params.put("gender", toGender(gender));
         params.put("jobPositions", jobPositions.stream().map(Enum::name).toList());
         params.put("skills", skills != null ? skills : List.of());
+        params.put("projectExperienceCount", projectExperienceCount != null ? projectExperienceCount : 0);
 
         String jsonBody = toJson(params);
 
