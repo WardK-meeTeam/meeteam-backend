@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -20,7 +21,8 @@ public class MemberProfileResponse {
 
     private Long memberId;
 
-    private int age;
+    @Schema(description = "생년월일", example = "1998-03-15")
+    private LocalDate birthDate;
 
     private Gender gender;
 
@@ -51,7 +53,7 @@ public class MemberProfileResponse {
     public MemberProfileResponse(Member member, Long memberId) {
         this.memberId = memberId;
         this.name = member.getRealName();
-        this.age = member.getAge();
+        this.birthDate = member.getBirth();
         this.gender = member.getGender();
         this.email = member.getEmail();
         this.categories = member.getJobPositions().stream()
