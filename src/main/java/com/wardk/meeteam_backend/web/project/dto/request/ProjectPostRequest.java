@@ -6,6 +6,8 @@ import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -19,7 +21,7 @@ public class ProjectPostRequest {
 
 
     /** 프로젝트 제목 */
-    @NotNull(message = "제목은 필수입니다.")
+    @NotBlank(message = "제목은 필수입니다.")
     @Schema(description = "프로젝트 제목", example = "test")
     private String projectName;
 
@@ -46,9 +48,8 @@ public class ProjectPostRequest {
     private JobPosition jobPosition;
 
     // 모집분야
-    @NotNull(message = "모집 분야는 필수입니다.")
+    @NotEmpty(message = "최소 한 개 이상의 모집 분야를 입력해주세요.")
     @Valid
-    @Size(min = 1, message = "최소 한 개 이상의 모집 분야를 입력해주세요.")
     @Schema(
             description = "모집분야 리스트",
             example = "[{\"jobPosition\": \"WEB_SERVER\", \"recruitmentCount\": 2}, {\"jobPosition\": \"UI_UX_DESIGN\", \"recruitmentCount\": 1}]"
@@ -56,8 +57,7 @@ public class ProjectPostRequest {
     private List<ProjectRecruitRequest> recruitments = new ArrayList<>();
 
     // 프로젝트 기술스택들
-    @NotNull(message = "기술 스택은 필수입니다.")
-    @Size(min = 1, message = "최소 한 개 이상의 기술 스택을 입력 해주세요.")
+    @NotEmpty(message = "최소 한 개 이상의 기술 스택을 입력 해주세요.")
     @Schema(
             description = "기술 스택 리스트",
             example = "[\"Java\", \"Spring\"]"

@@ -28,7 +28,7 @@ public class ApplicationRequest {
     @Schema(description = "주당 투자 가능 시간", example = "10")
     private Integer availableHoursPerWeek;
 
-    @NotEmpty
+    @NotBlank
     @Schema(description = "가능한 요일", example = "MONDAY, WEDNESDAY, FRIDAY")
     private String availableDays;
 

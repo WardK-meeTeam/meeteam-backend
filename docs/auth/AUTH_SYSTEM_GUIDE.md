@@ -52,7 +52,7 @@
 |------|----------|----------|------|
 | AccessToken | 10시간 | 클라이언트 (메모리/sessionStorage) | API 인증 |
 | RefreshToken | 7일 | HttpOnly Cookie | AccessToken 재발급 |
-| SignupToken | 50분 | URL 파라미터 | OAuth2 신규 회원가입용 |
+| OAuth 일회용 코드 | 60초(로그인) / 10분(회원가입) | Redis | OAuth2 인증 후 토큰 교환용 |
 
 ---
 
@@ -133,7 +133,119 @@ response.addHeader("Set-Cookie", cookie.toString());
 
 ## 3. OAuth2 로그인 플로우
 
-### 전체 흐름
+### 시퀀스 다이어그램 (클라이언트 / 백엔드 / OAuth 서버 / Redis)
+
+```
+┌──────────┐       ┌──────────────┐       ┌──────────────┐       ┌───────┐
+│ 클라이언트 │       │ MeeTeam 서버  │       │ OAuth 서버    │       │ Redis │
+│ (브라우저) │       │  (백엔드)     │       │(Google/GitHub)│       │       │
+└────┬─────┘       └──────┬───────┘       └──────┬───────┘       └───┬───┘
+     │                    │                      │                    │
+     │ ① GET /oauth2/authorization/google       │                    │
+     │───────────────────>│                      │                    │
+     │                    │                      │                    │
+     │ ② 302 Redirect     │                      │                    │
+     │ Location: https://accounts.google.com/...│                    │
+     │<───────────────────│                      │                    │
+     │                    │                      │                    │
+     │ ③ GET https://accounts.google.com/oauth/authorize             │
+     │──────────────────────────────────────────>│                    │
+     │                    │                      │                    │
+     │ ④ 로그인 페이지 표시                       │                    │
+     │<──────────────────────────────────────────│                    │
+     │                    │                      │                    │
+     │ ⑤ 사용자 로그인 + 동의                    │                    │
+     │──────────────────────────────────────────>│                    │
+     │                    │                      │                    │
+     │ ⑥ 302 Redirect (인가 코드)               │                    │
+     │ Location: {백엔드}/login/oauth2/code/google?code=auth_code    │
+     │<──────────────────────────────────────────│                    │
+     │                    │                      │                    │
+     │ ⑦ GET /login/oauth2/code/google?code=auth_code                │
+     │───────────────────>│                      │                    │
+     │                    │                      │                    │
+     │                    │ ⑧ POST /oauth/token  │                    │
+     │                    │ (인가코드로 토큰 교환) │                    │
+     │                    │─────────────────────>│                    │
+     │                    │                      │                    │
+     │                    │ ⑨ OAuth Access Token │                    │
+     │                    │<─────────────────────│                    │
+     │                    │                      │                    │
+     │                    │ ⑩ GET /userinfo      │                    │
+     │                    │─────────────────────>│                    │
+     │                    │                      │                    │
+     │                    │ ⑪ 사용자 정보        │                    │
+     │                    │ {email, name, id}    │                    │
+     │                    │<─────────────────────│                    │
+     │                    │                      │                    │
+     │                    │ ⑫ DB 조회 (기존/신규)│                    │
+     │                    │                      │                    │
+     │                    │ ⑬ 일회용 UUID 코드 생성 + 회원정보 저장   │
+     │                    │─────────────────────────────────────────>│
+     │                    │                      │                    │
+     │ ⑭ 302 Redirect     │                      │                    │
+     │ Location: {프론트}/oauth2/redirect        │                    │
+     │   ?code=uuid&type=login (기존회원)        │                    │
+     │   ?code=uuid&type=register (신규회원)     │                    │
+     │<───────────────────│                      │                    │
+     │                    │                      │                    │
+     │ ⑮ POST /api/auth/token/exchange (기존회원)│                    │
+     │    또는 POST /api/auth/register/oauth2 (신규회원)              │
+     │ { code: "uuid" }   │                      │                    │
+     │───────────────────>│                      │                    │
+     │                    │                      │                    │
+     │                    │ ⑯ 코드로 정보 조회 (조회 후 즉시 삭제)    │
+     │                    │─────────────────────────────────────────>│
+     │                    │                      │                    │
+     │                    │<─────────────────────────────────────────│
+     │                    │ 회원 정보 반환        │                    │
+     │                    │                      │                    │
+     │                    │ ⑰ JWT 토큰 생성      │                    │
+     │                    │                      │                    │
+     │ ⑱ 응답:            │                      │                    │
+     │ { accessToken }    │                      │                    │
+     │ + Set-Cookie: refreshToken                │                    │
+     │<───────────────────│                      │                    │
+```
+
+### 단계별 상세 설명
+
+| 단계 | 누가 → 누구 | 설명 |
+|------|------------|------|
+| ① | 클라이언트 → 백엔드 | 로그인 버튼 클릭 (브라우저 주소창 이동) |
+| ② | 백엔드 → 클라이언트 | OAuth 서버로 리다이렉트 응답 (302) |
+| ③ | 클라이언트 → OAuth | 브라우저가 자동으로 Google/GitHub 이동 |
+| ④ | OAuth → 클라이언트 | 로그인 페이지 HTML 응답 |
+| ⑤ | 클라이언트 → OAuth | 사용자가 로그인 + 동의 |
+| ⑥ | OAuth → 클라이언트 | 백엔드 콜백 URL로 리다이렉트 (**인가코드** 포함) |
+| ⑦ | 클라이언트 → 백엔드 | 브라우저가 자동으로 콜백 URL 호출 |
+| ⑧ | 백엔드 → OAuth | **Spring Security가 자동으로** 인가 코드로 토큰 교환 |
+| ⑨ | OAuth → 백엔드 | OAuth Access Token 응답 |
+| ⑩ | 백엔드 → OAuth | **Spring Security가 자동으로** 사용자 정보 요청 |
+| ⑪ | OAuth → 백엔드 | 사용자 정보 응답 (email, name 등) |
+| ⑫ | 백엔드 내부 | DB 조회 (기존/신규 회원 판별) |
+| ⑬ | 백엔드 → Redis | **일회용 UUID 코드 생성** + 회원 정보 저장 |
+| ⑭ | 백엔드 → 클라이언트 | 프론트엔드로 리다이렉트 (`?code=uuid&type=...`) |
+| ⑮ | 클라이언트 → 백엔드 | **토큰 교환 API 호출** (code 전달) |
+| ⑯ | 백엔드 → Redis | 코드로 정보 조회 후 **즉시 삭제** (일회성 보장) |
+| ⑰ | 백엔드 내부 | JWT AccessToken + RefreshToken 생성 |
+| ⑱ | 백엔드 → 클라이언트 | 토큰 응답 (AccessToken + RefreshToken 쿠키) |
+
+### Redis 일회용 코드를 사용하는 이유
+
+| 방식 | 문제점 |
+|-----|--------|
+| `?accessToken=xxx` (URL에 JWT 노출) | URL 히스토리, 로그, Referer 헤더에 토큰 노출 위험 |
+| `?code=uuid` (일회용 코드) | 짧은 TTL + 1회 사용 후 삭제 → **보안 강화** |
+
+### Redis 저장 정보
+
+| 회원 유형 | 저장 정보 | TTL | 교환 API |
+|---------|---------|-----|---------|
+| 기존 회원 | `OAuthLoginInfo` (memberId, oauthAccessToken) | 60초 | `POST /api/auth/token/exchange` |
+| 신규 회원 | `OAuthRegisterInfo` (email, provider, providerId, oauthAccessToken) | 10분 | `POST /api/auth/register/oauth2` |
+
+### 전체 흐름 요약
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -153,7 +265,7 @@ response.addHeader("Set-Cookie", cookie.toString());
 │            │                                                             │
 │            ▼                                                             │
 │  4. Spring Security가 자동으로:                                           │
-│     - 인가 코드로 액세스 토큰 교환                                         │
+│     - 인가 코드로 OAuth 액세스 토큰 교환                                   │
 │     - 사용자 정보 요청                                                    │
 │            │                                                             │
 │            ▼                                                             │
@@ -176,23 +288,28 @@ response.addHeader("Set-Cookie", cookie.toString());
 │     ┌──────────────┐     ┌──────────────┐                               │
 │     │ 기존 회원     │     │ 신규 회원     │                               │
 │     │              │     │              │                               │
-│     │ AccessToken  │     │ SignupToken  │                               │
-│     │ + RefreshToken│    │ (50분 유효)   │                               │
-│     │ 발급         │     │ 발급         │                               │
+│     │ Redis에      │     │ Redis에      │                               │
+│     │ OAuthLoginInfo│    │ OAuthRegisterInfo│                            │
+│     │ 저장 (60초)  │     │ 저장 (10분)   │                               │
 │     └──────┬───────┘     └──────┬───────┘                               │
 │            │                     │                                       │
 │            ▼                     ▼                                       │
-│     리다이렉트:             리다이렉트:                                    │
+│  7. 프론트엔드로 리다이렉트 (일회용 코드 전달)                              │
 │     /oauth2/redirect       /oauth2/redirect                              │
-│     ?accessToken=xxx       ?accessToken=xxx                              │
+│     ?code=uuid             ?code=uuid                                    │
 │     &type=login            &type=register                                │
-│                                  │                                       │
-│                                  ▼                                       │
-│                           추가 정보 입력 후                               │
-│                           POST /api/auth/register/oauth2                 │
-│                                  │                                       │
-│                                  ▼                                       │
-│                           AccessToken + RefreshToken 발급                │
+│            │                     │                                       │
+│            ▼                     ▼                                       │
+│  8. 프론트엔드가 토큰 교환 API 호출                                        │
+│     POST /api/auth/       POST /api/auth/                               │
+│     token/exchange        register/oauth2                                │
+│     { code: "uuid" }      { code: "uuid", name, ... }                   │
+│            │                     │                                       │
+│            ▼                     ▼                                       │
+│  9. 백엔드: Redis에서 정보 조회 후 삭제 (일회성 보장)                       │
+│            │                     │                                       │
+│            ▼                     ▼                                       │
+│  10. AccessToken + RefreshToken(쿠키) 응답                               │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -203,8 +320,9 @@ response.addHeader("Set-Cookie", cookie.toString());
 |------|---------|---------|
 | DB 상태 | provider + providerId로 찾음 | 없음 |
 | Role | USER | OAUTH2_GUEST |
-| 발급 토큰 | AccessToken + RefreshToken | SignupToken (임시) |
-| 리다이렉트 | `?type=login` | `?type=register` |
+| Redis 저장 | `OAuthLoginInfo` (60초 TTL) | `OAuthRegisterInfo` (10분 TTL) |
+| 리다이렉트 | `?code=uuid&type=login` | `?code=uuid&type=register` |
+| 토큰 교환 API | `POST /api/auth/token/exchange` | `POST /api/auth/register/oauth2` |
 | 추가 절차 | 없음 | 추가 정보 입력 필요 |
 
 ### 관련 코드
@@ -239,7 +357,7 @@ public OAuth2User process(String providerName, OAuth2User oAuth2User) {
 }
 ```
 
-**OAuth2AuthenticationSuccessHandler.java**
+**OAuth2AuthenticationSuccessHandler.java** - Redis에 일회용 코드 저장 후 리다이렉트
 ```java
 public void onAuthenticationSuccess(request, response, authentication) {
     CustomOauth2UserDetails userDetails = authentication.getPrincipal();
@@ -247,18 +365,73 @@ public void onAuthenticationSuccess(request, response, authentication) {
 
     String redirectUrl;
     if (userDetails.isNewMember()) {
-        // 신규 회원: SignupToken 발급
-        String signupToken = jwtUtil.createOAuth2SignupToken(member);
-        redirectUrl = redirectBaseUrl + "?accessToken=" + signupToken + "&type=register";
+        // 신규 회원: Redis에 회원가입 정보 저장 (10분 TTL)
+        OAuthRegisterInfo registerInfo = new OAuthRegisterInfo(
+            member.getEmail(),
+            member.getProvider(),
+            member.getProviderId(),
+            userDetails.getOauthAccessToken(),
+            "register"
+        );
+        String code = oAuthCodeRepository.saveRegisterInfo(registerInfo);
+        redirectUrl = redirectBaseUrl + "?code=" + code + "&type=register";
     } else {
-        // 기존 회원: 일반 토큰 발급
-        String accessToken = jwtUtil.createAccessToken(member);
-        String refreshToken = jwtUtil.createRefreshToken(member);
-        setRefreshTokenCookie(response, refreshToken);
-        redirectUrl = redirectBaseUrl + "?accessToken=" + accessToken + "&type=login";
+        // 기존 회원: Redis에 로그인 정보 저장 (60초 TTL)
+        OAuthLoginInfo loginInfo = new OAuthLoginInfo(
+            member.getId(),
+            userDetails.getOauthAccessToken(),
+            "login"
+        );
+        String code = oAuthCodeRepository.saveLoginInfo(loginInfo);
+        redirectUrl = redirectBaseUrl + "?code=" + code + "&type=login";
     }
 
     getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+}
+```
+
+**OAuthCodeRepository.java** - Redis 일회용 코드 관리
+```java
+@Repository
+public class OAuthCodeRepository {
+    private static final String KEY_PREFIX = "oauth:code:";
+    private static final Duration REGISTER_TTL = Duration.ofMinutes(10);
+    private static final Duration LOGIN_TTL = Duration.ofSeconds(60);
+
+    // 코드 저장 (UUID 생성)
+    public String saveLoginInfo(OAuthLoginInfo info) {
+        String code = UUID.randomUUID().toString();
+        String key = KEY_PREFIX + code;
+        stringRedisTemplate.opsForValue().set(key, json, LOGIN_TTL);
+        return code;
+    }
+
+    // 코드로 정보 조회 후 즉시 삭제 (일회성 보장)
+    public Optional<OAuthLoginInfo> consumeLoginInfo(String code) {
+        String key = KEY_PREFIX + code;
+        String json = stringRedisTemplate.opsForValue().getAndDelete(key);  // 조회 + 삭제
+        // ... 역직렬화 후 반환
+    }
+}
+```
+
+**AuthController.java** - 토큰 교환 API (기존 회원)
+```java
+@PostMapping("/token/exchange")
+public SuccessResponse<TokenExchangeResponse> exchangeToken(
+    HttpServletResponse response,
+    @RequestBody TokenExchangeRequest request  // { code: "uuid" }
+) {
+    TokenExchangeResult result = authService.exchangeToken(request.getCode());
+
+    // Refresh Token 쿠키 설정
+    ResponseCookie cookie = ResponseCookie.from("refreshToken", result.getRefreshToken())
+        .httpOnly(true).secure(true).path("/")
+        .domain(".meeteam.alom-sejong.com").sameSite("None")
+        .build();
+    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+    return SuccessResponse.of(new TokenExchangeResponse(result.getAccessToken()));
 }
 ```
 

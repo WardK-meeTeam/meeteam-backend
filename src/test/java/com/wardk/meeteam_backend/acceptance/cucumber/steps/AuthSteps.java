@@ -4,7 +4,11 @@ import com.wardk.meeteam_backend.acceptance.cucumber.factory.MemberFactory;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestApiSupport;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestRepositorySupport;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.ko.그러면;
@@ -41,7 +45,9 @@ public class AuthSteps {
     @Autowired
     private JwtUtil jwtUtil;
 
-    private String oauthCode;
+    @Autowired
+    private OAuthCodeRepository oAuthCodeRepository;
+
     private String refreshToken;
     private String previousAccessToken;
 
@@ -54,7 +60,10 @@ public class AuthSteps {
 
     @먼저("{string} 이메일로 가입된 일반회원이 존재한다")
     public void 이메일로_가입된_일반회원이_존재한다(String email) {
-        Member member = memberFactory.create("테스트회원", email, 기본_비밀번호);
+        if (repository.member().findByEmail(email).isEmpty()) {
+            api.auth().일반회원가입_요청(email, 기본_비밀번호, "테스트회원", "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+        }
+        Member member = repository.member().findByEmail(email).orElseThrow();
         context.member().setId(member.getId());
         context.member().setEmail(email);
     }
@@ -71,7 +80,19 @@ public class AuthSteps {
         String password = row.get("비밀번호");
         String name = row.get("이름");
 
-        Member member = memberFactory.create(name, email, password);
+        // API를 통한 회원가입 처리
+        api.auth().일반회원가입_요청(
+                email,
+                password,
+                name,
+                "1998-03-15",
+                "남성",
+                List.of(JobPosition.WEB_SERVER)
+        );
+
+        Member member = repository.member().findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("회원가입에 실패했습니다."));
+        
         context.member().setId(member.getId());
         context.member().setEmail(email);
         context.member().setName(name);
@@ -85,7 +106,18 @@ public class AuthSteps {
 
     @먼저("{string}가 Google OAuth 인증 후 회원가입 코드를 발급받은 상태이다")
     public void Google_OAuth_인증_후_회원가입_코드를_발급받은_상태이다(String name) {
-        oauthCode = "test-oauth-code-" + System.currentTimeMillis();
+        // OAuth 신규 회원 정보를 Redis에 저장하고 코드 발급
+        String testEmail = name.toLowerCase().replace(" ", "") + "@gmail.com";
+        OAuthRegisterInfo registerInfo = new OAuthRegisterInfo(
+                testEmail,
+                "google",
+                "google-provider-id-" + System.currentTimeMillis(),
+                null,  // oauthAccessToken
+                "register"
+        );
+        String oauthCode = oAuthCodeRepository.saveRegisterInfo(registerInfo);
+        context.member().setOauthCode(oauthCode);
+        context.member().setEmail(testEmail);
         context.member().setName(name);
     }
 
@@ -107,12 +139,34 @@ public class AuthSteps {
 
     @먼저("{string} 회원이 로그인한 상태이다")
     public void 회원이_로그인한_상태이다(String name) {
-        Member member = memberFactory.findOrCreate(name);
-        String accessToken = jwtUtil.createAccessToken(member);
-        refreshToken = jwtUtil.createRefreshToken(member);
-        context.setAccessToken(accessToken);
-        context.member().setId(member.getId());
-        context.member().setName(name);
+        String email = name + "@example.com";
+        String password = 기본_비밀번호;
+
+        // 1. 회원가입 (이미 존재할 수 있으므로 실패해도 무시하거나, repository에서 체크)
+        if (repository.member().findByEmail(email).isEmpty()) {
+            api.auth().일반회원가입_요청(email, password, name, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+        }
+
+        // 2. 로그인하여 토큰 획득
+        var response = api.auth().로그인_요청(email, password);
+        assertThat(response.statusCode()).isEqualTo(HTTP_OK);
+
+        String token = response.header("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            String accessToken = token.substring(7);
+            context.setAccessToken(accessToken);
+            
+            Member member = repository.member().findByEmail(email).orElseThrow();
+            context.member().setId(member.getId());
+            context.member().setEmail(email);
+            context.member().setName(name);
+        }
+        
+        // Refresh Token 추출 (쿠키에서)
+        String setCookie = response.header("Set-Cookie");
+        if (setCookie != null && setCookie.contains("refreshToken=")) {
+            refreshToken = setCookie.split("refreshToken=")[1].split(";")[0];
+        }
     }
 
     @그리고("인증 토큰이 만료되었다")
@@ -122,8 +176,9 @@ public class AuthSteps {
 
     @먼저("{string} 회원의 리프레시 토큰이 만료된 상태이다")
     public void 회원의_리프레시_토큰이_만료된_상태이다(String name) {
-        memberFactory.findOrCreate(name);
-        refreshToken = "expired-refresh-token";
+        Member member = memberFactory.findOrCreate(name);
+        // 이미 만료된 시간으로 리프레시 토큰 생성 (1초 전에 만료)
+        refreshToken = jwtUtil.createExpiredRefreshTokenForTest(member);
     }
 
     @먼저("{string} 회원이 로그인 후 로그아웃한 상태이다")
@@ -138,40 +193,44 @@ public class AuthSteps {
     @만약("다음 정보로 일반회원가입을 요청하면:")
     public void 다음_정보로_일반회원가입을_요청하면(DataTable dataTable) {
         Map<String, String> row = dataTable.asMaps().get(0);
-        
+
+        Integer projectExperienceCount = row.get("프로젝트경험횟수") != null
+                ? Integer.parseInt(row.get("프로젝트경험횟수").trim())
+                : 0;
+
         var response = api.auth().일반회원가입_요청(
                 row.get("이메일"),
                 row.get("비밀번호"),
                 row.get("이름"),
                 row.get("생년월일"),
                 row.get("성별"),
-                List.of(row.get("직무")),
-                List.of()
+                List.of(toJobPosition(row.get("직무"))),
+                projectExperienceCount
         );
         context.setResponse(response);
     }
 
     @만약("동일한 이메일 {string}으로 일반회원가입을 요청하면")
     public void 동일한_이메일로_일반회원가입을_요청하면(String email) {
-        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of("백엔드"), List.of());
+        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
         context.setResponse(response);
     }
 
     @만약("비밀번호 {string}으로 일반회원가입을 요청하면")
     public void 비밀번호로_일반회원가입을_요청하면(String password) {
-        var response = api.auth().일반회원가입_요청(기본_이메일, password, 기본_이름, "1998-03-15", "남성", List.of("백엔드"), List.of());
+        var response = api.auth().일반회원가입_요청(기본_이메일, password, 기본_이름, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
         context.setResponse(response);
     }
 
     @만약("이메일 {string}로 일반회원가입을 요청하면")
     public void 이메일로_일반회원가입을_요청하면(String email) {
-        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of("백엔드"), List.of());
+        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
         context.setResponse(response);
     }
 
     @만약("이름을 입력하지 않고 일반회원가입을 요청하면")
     public void 이름을_입력하지_않고_일반회원가입을_요청하면() {
-        var response = api.auth().일반회원가입_요청(기본_이메일, 기본_비밀번호, null, "1998-03-15", "남성", List.of("백엔드"), List.of());
+        var response = api.auth().일반회원가입_요청(기본_이메일, 기본_비밀번호, null, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
         context.setResponse(response);
     }
 
@@ -202,33 +261,92 @@ public class AuthSteps {
 
     @만약("Google OAuth 인증에 성공하면")
     public void Google_OAuth_인증에_성공하면() {
-        oauthCode = "test-oauth-code-" + System.currentTimeMillis();
+        // OAuth 신규 회원 정보를 Redis에 저장하고 코드 발급
+        String testEmail = "test-oauth-user@gmail.com";
+        OAuthRegisterInfo registerInfo = new OAuthRegisterInfo(
+                testEmail,
+                "google",
+                "google-provider-id-" + System.currentTimeMillis(),
+                null,
+                "register"
+        );
+        String oauthCode = oAuthCodeRepository.saveRegisterInfo(registerInfo);
+        context.member().setOauthCode(oauthCode);
+        context.member().setEmail(testEmail);
     }
 
     @만약("다음 추가 정보로 OAuth 회원가입을 완료하면:")
     public void 다음_추가_정보로_OAuth_회원가입을_완료하면(DataTable dataTable) {
         Map<String, String> row = dataTable.asMaps().get(0);
+
+        Integer projectExperienceCount = row.get("프로젝트경험횟수") != null
+                ? Integer.parseInt(row.get("프로젝트경험횟수").trim())
+                : 0;
+
         var response = api.auth().OAuth회원가입_요청(
-                oauthCode,
+                context.member().getOauthCode(),
                 row.get("이름"),
                 row.get("생년월일"),
                 row.get("성별"),
-                List.of(row.get("직무")),
-                List.of()
+                List.of(toJobPosition(row.get("직무"))),
+                List.of(),
+                projectExperienceCount
         );
         context.setResponse(response);
+
+        // OAuth 회원가입 성공 시 토큰 추출
+        if (response.statusCode() == HTTP_OK) {
+            String accessToken = response.jsonPath().getString("result.accessToken");
+            if (accessToken != null) {
+                context.setAccessToken(accessToken);
+            }
+        }
     }
 
     @만약("동일한 Google 계정으로 OAuth 인증에 성공하면")
     public void 동일한_Google_계정으로_OAuth_인증에_성공하면() {
-        Member member = repository.member().findById(context.member().getId()).orElseThrow();
-        context.setAccessToken(jwtUtil.createAccessToken(member));
+        // OAuth 로그인 정보를 Redis에 저장하고 코드 발급
+        OAuthLoginInfo loginInfo = new OAuthLoginInfo(
+                context.member().getId(),
+                null,  // oauthAccessToken
+                "login"
+        );
+        String oauthCode = oAuthCodeRepository.saveLoginInfo(loginInfo);
+
+        // 토큰 교환 API 호출
+        var response = api.auth().토큰교환_요청(oauthCode);
+        context.setResponse(response);
+
+        // 성공 시 토큰 추출
+        if (response.statusCode() == HTTP_OK) {
+            String accessToken = response.jsonPath().getString("result.accessToken");
+            if (accessToken != null) {
+                context.setAccessToken(accessToken);
+            }
+        }
     }
 
     @만약("동일한 GitHub 계정으로 OAuth 인증에 성공하면")
     public void 동일한_GitHub_계정으로_OAuth_인증에_성공하면() {
-        Member member = repository.member().findById(context.member().getId()).orElseThrow();
-        context.setAccessToken(jwtUtil.createAccessToken(member));
+        // OAuth 로그인 정보를 Redis에 저장하고 코드 발급
+        OAuthLoginInfo loginInfo = new OAuthLoginInfo(
+                context.member().getId(),
+                null,  // oauthAccessToken
+                "login"
+        );
+        String oauthCode = oAuthCodeRepository.saveLoginInfo(loginInfo);
+
+        // 토큰 교환 API 호출
+        var response = api.auth().토큰교환_요청(oauthCode);
+        context.setResponse(response);
+
+        // 성공 시 토큰 추출
+        if (response.statusCode() == HTTP_OK) {
+            String accessToken = response.jsonPath().getString("result.accessToken");
+            if (accessToken != null) {
+                context.setAccessToken(accessToken);
+            }
+        }
     }
 
     @만약("리프레시 토큰으로 토큰 재발급을 요청하면")
@@ -260,6 +378,29 @@ public class AuthSteps {
     public void 이전_토큰으로_회원_전용_서비스에_접근하면() {
         var response = api.auth().회원전용API접근_요청(previousAccessToken);
         context.setResponse(response);
+    }
+
+    private JobPosition toJobPosition(String description) {
+        if (description == null) return JobPosition.WEB_SERVER;
+        return switch (description) {
+            case "웹서버", "백엔드" -> JobPosition.WEB_SERVER;
+            case "웹프론트엔드", "프론트엔드" -> JobPosition.WEB_FRONTEND;
+            case "iOS" -> JobPosition.IOS;
+            case "안드로이드" -> JobPosition.ANDROID;
+            case "UI/UX디자인", "디자인" -> JobPosition.UI_UX_DESIGN;
+            case "AI" -> JobPosition.AI;
+            case "기획", "프로덕트매니저", "프로덕트 매니저/오너" -> JobPosition.PRODUCT_MANAGER;
+            case "그래픽디자인" -> JobPosition.GRAPHIC_DESIGN;
+            case "모션 디자인" -> JobPosition.MOTION_DESIGN;
+            case "크로스플랫폼" -> JobPosition.CROSS_PLATFORM;
+            default -> {
+                try {
+                    yield JobPosition.valueOf(description);
+                } catch (IllegalArgumentException e) {
+                    yield JobPosition.WEB_SERVER;
+                }
+            }
+        };
     }
 
     // ==================== Then Steps ====================
@@ -350,7 +491,7 @@ public class AuthSteps {
 
     @그러면("회원가입 코드를 발급받는다")
     public void 회원가입_코드를_발급받는다() {
-        assertThat(oauthCode).isNotNull();
+        assertThat(context.member().getOauthCode()).isNotNull();
     }
 
     @그리고("추가 정보 입력을 한다")
