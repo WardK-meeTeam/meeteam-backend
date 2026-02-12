@@ -63,6 +63,15 @@ public class AuthController {
 
         OAuth2RegisterResult result = authService.oauth2Register(request, file);
 
+        setRefreshCookie(response, result);
+
+        Member member = result.getMember();
+        return SuccessResponse.onSuccess(
+            new OAuth2RegisterResponse(member.getRealName(), member.getId(), result.getAccessToken())
+        );
+    }
+
+    private void setRefreshCookie(HttpServletResponse response, OAuth2RegisterResult result) {
         // Refresh Token 쿠키 설정
         ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken())
             .httpOnly(true)
@@ -75,11 +84,6 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
         log.info("Refresh Token 쿠키 설정 완료");
-
-        Member member = result.getMember();
-        return SuccessResponse.onSuccess(
-            new OAuth2RegisterResponse(member.getRealName(), member.getId(), result.getAccessToken())
-        );
     }
 
     @Operation(summary = "OAuth2 토큰 교환", description = "OAuth2 로그인 후 전달받은 일회용 코드를 사용하여 Access Token과 Refresh Token을 교환합니다.")
