@@ -7,7 +7,6 @@ import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectApplication;
-import com.wardk.meeteam_backend.domain.review.entity.Review;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
@@ -82,9 +81,6 @@ public class Project extends BaseEntity {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectLike> projectLikes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "project")
-    private List<Review> reviews = new ArrayList<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecruitmentState> recruitments = new ArrayList<>();
