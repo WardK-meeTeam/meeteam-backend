@@ -40,6 +40,5 @@ public class CucumberSpringConfiguration {
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("data-h2.sql"));
         populator.execute(dataSource);
-
     }
 }

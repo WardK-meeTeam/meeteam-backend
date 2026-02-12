@@ -68,6 +68,9 @@ public enum ErrorCode {
     // MEMBER SKILL
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND, "SKILL404", "해당 기술스택이 존재하지 않습니다."),
 
+    // REVIEW
+    ALREADY_REVIEWED(HttpStatus.BAD_REQUEST, "REVIEW400", "이미 리뷰를 작성한 프로젝트입니다."),
+
     //NOTIFICATION
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION404", "알림을 찾을 수 없습니다."),
     ACTOR_NOT_FOUND(HttpStatus.NOT_FOUND, "ACTOR404", "행위자(신청자)를 찾을 수 없습니다."),

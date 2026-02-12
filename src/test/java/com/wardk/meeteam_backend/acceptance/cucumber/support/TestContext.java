@@ -28,7 +28,6 @@ public class TestContext {
         private String email;
         private String name;
         private String password;
-        private String oauthCode;  // OAuth 회원가입용 코드
     }
 
     @Getter @Setter

@@ -119,23 +119,6 @@ public class JwtUtil {
   }
 
   /**
-   * 테스트용: 이미 만료된 RefreshToken 생성
-   */
-  public String createExpiredRefreshTokenForTest(Member member) {
-    log.info("테스트용 만료된 리프레시 토큰 생성 중: 회원: {}", member.getEmail());
-    return Jwts.builder()
-            .id(UUID.randomUUID().toString())
-            .subject(member.getEmail())
-            .claim("category", REFRESH_CATEGORY)
-            .claim("username", member.getEmail())
-            .claim("id", member.getId())
-            .issuedAt(new Date(System.currentTimeMillis() - 2000))  // 2초 전 발급
-            .expiration(new Date(System.currentTimeMillis() - 1000))  // 1초 전 만료
-            .signWith(getSignKey())
-            .compact();
-  }
-
-  /**
    * JWT 토큰 생성 메서드
    * @return 생성된 JWT 토큰
    */
