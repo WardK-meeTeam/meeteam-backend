@@ -10,6 +10,7 @@ import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectApplication;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.web.project.dto.request.ProjectPostRequest;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.wardk.meeteam_backend.global.response.ErrorCode.PROJECT_ALREADY_COMPLETED;
 
 @Data
 @Entity
@@ -50,14 +53,12 @@ public class Project extends BaseEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @Column(name = "offline_required", nullable = false)
-    private boolean offlineRequired;
-
-    @Enumerated(value = EnumType.STRING)
-    private ProjectStatus status;
-
     @Enumerated(value = EnumType.STRING)
     private Recruitment recruitmentStatus;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(nullable = false)
+    private RecruitmentDeadlineType recruitmentDeadlineType;
 
     private LocalDate startDate;
 
@@ -68,7 +69,9 @@ public class Project extends BaseEntity {
     @Column(nullable = false)
     private Integer likeCount = 0;
 
+    private String githubRepositoryUrl;
 
+    private String communicationChannelUrl;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectMember> members = new ArrayList<>();
@@ -88,7 +91,6 @@ public class Project extends BaseEntity {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectRepo> repos = new ArrayList<>();
 
-
     public void increaseLike() {
         this.likeCount++;
     }
@@ -100,37 +102,54 @@ public class Project extends BaseEntity {
     }
 
     @Builder
-    public Project(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
-                   String imageUrl, boolean offlineRequired, ProjectStatus status, Recruitment recruitmentStatus,
-                   LocalDate startDate, LocalDate endDate, boolean isDeleted) {
+    public Project(
+            Member creator,
+            String name,
+            String description,
+            ProjectCategory projectCategory,
+            PlatformCategory platformCategory,
+            String imageUrl,
+            Recruitment recruitmentStatus,
+            RecruitmentDeadlineType recruitmentDeadlineType,
+            LocalDate startDate,
+            LocalDate endDate,
+            boolean isDeleted,
+            String githubRepositoryUrl,
+            String communicationChannelUrl
+    ) {
         this.creator = creator;
         this.name = name;
         this.description = description;
         this.projectCategory = projectCategory;
         this.platformCategory = platformCategory;
         this.imageUrl = imageUrl;
-        this.offlineRequired = offlineRequired;
-        this.status = status;
         this.recruitmentStatus = recruitmentStatus;
+        this.recruitmentDeadlineType = recruitmentDeadlineType;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.githubRepositoryUrl = githubRepositoryUrl;
+        this.communicationChannelUrl = communicationChannelUrl;
         this.isDeleted = isDeleted;
     }
 
-    public static Project createProject(Member creator, String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
-                                        String imageUrl, boolean offlineRequired, LocalDate endDate) {
+    public static Project createProject(
+            ProjectPostRequest projectPostRequest,
+            Member creator,
+            String imageUrl
+    ) {
         return Project.builder()
                 .creator(creator)
-                .name(name)
-                .description(description)
-                .projectCategory(projectCategory)
-                .platformCategory(platformCategory)
+                .name(projectPostRequest.getProjectName())
+                .description(projectPostRequest.getDescription())
+                .projectCategory(projectPostRequest.getProjectCategory())
+                .platformCategory(projectPostRequest.getPlatformCategory())
                 .imageUrl(imageUrl)
-                .offlineRequired(offlineRequired)
-                .status(ProjectStatus.PLANNING)
                 .recruitmentStatus(Recruitment.RECRUITING)
+                .recruitmentDeadlineType(projectPostRequest.getRecruitmentDeadlineType())
                 .startDate(LocalDate.now())
-                .endDate(endDate)
+                .endDate(projectPostRequest.getRecruitmentDeadlineType().equals(RecruitmentDeadlineType.END_DATE) ? projectPostRequest.getEndDate() : null)
+                .githubRepositoryUrl(projectPostRequest.getGithubRepositoryUrl())
+                .communicationChannelUrl(projectPostRequest.getCommunicationChannelUrl())
                 .isDeleted(false)
                 .build();
     }
@@ -156,14 +175,12 @@ public class Project extends BaseEntity {
     }
 
     public void updateProject(String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
-                              String imageUrl, boolean offlineRequired, ProjectStatus status, LocalDate startDate, LocalDate endDate) {
+                              String imageUrl, LocalDate startDate, LocalDate endDate) {
         this.name = name;
         this.description = description;
         this.projectCategory = projectCategory;
         this.platformCategory = platformCategory;
         this.imageUrl = imageUrl;
-        this.offlineRequired = offlineRequired;
-        this.status = status;
         this.startDate = startDate;
         this.endDate = endDate;
     }
@@ -213,13 +230,20 @@ public class Project extends BaseEntity {
     }
 
     public void endProject() {
-        this.status = ProjectStatus.COMPLETED;
+        if (recruitmentStatus.equals(Recruitment.CLOSED)) {
+            throw new CustomException(PROJECT_ALREADY_COMPLETED);
+        }
+
         this.recruitmentStatus = Recruitment.CLOSED;
         this.endDate = LocalDate.now();
     }
 
 
     public void updateRecruitmentsStatus() {
+        if (this.recruitmentDeadlineType != RecruitmentDeadlineType.RECRUITMENT_COMPLETED) {
+            return;
+        }
+
         boolean isClosed = this.recruitments.stream()
                 .allMatch(r -> r.getCurrentCount() >= r.getRecruitmentCount());
 
@@ -228,13 +252,7 @@ public class Project extends BaseEntity {
         }
     }
 
-
-    public void isCompleted() {
-        if (status == ProjectStatus.COMPLETED || recruitmentStatus == Recruitment.CLOSED) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
+    public boolean isCompleted() {
+        return recruitmentStatus.equals(Recruitment.CLOSED);
     }
-
-
-
 }
