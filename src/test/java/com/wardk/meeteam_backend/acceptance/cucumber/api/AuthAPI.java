@@ -1,5 +1,8 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wardk.meeteam_backend.domain.job.JobPosition;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ExtractableResponse;
@@ -17,12 +20,14 @@ import java.util.Map;
 @Component
 public class AuthAPI {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * 일반 회원가입 요청
      */
     public ExtractableResponse<Response> 일반회원가입_요청(
             String email, String password, String name, String birthDate,
-            String gender, List<String> jobPositions, List<String> skills) {
+            String gender, List<JobPosition> jobPositions) {
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("email", email);
@@ -30,12 +35,13 @@ public class AuthAPI {
         params.put("name", name);
         params.put("birthDate", birthDate);
         params.put("gender", toGender(gender));
-        params.put("jobPositions", jobPositions.stream().map(this::toJobPosition).toList());
-        params.put("skills", skills != null ? skills : List.of());
+        params.put("jobPositions", jobPositions.stream().map(Enum::name).toList());
+
+        String jsonBody = toJson(params);
 
         return RestAssured.given().log().all()
                 .contentType("multipart/form-data")
-                .multiPart("request", params, "application/json")
+                .multiPart("request", "request.json", jsonBody.getBytes(), "application/json")
                 .when()
                 .post("/api/auth/register")
                 .then().log().all()
@@ -47,19 +53,21 @@ public class AuthAPI {
      */
     public ExtractableResponse<Response> OAuth회원가입_요청(
             String oauthCode, String name, String birthDate,
-            String gender, List<String> jobPositions, List<String> skills) {
+            String gender, List<JobPosition> jobPositions, List<String> skills) {
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("code", oauthCode);
         params.put("name", name);
         params.put("birthDate", birthDate);
         params.put("gender", toGender(gender));
-        params.put("jobPositions", jobPositions.stream().map(this::toJobPosition).toList());
+        params.put("jobPositions", jobPositions.stream().map(Enum::name).toList());
         params.put("skills", skills != null ? skills : List.of());
+
+        String jsonBody = toJson(params);
 
         return RestAssured.given().log().all()
                 .contentType("multipart/form-data")
-                .multiPart("request", params, "application/json")
+                .multiPart("request", "request.json", jsonBody.getBytes(), "application/json")
                 .when()
                 .post("/api/auth/register/oauth2")
                 .then().log().all()
@@ -70,12 +78,15 @@ public class AuthAPI {
      * 로그인 요청
      */
     public ExtractableResponse<Response> 로그인_요청(String email, String password) {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("email", email);
+        params.put("password", password);
+
         return RestAssured.given().log().all()
-                .contentType(ContentType.URLENC)
-                .formParam("email", email)
-                .formParam("password", password)
+                .contentType(ContentType.JSON)
+                .body(params)
                 .when()
-                .post("/api/login")
+                .post("/api/auth/login")
                 .then().log().all()
                 .extract();
     }
@@ -130,6 +141,22 @@ public class AuthAPI {
     }
 
     /**
+     * OAuth 토큰 교환 요청 (기존 회원 로그인)
+     */
+    public ExtractableResponse<Response> 토큰교환_요청(String code) {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("code", code);
+
+        return RestAssured.given().log().all()
+                .contentType(ContentType.JSON)
+                .body(params)
+                .when()
+                .post("/api/auth/token/exchange")
+                .then().log().all()
+                .extract();
+    }
+
+    /**
      * 인증이 필요한 API 접근 테스트용
      */
     public ExtractableResponse<Response> 회원전용API접근_요청(String accessToken) {
@@ -141,7 +168,7 @@ public class AuthAPI {
 
         return spec
                 .when()
-                .get("/api/members/profile")
+                .get("/api/members")
                 .then().log().all()
                 .extract();
     }
@@ -157,17 +184,11 @@ public class AuthAPI {
         };
     }
 
-    private String toJobPosition(String job) {
-        if (job == null) return "WEB_SERVER";
-        return switch (job) {
-            case "웹서버", "백엔드" -> "WEB_SERVER";
-            case "웹프론트엔드", "프론트엔드" -> "WEB_FRONTEND";
-            case "iOS" -> "IOS";
-            case "안드로이드" -> "ANDROID";
-            case "UI/UX디자인", "디자인" -> "UI_UX_DESIGN";
-            case "AI" -> "AI";
-            case "기획", "프로덕트매니저" -> "PRODUCT_MANAGER";
-            default -> job; // 이미 Enum 형태면 그대로 사용
-        };
+    private String toJson(Map<String, Object> params) {
+        try {
+            return objectMapper.writeValueAsString(params);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("JSON 직렬화 실패", e);
+        }
     }
 }
