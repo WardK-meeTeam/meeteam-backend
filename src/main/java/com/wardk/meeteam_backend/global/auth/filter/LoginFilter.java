@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.global.auth.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.wardk.meeteam_backend.global.auth.cookie.RefreshTokenCookieProvider;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.response.SuccessCode;
 import com.wardk.meeteam_backend.global.response.ErrorResponse;
@@ -11,13 +12,11 @@ import com.wardk.meeteam_backend.web.auth.dto.login.LoginRequest;
 import com.wardk.meeteam_backend.web.auth.dto.login.LoginResponse;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -34,6 +33,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenCookieProvider cookieProvider;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -86,19 +86,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         // 2) JS에서 읽을 수 있도록 expose-header 추가
         response.addHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.AUTHORIZATION);
 
-
         // 쿠키에 refreshToken 추가
-        ResponseCookie refreshCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, refreshToken)
-                .httpOnly(true)                            // JS 접근 차단
-                .secure(true)                              // HTTPS 환경 필수
-                .path("/")                                 // 모든 경로에서 접근 가능
-                .sameSite("None")                          // CORS 환경에서도 쿠키 전송 가능
-                .domain(".meeteam.alom-sejong.com")        // 서브도메인 간 공유 허용
-                .maxAge(jwtUtil.getRefreshExpirationTime() / 1000) // 초 단위 변환
-                .build();
-
-        // 응답 헤더에 Set-Cookie 추가
-        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        cookieProvider.addCookie(response, refreshToken);
 
         // 로그인에 성공하면 유저 정보 반환
         response.setContentType("application/json");

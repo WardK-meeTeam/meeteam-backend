@@ -2,8 +2,8 @@ package com.wardk.meeteam_backend.web.auth.controller;
 
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.global.auth.cookie.RefreshTokenCookieProvider;
 import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
-import com.wardk.meeteam_backend.global.util.JwtUtil;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
@@ -23,9 +23,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,7 +37,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtUtil jwtUtil;
+    private final RefreshTokenCookieProvider cookieProvider;
 
     @Operation(summary = "회원가입", description = "회원 정보를 입력받아 계정을 생성합니다.")
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -63,27 +61,12 @@ public class AuthController {
 
         OAuth2RegisterResult result = authService.oauth2Register(request, file);
 
-        setRefreshCookie(response, result);
+        cookieProvider.addCookie(response, result.getRefreshToken());
 
         Member member = result.getMember();
         return SuccessResponse.onSuccess(
             new OAuth2RegisterResponse(member.getRealName(), member.getId(), result.getAccessToken())
         );
-    }
-
-    private void setRefreshCookie(HttpServletResponse response, OAuth2RegisterResult result) {
-        // Refresh Token 쿠키 설정
-        ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken())
-            .httpOnly(true)
-            .secure(true)
-            .path("/")
-            .domain(".meeteam.alom-sejong.com")
-            .sameSite("None")
-            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000)
-            .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
-        log.info("Refresh Token 쿠키 설정 완료");
     }
 
     @Operation(summary = "OAuth2 토큰 교환", description = "OAuth2 로그인 후 전달받은 일회용 코드를 사용하여 Access Token과 Refresh Token을 교환합니다.")
@@ -96,17 +79,7 @@ public class AuthController {
 
         TokenExchangeResult result = authService.exchangeToken(request.getCode());
 
-        // Refresh Token 쿠키 설정
-        ResponseCookie responseCookie = ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, result.getRefreshToken())
-            .httpOnly(true)
-            .secure(true)
-            .path("/")
-            .domain(".meeteam.alom-sejong.com")
-            .sameSite("None")
-            .maxAge(jwtUtil.getRefreshExpirationTime() / 1000)
-            .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
+        cookieProvider.addCookie(response, result.getRefreshToken());
         log.info("토큰 교환 완료 - Refresh Token 쿠키 설정");
 
         return SuccessResponse.of(SuccessCode._TOKEN_EXCHANGE_SUCCESS, new TokenExchangeResponse(result.getAccessToken()));
@@ -142,9 +115,11 @@ public class AuthController {
         // Authorization 헤더에서 AccessToken 추출
         String accessToken = extractAccessToken(request);
 
-        // 로그아웃 처리 (토큰 블랙리스트 추가 + 쿠키 삭제)
-        ResponseCookie expiredCookie = authService.logout(accessToken);
-        response.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
+        // 로그아웃 처리 (토큰 블랙리스트 추가)
+        authService.logout(accessToken);
+
+        // Refresh Token 쿠키 삭제
+        cookieProvider.deleteCookie(response);
 
         log.info("로그아웃 완료 - AccessToken 블랙리스트 등록 및 Refresh Token 쿠키 삭제");
         return SuccessResponse.onSuccess("로그아웃이 완료되었습니다.");

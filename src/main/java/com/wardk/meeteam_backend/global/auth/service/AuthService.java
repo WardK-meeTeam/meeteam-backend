@@ -24,7 +24,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -288,13 +287,13 @@ public class AuthService {
     }
 
     /**
-     * 로그아웃 처리 - AccessToken을 블랙리스트에 추가하고, OAuth 토큰을 철회하고, 만료된 쿠키 반환
+     * 로그아웃 처리 - AccessToken을 블랙리스트에 추가하고, OAuth 토큰을 철회합니다.
+     * 쿠키 삭제는 Controller에서 RefreshTokenCookieProvider를 사용하여 처리합니다.
      *
      * @param accessToken 블랙리스트에 추가할 AccessToken (null 가능)
-     * @return 만료된 Refresh Token 쿠키
      */
     @Transactional
-    public ResponseCookie logout(String accessToken) {
+    public void logout(String accessToken) {
         // AccessToken이 있으면 블랙리스트에 추가 및 OAuth 토큰 철회
         if (accessToken != null && !accessToken.isBlank()) {
             try {
@@ -319,9 +318,6 @@ public class AuthService {
                 log.warn("토큰 블랙리스트 추가 중 오류 발생: {}", e.getMessage());
             }
         }
-
-        // Refresh Token 쿠키 삭제
-        return createExpiredRefreshTokenCookie();
     }
 
     /**
@@ -365,21 +361,5 @@ public class AuthService {
             // OAuth 토큰 철회 실패해도 로그아웃은 계속 진행
             log.warn("OAuth 토큰 철회 중 오류 발생: {}", e.getMessage());
         }
-    }
-
-    /**
-     * 만료된 Refresh Token 쿠키 생성
-     *
-     * @return 만료된 Refresh Token 쿠키
-     */
-    private ResponseCookie createExpiredRefreshTokenCookie() {
-        return ResponseCookie.from(JwtUtil.REFRESH_COOKIE_NAME, "")
-                .path("/")                                 // 경로 동일
-                .domain(".meeteam.alom-sejong.com")        // 도메인 동일
-                .httpOnly(true)
-                .secure(true)                              // OAuth2 회원가입과 동일하게 true로 설정
-                .sameSite("None")
-                .maxAge(0)                                 // 즉시 만료
-                .build();
     }
 }
