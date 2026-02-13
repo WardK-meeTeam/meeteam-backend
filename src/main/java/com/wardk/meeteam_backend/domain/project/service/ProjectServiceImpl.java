@@ -47,6 +47,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.client.WebClient;
+
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -89,20 +90,8 @@ public class ProjectServiceImpl implements ProjectService {
                 imageUrl
         );
 
-        projectPostCommand.recruitments().forEach(recruitment -> {
-            RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
-                    recruitment.jobPosition(), recruitment.recruitmentCount());
-            project.addRecruitment(recruitmentState);
-        });
-
-        projectPostCommand.skills().forEach(skillName -> {
-            Skill skill = skillRepository.findBySkillName(skillName)
-                    .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
-
-            ProjectSkill projectSkill = ProjectSkill.createProjectSkill(skill);
-            project.addProjectSkill(projectSkill);
-        });
-
+        applyRecruitments(projectPostCommand.recruitments(), project);
+        applyProjectSkill(projectPostCommand.skills(), project);
         projectRepository.save(project);
         projectMemberService.addCreator(project.getId(), creator.getId(), projectPostCommand.jobPosition());
         return ProjectPostResponse.from(project);
@@ -224,7 +213,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         List<ProjectRepoResponse> responses = new ArrayList<>();
 
-        for (String repoUrl :request.getRepoUrls()){
+        for (String repoUrl : request.getRepoUrls()) {
             String repoFullName = extractRepoFullName(repoUrl);
 
             if (projectRepoRepository.existsByRepoFullName(repoFullName)) {
@@ -287,7 +276,7 @@ public class ProjectServiceImpl implements ProjectService {
 
                     Long currentCount = totalCountsByProject != null ? totalCountsByProject.getCurrentCount() : 0L;
                     Long recruitmentCount = totalCountsByProject != null ? totalCountsByProject.getRecruitmentCount() : 0L;
-                    log.info("userDetails={}",userDetails);
+                    log.info("userDetails={}", userDetails);
                     boolean isLiked = false;
                     if (userDetails != null) {
                         isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
@@ -381,7 +370,7 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if(!project.getCreator().getEmail().equals(requesterEmail)) {
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
@@ -416,6 +405,24 @@ public class ProjectServiceImpl implements ProjectService {
 
         if (deadlineType == RecruitmentDeadlineType.RECRUITMENT_COMPLETED && endDate != null) {
             throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
+        }
+    }
+
+    private void applyRecruitments(List<ProjectRecruitRequest> recruitments, Project project) {
+        for (ProjectRecruitRequest recruitment : recruitments) {
+            RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
+                    recruitment.jobPosition(), recruitment.recruitmentCount());
+            project.addRecruitment(recruitmentState);
+        }
+    }
+
+    private void applyProjectSkill(List<String> skillNames, Project project) {
+        for (String skillName : skillNames) {
+            Skill skill = skillRepository.findBySkillName(skillName)
+                    .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
+
+            ProjectSkill projectSkill = ProjectSkill.createProjectSkill(skill);
+            project.addProjectSkill(projectSkill);
         }
     }
 }
