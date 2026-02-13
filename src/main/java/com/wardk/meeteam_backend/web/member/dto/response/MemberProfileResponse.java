@@ -79,7 +79,7 @@ public class MemberProfileResponse {
                         project.getEndDate(),
                         project.getName(),
                         project.getImageUrl(),
-                        project.getStatus()
+                        project.getRecruitmentStatus()
                 ))
                 .toList();
         // profileImageUrl과 profileImageName은 Service에서 별도로 설정됨
