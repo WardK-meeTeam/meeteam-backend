@@ -4,6 +4,7 @@ import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
+import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectApplication;
@@ -133,23 +134,23 @@ public class Project extends BaseEntity {
     }
 
     public static Project createProject(
-            ProjectPostRequest projectPostRequest,
+            ProjectPostCommand projectPostCommand,
             Member creator,
             String imageUrl
     ) {
         return Project.builder()
                 .creator(creator)
-                .name(projectPostRequest.getProjectName())
-                .description(projectPostRequest.getDescription())
-                .projectCategory(projectPostRequest.getProjectCategory())
-                .platformCategory(projectPostRequest.getPlatformCategory())
+                .name(projectPostCommand.projectName())
+                .description(projectPostCommand.description())
+                .projectCategory(projectPostCommand.projectCategory())
+                .platformCategory(projectPostCommand.platformCategory())
                 .imageUrl(imageUrl)
                 .recruitmentStatus(Recruitment.RECRUITING)
-                .recruitmentDeadlineType(projectPostRequest.getRecruitmentDeadlineType())
+                .recruitmentDeadlineType(projectPostCommand.recruitmentDeadlineType())
                 .startDate(LocalDate.now())
-                .endDate(projectPostRequest.getRecruitmentDeadlineType().equals(RecruitmentDeadlineType.END_DATE) ? projectPostRequest.getEndDate() : null)
-                .githubRepositoryUrl(projectPostRequest.getGithubRepositoryUrl())
-                .communicationChannelUrl(projectPostRequest.getCommunicationChannelUrl())
+                .endDate(projectPostCommand.recruitmentDeadlineType().equals(RecruitmentDeadlineType.END_DATE) ? projectPostRequest.getEndDate() : null)
+                .githubRepositoryUrl(projectPostCommand.githubRepositoryUrl())
+                .communicationChannelUrl(projectPostCommand.communicationChannelUrl())
                 .isDeleted(false)
                 .build();
     }

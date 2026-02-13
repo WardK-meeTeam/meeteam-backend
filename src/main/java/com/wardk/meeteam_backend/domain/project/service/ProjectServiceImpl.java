@@ -11,10 +11,9 @@ import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
-import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
-import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
+import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
@@ -75,42 +74,28 @@ public class ProjectServiceImpl implements ProjectService {
     private final WebClient.Builder webClientBuilder;
     private final ApplicationEventPublisher eventPublisher;
 
-
     @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Counted("post.project")
     @Override
-    public ProjectPostResponse postProject(ProjectPostRequest projectPostRequest, MultipartFile file, String requesterEmail) {
-
+    public ProjectPostResponse postProject(ProjectPostCommand projectPostCommand, MultipartFile file, String requesterEmail) {
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         String imageUrl = getImageUrl(file, creator.getId());
-
-        LocalDate endDate = projectPostRequest.getEndDate();
-
-        if(endDate != null && !endDate.isAfter(LocalDate.now())) {
-            throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
-        }
-
+        validateRecruitmentDeadline(projectPostCommand);
         Project project = Project.createProject(
+                projectPostCommand,
                 creator,
-                projectPostRequest.getProjectName(),
-                projectPostRequest.getDescription(),
-                projectPostRequest.getProjectCategory(),
-                projectPostRequest.getPlatformCategory(),
-                imageUrl,
-                projectPostRequest.getOfflineRequired(),
-                endDate
+                imageUrl
         );
 
-
-        projectPostRequest.getRecruitments().forEach(recruitment -> {
+        projectPostCommand.recruitments().forEach(recruitment -> {
             RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
                     recruitment.jobPosition(), recruitment.recruitmentCount());
             project.addRecruitment(recruitmentState);
         });
 
-        projectPostRequest.getSkills().forEach(skillName -> {
+        projectPostCommand.skills().forEach(skillName -> {
             Skill skill = skillRepository.findBySkillName(skillName)
                     .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
 
@@ -119,10 +104,7 @@ public class ProjectServiceImpl implements ProjectService {
         });
 
         projectRepository.save(project);
-
-        JobPosition creatorJobPosition = projectPostRequest.getJobPosition();
-        projectMemberService.addCreator(project.getId(), creator.getId(), creatorJobPosition);
-
+        projectMemberService.addCreator(project.getId(), creator.getId(), projectPostCommand.jobPosition());
         return ProjectPostResponse.from(project);
     }
 
