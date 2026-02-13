@@ -148,7 +148,7 @@ public class Project extends BaseEntity {
                 .recruitmentStatus(Recruitment.RECRUITING)
                 .recruitmentDeadlineType(projectPostCommand.recruitmentDeadlineType())
                 .startDate(LocalDate.now())
-                .endDate(projectPostCommand.recruitmentDeadlineType().equals(RecruitmentDeadlineType.END_DATE) ? projectPostRequest.getEndDate() : null)
+                .endDate(projectPostCommand.recruitmentDeadlineType().equals(RecruitmentDeadlineType.END_DATE) ? projectPostCommand.endDate() : null)
                 .githubRepositoryUrl(projectPostCommand.githubRepositoryUrl())
                 .communicationChannelUrl(projectPostCommand.communicationChannelUrl())
                 .isDeleted(false)
