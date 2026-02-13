@@ -1,12 +1,12 @@
 package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
+import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
 import com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto;
-import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
 import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -34,11 +34,11 @@ public class ProjectController {
             @RequestPart(name = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        log.info("Project Post Request: {}", projectPostRequest);
-        ProjectPostResponse projectPostResponse = projectService.postProject(projectPostRequest, file, userDetails.getUsername());
-
+        ProjectPostResponse projectPostResponse = projectService.postProject(
+                ProjectPostCommand.from(projectPostRequest),
+                file,
+                userDetails.getUsername());
         return SuccessResponse.onSuccess(projectPostResponse);
-
     }
 
     @Operation(summary = "프로젝트 목록 조회")
@@ -121,11 +121,12 @@ public class ProjectController {
     }
 
     @Operation(summary = "프로젝트 종료")
-    @PostMapping("/{projectId}/complete")
-    public SuccessResponse<ProjectEndResponse> endProject(@PathVariable Long projectId,
-                                                          @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    @PostMapping("/{projectId}/end")
+    public SuccessResponse<ProjectEndResponse> endProject(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        ProjectEndResponse response = projectService.endProject(projectId, userDetails.getUsername());
-        return SuccessResponse.onSuccess(response);
+        ProjectEndResponse projectEndResponse = projectService.endProject(projectId, userDetails.getUsername());
+        return SuccessResponse.onSuccess(projectEndResponse);
     }
 }
