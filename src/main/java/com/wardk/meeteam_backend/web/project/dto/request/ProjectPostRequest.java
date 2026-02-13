@@ -66,8 +66,8 @@ public class ProjectPostRequest {
     )
     private List<String> skills = new ArrayList<>();
 
-    @NotNull(message = "프로젝트 마감 방식을 선택해주세요.")
-    @Schema(description = "프로젝트 마감 방식", example = "END_DATE, RECRUITMENT_COMPLETED")
+    @NotNull(message = "프로젝트 마감 방식을 선택해주세요. ex) END_DATE(마감 날자 방식), RECRUITMENT_COMPLETED(모집 완료 시)")
+    @Schema(description = "프로젝트 마감 방식", example = "END_DATE")
     private RecruitmentDeadlineType recruitmentDeadlineType;
 
     @Schema(description = "프로젝트 마감일")

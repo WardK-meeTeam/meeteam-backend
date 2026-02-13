@@ -27,7 +27,8 @@ public class ProjectController {
 
     private final ProjectService projectService;
 
-    @Operation(summary = "프로젝트 등록")
+    @Operation(summary = "프로젝트 등록",
+            description = "프로젝트 마감 방식 ex) END_DATE(마감 날짜 방식), RECRUITMENT_COMPLETED(모집 완료 시)")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<ProjectPostResponse> projectPost(
             @RequestPart @Validated ProjectPostRequest projectPostRequest,
