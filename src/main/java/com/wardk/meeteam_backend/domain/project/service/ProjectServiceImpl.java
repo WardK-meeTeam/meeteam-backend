@@ -338,11 +338,10 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private String getImageUrl(MultipartFile file, Long uploaderId) {
-        String imageUrl = null;
         if (file != null && !file.isEmpty()) {
-            imageUrl = s3FileService.uploadFile(file, "images", uploaderId);
+            return s3FileService.uploadFile(file, "images", uploaderId);
         }
-        return imageUrl;
+        return null;
     }
 
     private String extractRepoFullName(String url) {
