@@ -110,9 +110,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public List<ProjectListResponse> getProjectList() {
-
         List<Project> projects = projectRepository.findAllWithCreatorAndSkills();
-
         return projects.stream()
                 .map(ProjectListResponse::responseDto)
                 .toList();
@@ -120,24 +118,16 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectWithLikeDto getProjectV2(Long projectId) {
-
         ProjectWithLikeDto projectWithLikeDto = projectRepository.findProjectWithLikeCount(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-
-
         return projectWithLikeDto;
     }
 
     @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Override
     public ProjectUpdateResponse updateProject(Long projectId, ProjectUpdateRequest request, MultipartFile file, String requesterEmail) {
-
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-
-        if (project.getStatus() == ProjectStatus.COMPLETED) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
 
         Member creator = memberRepository.findOptionByEmail(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -164,8 +154,6 @@ public class ProjectServiceImpl implements ProjectService {
                 request.getProjectCategory(),
                 request.getPlatformCategory(),
                 imageUrl,
-                request.getOfflineRequired(),
-                request.getStatus(),
                 startDate,
                 endDate
         );
@@ -192,7 +180,6 @@ public class ProjectServiceImpl implements ProjectService {
     @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Override
     public ProjectDeleteResponse deleteProject(Long projectId, String requesterEmail) {
-
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
@@ -201,7 +188,6 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         project.delete();
-
         List<Long> membersId = getMembersId(project);
 
         eventPublisher.publishEvent(new ProjectEndEvent(
@@ -225,11 +211,10 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public List<ProjectRepoResponse> addRepo(Long projectId, ProjectRepoRequest request, String requesterEmail) {
-
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if (project.getStatus() == ProjectStatus.COMPLETED) {
+        if (project.getRecruitmentStatus() == Recruitment.CLOSED) {
             throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
 
@@ -346,9 +331,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails) {
-
         List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(userDetails.getMemberId());
-
         return projectMembers.stream()
                 .map(MyProjectResponse::responseDto)
                 .toList();
@@ -396,7 +379,6 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectEndResponse endProject(Long projectId, String requesterEmail) {
-
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
@@ -404,14 +386,37 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        if (project.getStatus() == ProjectStatus.COMPLETED) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
-
+        validateIsCompleted(project);
         project.endProject();
-
-        return ProjectEndResponse.responseDto(project.getId(), project.getStatus());
+        return ProjectEndResponse.responseDto(projectId);
     }
 
+    private static void validateIsCompleted(Project project) {
+        if (project.isCompleted()) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+    }
 
+    private void validateRecruitmentDeadline(ProjectPostCommand projectPostCommand) {
+        RecruitmentDeadlineType deadlineType = projectPostCommand.recruitmentDeadlineType();
+        LocalDate endDate = projectPostCommand.endDate();
+
+        if (deadlineType == null) {
+            throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
+        }
+
+        if (deadlineType == RecruitmentDeadlineType.END_DATE) {
+            if (endDate == null) {
+                throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
+            }
+            if (!endDate.isAfter(LocalDate.now())) {
+                throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
+            }
+            return;
+        }
+
+        if (deadlineType == RecruitmentDeadlineType.RECRUITMENT_COMPLETED && endDate != null) {
+            throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
+        }
+    }
 }
