@@ -98,7 +98,7 @@ security:
     - method: GET
       uri: /api/main/**
 
-# OAuth2 설정
+# OAuth2 및 쿠키 설정
 app:
   oauth2:
     oauth2-redirect-url: http://localhost:3000/oauth2/redirect
@@ -113,6 +113,10 @@ app:
         user-name-attribute: name
         email-attribute: email
         id-attribute: id
+  cookie:
+    domain: # 테스트에서는 비워둠
+    secure: false
+    same-site: Lax
 
 # CORS 설정
 cors:
