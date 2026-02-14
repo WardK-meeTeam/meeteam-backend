@@ -1,6 +1,5 @@
 package com.wardk.meeteam_backend.domain.project.service.dto;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
 import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
@@ -17,9 +16,8 @@ public record ProjectPostCommand(
         ProjectCategory projectCategory,
         String description,
         PlatformCategory platformCategory,
-        JobPosition jobPosition,
+        Long creatorJobPositionId,
         List<ProjectRecruitRequest> recruitments,
-        List<String> skills,
         RecruitmentDeadlineType recruitmentDeadlineType,
         LocalDate endDate
 ) {
@@ -31,9 +29,8 @@ public record ProjectPostCommand(
                 projectPostRequest.getProjectCategory(),
                 projectPostRequest.getDescription(),
                 projectPostRequest.getPlatformCategory(),
-                projectPostRequest.getJobPosition(),
+                projectPostRequest.getCreatorJobPositionId(),
                 projectPostRequest.getRecruitments(),
-                projectPostRequest.getSkills(),
                 projectPostRequest.getRecruitmentDeadlineType(),
                 projectPostRequest.getEndDate()
         );

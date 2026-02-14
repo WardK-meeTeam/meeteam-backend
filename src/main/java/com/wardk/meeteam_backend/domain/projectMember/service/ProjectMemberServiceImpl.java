@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.domain.projectmember.service;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
@@ -64,7 +64,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         project.joinMember(projectMember);
 
         RecruitmentState recruitmentState = project.getRecruitments().stream()
-                .filter(r -> r.getJobPosition() == jobPosition)
+                .filter(r -> r.getJobPosition().getId().equals(jobPosition.getId()))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
 

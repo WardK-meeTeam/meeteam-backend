@@ -2,9 +2,16 @@ package com.wardk.meeteam_backend.domain.project.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentTechStack;
 import com.wardk.meeteam_backend.domain.applicant.repository.RecruitmentStateRepository;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
+import com.wardk.meeteam_backend.domain.job.entity.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.repository.JobFieldRepository;
+import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackRepository;
+import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
+import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
@@ -64,6 +71,10 @@ public class ProjectServiceImpl implements ProjectService {
     private final S3FileService s3FileService;
     private final ProjectRepository projectRepository;
     private final MemberRepository memberRepository;
+    private final JobFieldRepository jobFieldRepository;
+    private final JobPositionRepository jobPositionRepository;
+    private final TechStackRepository techStackRepository;
+    private final JobFieldTechStackRepository jobFieldTechStackRepository;
     private final SkillRepository skillRepository;
     private final ProjectMemberService projectMemberService;
     private final ProjectRepoRepository projectRepoRepository;
@@ -91,9 +102,15 @@ public class ProjectServiceImpl implements ProjectService {
         );
 
         applyRecruitments(projectPostCommand.recruitments(), project);
-        applyProjectSkill(projectPostCommand.skills(), project);
         projectRepository.save(project);
-        projectMemberService.addCreator(project.getId(), creator.getId(), projectPostCommand.jobPosition());
+        JobPosition creatorPosition = jobPositionRepository
+                .findById(projectPostCommand.creatorJobPositionId())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+        projectMemberService.addCreator(
+                project.getId(),
+                creator.getId(),
+                creatorPosition
+        );
         return ProjectPostResponse.from(project);
     }
 
@@ -148,8 +165,32 @@ public class ProjectServiceImpl implements ProjectService {
         );
 
         List<RecruitmentState> recruitments = request.getRecruitments().stream()
-                .map(recruitment -> RecruitmentState.createRecruitmentState(
-                        recruitment.jobPosition(), recruitment.recruitmentCount()))
+                .map(recruitment -> {
+                    JobField jobField = jobFieldRepository.findById(recruitment.jobFieldId())
+                            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+            JobPosition jobPosition = jobPositionRepository.findById(recruitment.jobPositionId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+
+                    if (!jobPosition.getJobField().getId().equals(jobField.getId())) {
+                        throw new CustomException(ErrorCode.INVALID_REQUEST);
+                    }
+
+                    RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
+                            jobField, jobPosition, recruitment.recruitmentCount());
+
+                    for (Long techStackId : recruitment.techStackIds()) {
+                        TechStack techStack = techStackRepository.findById(techStackId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+
+                        if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
+                            throw new CustomException(ErrorCode.INVALID_REQUEST);
+                        }
+
+                        recruitmentState.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
+                    }
+
+                    return recruitmentState;
+                })
                 .toList();
 
         List<ProjectSkill> skills = request.getSkills().stream()
@@ -410,19 +451,30 @@ public class ProjectServiceImpl implements ProjectService {
 
     private void applyRecruitments(List<ProjectRecruitRequest> recruitments, Project project) {
         for (ProjectRecruitRequest recruitment : recruitments) {
+            JobField jobField = jobFieldRepository.findById(recruitment.jobFieldId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+            JobPosition jobPosition = jobPositionRepository.findById(recruitment.jobPositionId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+
+            if (!jobPosition.getJobField().getId().equals(jobField.getId())) {
+                throw new CustomException(ErrorCode.INVALID_REQUEST);
+            }
+
             RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
-                    recruitment.jobPosition(), recruitment.recruitmentCount());
+                    jobField, jobPosition, recruitment.recruitmentCount());
+
+            for (Long techStackId : recruitment.techStackIds()) {
+                TechStack techStack = techStackRepository.findById(techStackId)
+                        .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+
+                if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
+                    throw new CustomException(ErrorCode.INVALID_REQUEST);
+                }
+
+                recruitmentState.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
+            }
             project.addRecruitment(recruitmentState);
         }
     }
 
-    private void applyProjectSkill(List<String> skillNames, Project project) {
-        for (String skillName : skillNames) {
-            Skill skill = skillRepository.findBySkillName(skillName)
-                    .orElseThrow(() -> new CustomException(ErrorCode.SKILL_NOT_FOUND));
-
-            ProjectSkill projectSkill = ProjectSkill.createProjectSkill(skill);
-            project.addProjectSkill(projectSkill);
-        }
-    }
 }

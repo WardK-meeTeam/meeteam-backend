@@ -1,9 +1,9 @@
 package com.wardk.meeteam_backend.web.project.dto.request;
 
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
+import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -47,24 +47,17 @@ public class ProjectPostRequest {
     @Schema(description = "출시 플랫폼 카테고리", example = "WEB")
     private PlatformCategory platformCategory;
 
-    @NotNull(message = "프로젝트 생성자의 직무 포지션을 입력해주세요")
-    @Schema(description = "생성자의 직무 포지션", example = "WEB_SERVER")
-    private JobPosition jobPosition;
+    @NotNull(message = "프로젝트 생성자의 직무 포지션 ID를 입력해주세요")
+    @Schema(description = "생성자 직무 포지션 ID", example = "1")
+    private Long creatorJobPositionId;
 
     @NotEmpty(message = "최소 한 개 이상의 모집 분야를 입력해주세요.")
     @Valid
     @Schema(
             description = "모집분야 리스트",
-            example = "[{\"jobPosition\": \"WEB_SERVER\", \"recruitmentCount\": 2}, {\"jobPosition\": \"UI_UX_DESIGN\", \"recruitmentCount\": 1}]"
+            example = "[{\"jobFieldId\": 3, \"jobPositionId\": 7, \"recruitmentCount\": 2, \"techStackIds\": [1,2,3]}]"
     )
     private List<ProjectRecruitRequest> recruitments = new ArrayList<>();
-
-    @NotEmpty(message = "최소 한 개 이상의 기술 스택을 입력 해주세요.")
-    @Schema(
-            description = "기술 스택 리스트",
-            example = "[\"Java\", \"Spring\"]"
-    )
-    private List<String> skills = new ArrayList<>();
 
     @NotNull(message = "프로젝트 마감 방식을 선택해주세요. ex) END_DATE(마감 날자 방식), RECRUITMENT_COMPLETED(모집 완료 시)")
     @Schema(description = "프로젝트 마감 방식", example = "END_DATE")
