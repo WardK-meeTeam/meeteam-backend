@@ -49,12 +49,14 @@ public class AuthAPI {
 
         String jsonBody = toJson(params);
 
-        return RestAssured.given().log().all()
+        return RestAssured.given()
+                .log().all()
                 .contentType("multipart/form-data")
                 .multiPart("request", "request.json", jsonBody.getBytes(), "application/json")
                 .when()
                 .post("/api/auth/register")
-                .then().log().all()
+                .then()
+                .log().all()
                 .extract();
     }
 

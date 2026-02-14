@@ -7,13 +7,13 @@ import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
-import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
-import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
@@ -68,22 +68,22 @@ public class AuthService {
     }
 
     @Transactional
-    public OAuth2RegisterResult oauth2Register(OAuth2RegisterRequest registerRequest, MultipartFile file) {
-        OAuthRegisterInfo registerInfo = oAuthCodeRepository.consumeRegisterInfo(registerRequest.getCode())
+    public OAuth2RegisterResult oauth2Register(OAuth2RegisterCommand command, MultipartFile file) {
+        OAuthRegisterInfo registerInfo = oAuthCodeRepository.consumeRegisterInfo(command.code())
             .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OAUTH_CODE));
 
         validateOAuthNotDuplicated(registerInfo.getProvider(), registerInfo.getProviderId());
 
-        List<Skill> skills = fetchSkillsByNames(registerRequest.getSkills());
+        List<Skill> skills = fetchSkillsByNames(command.skills());
         String imageUrl = uploadFile(file);
 
         Member member = Member.createOAuthMember(
-            registerRequest,
+            command,
             registerInfo,
             bCryptPasswordEncoder.encode(UUID.randomUUID().toString()),
             imageUrl
         );
-        member.initializeDetails(registerRequest.getJobPositions(), skills);
+        member.initializeDetails(command.jobPositions(), skills);
 
         if (registerInfo.getOauthAccessToken() != null) {
             member.setOauthAccessToken(registerInfo.getOauthAccessToken());
@@ -92,7 +92,7 @@ public class AuthService {
 
         String accessToken = jwtUtil.createAccessToken(member);
         String refreshToken = jwtUtil.createRefreshToken(member);
-        return new OAuth2RegisterResult(member, accessToken, refreshToken);
+        return OAuth2RegisterResult.of(member, accessToken, refreshToken);
     }
 
     /**

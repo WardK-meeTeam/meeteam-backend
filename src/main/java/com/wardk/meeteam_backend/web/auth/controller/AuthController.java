@@ -3,12 +3,13 @@ package com.wardk.meeteam_backend.web.auth.controller;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.global.auth.cookie.RefreshTokenCookieProvider;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResponse;
-import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.TokenExchangeRequest;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.TokenExchangeResponse;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterDescriptionRequest;
@@ -39,15 +40,18 @@ public class AuthController {
     private final AuthService authService;
     private final RefreshTokenCookieProvider cookieProvider;
 
+
+
     @Operation(summary = "회원가입", description = "회원 정보를 입력받아 계정을 생성합니다.")
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public SuccessResponse<RegisterResponse> response(
+    public SuccessResponse<RegisterResponse> register(
             @RequestPart("request") @Valid RegisterRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
         log.info("회원가입={}", request.getName());
         return SuccessResponse.onSuccess(authService.register(RegisterMemberCommand.from(request), file));
     }
+
 
 
     @Operation(summary = "OAuth2 회원가입", description = "OAuth2 회원가입 전용 페이지에서 일회용 코드와 회원 정보를 입력받아 계정을 생성 후, 로그인 처리를 합니다.")
@@ -58,16 +62,12 @@ public class AuthController {
         @RequestPart(value = "file", required = false) MultipartFile file
     ) {
         log.info("OAuth2 회원가입 요청 - name: {}", request.getName());
-
-        OAuth2RegisterResult result = authService.oauth2Register(request, file);
-
-        cookieProvider.addCookie(response, result.getRefreshToken());
-
-        Member member = result.getMember();
-        return SuccessResponse.onSuccess(
-            new OAuth2RegisterResponse(member.getRealName(), member.getId(), result.getAccessToken())
-        );
+        OAuth2RegisterResult result = authService.oauth2Register(OAuth2RegisterCommand.from(request), file);
+        cookieProvider.addCookie(response, result.refreshToken());
+        return SuccessResponse.onSuccess(OAuth2RegisterResponse.from(result));
     }
+
+
 
     @Operation(summary = "OAuth2 토큰 교환", description = "OAuth2 로그인 후 전달받은 일회용 코드를 사용하여 Access Token과 Refresh Token을 교환합니다.")
     @PostMapping("/token/exchange")
@@ -84,6 +84,9 @@ public class AuthController {
 
         return SuccessResponse.of(SuccessCode._TOKEN_EXCHANGE_SUCCESS, new TokenExchangeResponse(result.getAccessToken()));
     }
+
+
+
 
     @Operation(summary = "자기소개 등록", description = "회원가입 후 자기소개.")
     @PostMapping(value = "/register/{memberId}")

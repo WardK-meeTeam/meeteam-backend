@@ -4,10 +4,10 @@ import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
+import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
-import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -125,22 +125,22 @@ public class Member extends BaseEntity {
     /**
      * OAuth 회원가입용 정적 팩토리 메서드
      */
-    public static Member createOAuthMember(OAuth2RegisterRequest request, OAuthRegisterInfo registerInfo,
+    public static Member createOAuthMember(OAuth2RegisterCommand command, OAuthRegisterInfo registerInfo,
                                             String encodedPassword, String imageUrl) {
         return Member.builder()
                 .email(registerInfo.getEmail())
                 .password(encodedPassword)
-                .realName(request.getName())
-                .birth(request.getBirthDate())
-                .gender(request.getGender())
+                .realName(command.name())
+                .birth(command.birthDate())
+                .gender(command.gender())
                 .storeFileName(imageUrl)
                 .isParticipating(true)
                 .role(UserRole.USER)
                 .provider(registerInfo.getProvider())
                 .providerId(registerInfo.getProviderId())
-                .projectExperienceCount(request.getProjectExperienceCount())
-                .githubUrl(request.getGithubUrl())
-                .blogUrl(request.getBlogUrl())
+                .projectExperienceCount(command.projectExperienceCount())
+                .githubUrl(command.githubUrl())
+                .blogUrl(command.blogUrl())
                 .build();
     }
 
