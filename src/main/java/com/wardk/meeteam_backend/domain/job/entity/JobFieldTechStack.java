@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_job_field_tech_stack_pair",
-                        columnNames = {"job_field__id", "tech_stack__id"}
+                        columnNames = {"job_field_id", "tech_stack__id"}
                 )
         }
 )
