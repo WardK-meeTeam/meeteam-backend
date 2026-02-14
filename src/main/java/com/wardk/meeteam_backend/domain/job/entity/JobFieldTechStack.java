@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.domain.jobcatalog.entity;
+package com.wardk.meeteam_backend.domain.job.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

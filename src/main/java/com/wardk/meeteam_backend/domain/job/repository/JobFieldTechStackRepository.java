@@ -1,6 +1,6 @@
-package com.wardk.meeteam_backend.domain.jobcatalog.repository;
+package com.wardk.meeteam_backend.domain.job.repository;
 
-import com.wardk.meeteam_backend.domain.jobcatalog.entity.JobFieldTechStack;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldTechStack;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface JobFieldTechStackRepository extends JpaRepository<JobFieldTechStack, Long> {

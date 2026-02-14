@@ -1,13 +1,13 @@
-package com.wardk.meeteam_backend.domain.jobcatalog.bootstrap;
+package com.wardk.meeteam_backend.domain.job.bootstrap;
 
-import com.wardk.meeteam_backend.domain.jobcatalog.entity.JobField;
-import com.wardk.meeteam_backend.domain.jobcatalog.entity.JobFieldTechStack;
-import com.wardk.meeteam_backend.domain.jobcatalog.entity.JobPosition;
-import com.wardk.meeteam_backend.domain.jobcatalog.entity.TechStack;
-import com.wardk.meeteam_backend.domain.jobcatalog.repository.JobFieldRepository;
-import com.wardk.meeteam_backend.domain.jobcatalog.repository.JobFieldTechStackRepository;
-import com.wardk.meeteam_backend.domain.jobcatalog.repository.JobPositionRepository;
-import com.wardk.meeteam_backend.domain.jobcatalog.repository.TechStackRepository;
+import com.wardk.meeteam_backend.domain.job.entity.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldTechStack;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.repository.JobFieldRepository;
+import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackRepository;
+import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
+import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
