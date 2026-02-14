@@ -60,28 +60,20 @@ public class JobInfoServiceImpl implements JobInfoService {
                 .sorted(Comparator.comparing(TechStackOptionResponse::id))
                 .toList();
 
-        return JobFieldOptionResponse.builder()
-                .id(field.getId())
-                .code(field.getCode())
-                .name(field.getName())
-                .positions(positions)
-                .techStacks(techStacks)
-                .build();
+        return JobFieldOptionResponse.of(
+                field,
+                positions,
+                techStacks
+        );
     }
 
     private JobPositionOptionResponse toPositionResponse(JobPosition position) {
-        return JobPositionOptionResponse.builder()
-                .id(position.getId())
-                .fieldId(position.getJobField().getId())
-                .code(position.getCode())
-                .name(position.getName())
-                .build();
+        return JobPositionOptionResponse.of(
+                position
+        );
     }
 
     private TechStackOptionResponse toTechStackResponse(TechStack techStack) {
-        return TechStackOptionResponse.builder()
-                .id(techStack.getId())
-                .name(techStack.getName())
-                .build();
+        return TechStackOptionResponse.of(techStack);
     }
 }
