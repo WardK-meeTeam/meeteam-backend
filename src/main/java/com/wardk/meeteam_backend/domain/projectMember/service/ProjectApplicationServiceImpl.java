@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.projectmember.service;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
@@ -39,6 +40,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
+    private final JobPositionRepository jobPositionRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -61,7 +63,8 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        JobPosition jobPosition = request.getJobPosition();
+        JobPosition jobPosition = jobPositionRepository.findById(request.getJobPositionId())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
 
         List<WeekDay> weekDays = Arrays.stream(request.getAvailableDays().split(","))
                 .map(String::trim)

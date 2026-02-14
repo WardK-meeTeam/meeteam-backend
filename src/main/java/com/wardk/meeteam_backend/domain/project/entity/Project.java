@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.domain.project.entity;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
@@ -187,11 +187,11 @@ public class Project extends BaseEntity {
     }
 
     public void updateRecruitments(List<RecruitmentState> recruitments) {
-        Map<JobPosition, RecruitmentState> current = this.recruitments.stream()
-                .collect(Collectors.toMap(RecruitmentState::getJobPosition, r -> r));
+        Map<Long, RecruitmentState> current = this.recruitments.stream()
+                .collect(Collectors.toMap(r -> r.getJobPosition().getId(), r -> r));
 
         for (RecruitmentState newPca : recruitments) {
-            RecruitmentState existing = current.get(newPca.getJobPosition());
+            RecruitmentState existing = current.get(newPca.getJobPosition().getId());
 
             if(existing != null) {
                 int oldCurrentCount = existing.getCurrentCount();
@@ -214,7 +214,7 @@ public class Project extends BaseEntity {
         }
 
         this.recruitments.removeIf(existing -> recruitments.stream()
-                .noneMatch(n -> n.getJobPosition() == existing.getJobPosition())
+                .noneMatch(n -> n.getJobPosition().getId().equals(existing.getJobPosition().getId()))
                 && existing.getCurrentCount() == 0
         );
     }
