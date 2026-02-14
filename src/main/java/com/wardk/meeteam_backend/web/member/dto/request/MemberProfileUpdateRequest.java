@@ -33,7 +33,7 @@ public class MemberProfileUpdateRequest {
 
     @NotEmpty(message = "관심 분야를 하나 이상 선택해주세요.")
     @Schema(description = "관심 직무 포지션 목록",
-            example = "[\"WEB_SERVER\", \"AI\"]")
+            example = "[1, 2]")
     private List<Long> jobPositionIds;
 
     @NotEmpty(message = "기술 스택을 하나 이상 선택해주세요.")
