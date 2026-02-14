@@ -10,4 +10,11 @@ public record JobOptionResponse(
         List<JobPositionOptionResponse> positions,
         List<TechStackOptionResponse> techStacks
 ) {
+    public static JobOptionResponse of(
+            List<JobFieldOptionResponse> fields,
+            List<JobPositionOptionResponse> positions,
+            List<TechStackOptionResponse> techStacks
+    ) {
+        return new JobOptionResponse(fields, positions, techStacks);
+    }
 }

@@ -1,11 +1,9 @@
 package com.wardk.meeteam_backend.domain.job.service;
 
 import com.wardk.meeteam_backend.domain.job.entity.JobField;
-import com.wardk.meeteam_backend.domain.job.entity.JobFieldTechStack;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.job.repository.JobFieldRepository;
-import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackRepository;
 import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.web.job.dto.response.JobFieldOptionResponse;
@@ -17,10 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,61 +26,46 @@ public class JobInfoServiceImpl implements JobInfoService {
     private final JobFieldRepository jobFieldRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
-    private final JobFieldTechStackRepository jobFieldTechStackRepository;
 
     @Override
     public JobOptionResponse getJobOptions() {
-        List<JobField> fields = jobFieldRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
-        List<JobPosition> positions = jobPositionRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
-        List<TechStack> techStacks = techStackRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
-        List<JobFieldTechStack> fieldTechStacks = jobFieldTechStackRepository.findAll();
-
-        Map<Long, List<JobPositionOptionResponse>> positionsByFieldId = positions.stream()
-                .map(this::toPositionResponse)
-                .collect(Collectors.groupingBy(JobPositionOptionResponse::fieldId));
-
-        Map<Long, TechStackOptionResponse> techStackById = techStacks.stream()
-                .map(this::toTechStackResponse)
-                .collect(Collectors.toMap(TechStackOptionResponse::id, Function.identity()));
-
-        Map<Long, List<TechStackOptionResponse>> techStacksByFieldId = fieldTechStacks.stream()
-                .collect(Collectors.groupingBy(
-                        mapping -> mapping.getJobField().getId(),
-                        Collectors.mapping(
-                                mapping -> techStackById.get(mapping.getTechStack().getId()),
-                                Collectors.collectingAndThen(Collectors.toMap(
-                                        TechStackOptionResponse::id,
-                                        Function.identity(),
-                                        (left, right) -> left
-                                ), map -> map.values().stream()
-                                        .sorted((a, b) -> a.id().compareTo(b.id()))
-                                        .toList()
-                                )
-                        )
-                ));
+        List<JobField> fields = jobFieldRepository.findAllWithPositions();
+        List<JobPosition> allPositions = jobPositionRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+        List<TechStack> allTechStacks = techStackRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
 
         List<JobFieldOptionResponse> fieldResponses = fields.stream()
-                .map(field -> JobFieldOptionResponse.builder()
-                        .id(field.getId())
-                        .code(field.getCode())
-                        .name(field.getName())
-                        .positions(positionsByFieldId.getOrDefault(field.getId(), List.of()))
-                        .techStacks(techStacksByFieldId.getOrDefault(field.getId(), List.of()))
-                        .build())
+                .map(this::toFieldResponse)
                 .toList();
 
-        List<JobPositionOptionResponse> positionResponses = positions.stream()
+        List<JobPositionOptionResponse> positionResponses = allPositions.stream()
                 .map(this::toPositionResponse)
                 .toList();
 
-        List<TechStackOptionResponse> techStackResponses = techStacks.stream()
+        List<TechStackOptionResponse> techStackResponses = allTechStacks.stream()
                 .map(this::toTechStackResponse)
                 .toList();
 
-        return JobOptionResponse.builder()
-                .fields(fieldResponses)
-                .positions(positionResponses)
-                .techStacks(techStackResponses)
+        return JobOptionResponse.of(fieldResponses, positionResponses, techStackResponses);
+    }
+
+    private JobFieldOptionResponse toFieldResponse(JobField field) {
+        List<JobPositionOptionResponse> positions = field.getJobPositions().stream()
+                .sorted(Comparator.comparing(JobPosition::getId))
+                .map(this::toPositionResponse)
+                .toList();
+
+        List<TechStackOptionResponse> techStacks = field.getJobFieldTechStacks().stream()
+                .map(jfts -> toTechStackResponse(jfts.getTechStack()))
+                .distinct()
+                .sorted(Comparator.comparing(TechStackOptionResponse::id))
+                .toList();
+
+        return JobFieldOptionResponse.builder()
+                .id(field.getId())
+                .code(field.getCode())
+                .name(field.getName())
+                .positions(positions)
+                .techStacks(techStacks)
                 .build();
     }
 

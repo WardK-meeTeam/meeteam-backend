@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -26,6 +30,14 @@ public class JobField {
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @BatchSize(size = 100)
+    @OneToMany(mappedBy = "jobField", fetch = FetchType.LAZY)
+    private final List<JobPosition> jobPositions = new ArrayList<>();
+
+    @BatchSize(size = 100)
+    @OneToMany(mappedBy = "jobField", fetch = FetchType.LAZY)
+    private final List<JobFieldTechStack> jobFieldTechStacks = new ArrayList<>();
 
     private JobField(String code, String name) {
         this.code = code;
