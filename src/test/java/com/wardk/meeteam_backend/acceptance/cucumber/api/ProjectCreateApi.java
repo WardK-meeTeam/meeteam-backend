@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
@@ -17,20 +18,20 @@ public class ProjectCreateApi {
     private final ObjectMapper objectMapper;
 
     public Response createProject(String accessToken, Map<String, Object> requestBody) {
-        var spec = RestAssured.given()
+        RequestSpecification projectPostRequest = RestAssured.given()
                 .accept("application/json")
                 .multiPart("projectPostRequest", toJson(requestBody), "application/json");
 
         if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+            projectPostRequest.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         }
 
-        return spec
+        return projectPostRequest
                 .when()
-                .post("/api/projects")
+                    .post("/api/projects")
                 .then()
-                .extract()
-                .response();
+                    .extract()
+                    .response();
     }
 
     public Response getProjectDetail(Long projectId) {
