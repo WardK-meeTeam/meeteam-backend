@@ -1,11 +1,12 @@
 package com.wardk.meeteam_backend.domain.member.service;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
+import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.skill.entity.Skill;
-import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.member.dto.request.*;
@@ -26,7 +27,8 @@ import java.util.List;
 public class MemberProfileServiceImpl implements MemberProfileService {
 
     private final MemberRepository memberRepository;
-    private final SkillRepository skillRepository;
+    private final JobPositionRepository jobPositionRepository;
+    private final TechStackRepository techStackRepository;
     private final S3FileService s3FileService;
 
     /**
@@ -96,10 +98,10 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         member.setIntroduction(request.getIntroduction());
 
         // 기존 관심 분야 삭제 후 새로 추가
-        updateMemberJobPositions(member, request.getJobPositions());
+        updateMemberJobPositions(member, request.getJobPositionIds());
 
         // 기존 기술 스택 삭제 후 새로 추가
-        updateMemberSkills(member, request.getSkills());
+        updateMemberTechStacks(member, request.getTechStackIds());
 
         // 변경 사항 저장 (더티 체킹으로 자동 업데이트)
         Member savedMember = memberRepository.save(member);
@@ -130,16 +132,10 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     @Override
     @Transactional(readOnly = true)
     public Page<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
-
-        log.info("QueryDSL을 사용한 회원 검색 - 대분류: {}, 기술스택: {}, 정렬: {}",
-                searchRequest.getJobFields(),
-                searchRequest.getSkills(),
-                pageable.getSort());
-
         // QueryDSL로 조회
         Page<Member> memberPage = memberRepository.searchMembers(
-                searchRequest.getJobFields(),
-                searchRequest.getSkills(),
+                searchRequest.getJobFieldIds(),
+                searchRequest.getSkillIds(),
                 pageable
         );
 
@@ -152,11 +148,16 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     /**
      * 회원 관심 분야 업데이트
      */
-    private void updateMemberJobPositions(Member member, List<JobPosition> jobPositions) {
+    private void updateMemberJobPositions(Member member, List<Long> jobPositionIds) {
         member.getJobPositions().clear();
 
-        if (jobPositions == null || jobPositions.isEmpty()) {
+        if (jobPositionIds == null || jobPositionIds.isEmpty()) {
             return;
+        }
+
+        List<JobPosition> jobPositions = jobPositionRepository.findAllById(jobPositionIds);
+        if (jobPositions.size() != jobPositionIds.size()) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
 
         for (JobPosition jobPosition : jobPositions) {
@@ -167,17 +168,16 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     /**
      * 회원 기술 스택 업데이트
      */
-    private void updateMemberSkills(Member member, List<String> skillNames) {
-        member.getMemberSkills().clear();
+    private void updateMemberTechStacks(Member member, List<Long> techStackIds) {
+        member.getMemberTechStacks().clear();
 
-        List<Skill> skills = skillRepository.findBySkillNameIn(skillNames);
-
-        if (skills.size() != skillNames.size()) {
-            throw new CustomException(ErrorCode.SKILL_NOT_FOUND);
+        List<TechStack> techStacks = techStackRepository.findAllById(techStackIds);
+        if (techStacks.size() != techStackIds.size()) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
 
-        for (Skill skill : skills) {
-            member.addMemberSkill(skill);
+        for (TechStack techStack : techStacks) {
+            member.addMemberTechStack(techStack);
         }
     }
 

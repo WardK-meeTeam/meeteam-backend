@@ -1,6 +1,5 @@
 package com.wardk.meeteam_backend.web.projectmember.dto.request;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,8 +16,8 @@ public class ApplicationRequest {
     private Long projectId;
 
     @NotNull
-    @Schema(description = "지원 직무 포지션", example = "WEB_SERVER")
-    private JobPosition jobPosition;
+    @Schema(description = "지원 직무 포지션 ID", example = "1")
+    private Long jobPositionId;
 
     @NotBlank
     @Schema(description = "지원 동기", example = "이 프로젝트에 참여하고 싶습니다.")

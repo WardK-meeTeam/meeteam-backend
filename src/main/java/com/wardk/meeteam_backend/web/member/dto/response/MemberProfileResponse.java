@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.web.member.dto.response;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -65,8 +65,8 @@ public class MemberProfileResponse {
                     );
                 })
                 .toList();
-        this.skills = member.getMemberSkills().stream()
-                .map(memberSkill -> memberSkill.getSkill().getSkillName())
+        this.skills = member.getMemberTechStacks().stream()
+                .map(memberTechStack -> memberTechStack.getTechStack().getName())
                 .toList();
         this.isParticipating = member.getIsParticipating();
         this.projectCount = member.getProjectMembers().size();

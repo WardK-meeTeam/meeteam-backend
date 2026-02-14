@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.member.entity;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -22,8 +22,8 @@ public class MemberJobPosition extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "job_position", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_position_id")
     private JobPosition jobPosition;
 
     public MemberJobPosition(Member member, JobPosition jobPosition) {

@@ -1,6 +1,5 @@
 package com.wardk.meeteam_backend.global.auth.service.dto;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.web.auth.dto.oauth.OAuth2RegisterRequest;
 
@@ -16,7 +15,7 @@ public record OAuth2RegisterCommand(
         String name,
         LocalDate birthDate,
         Gender gender,
-        List<JobPosition> jobPositions,
+        List<Long> jobPositionIds,
         List<String> skills,
         Integer projectExperienceCount,
         String githubUrl,
@@ -28,7 +27,7 @@ public record OAuth2RegisterCommand(
                 request.getName(),
                 request.getBirthDate(),
                 request.getGender(),
-                request.getJobPositions(),
+                request.getJobPositionIds(),
                 request.getSkills(),
                 request.getProjectExperienceCount(),
                 request.getGithubUrl(),

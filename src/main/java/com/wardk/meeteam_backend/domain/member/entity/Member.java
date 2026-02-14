@@ -1,9 +1,8 @@
 package com.wardk.meeteam_backend.domain.member.entity;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.skill.entity.MemberSkill;
-import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
@@ -54,7 +53,7 @@ public class Member extends BaseEntity {
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 500)
-    private List<MemberSkill> memberSkills = new ArrayList<>();
+    private List<MemberTechStack> memberTechStacks = new ArrayList<>();
 
     @OneToMany(mappedBy = "member")
     @BatchSize(size = 500)
@@ -203,16 +202,16 @@ public class Member extends BaseEntity {
         jobPositions.add(new MemberJobPosition(this, jobPosition));
     }
 
-    public void addMemberSkill(Skill skill) {
-        memberSkills.add(new MemberSkill(this, skill));
+    public void addMemberTechStack(TechStack techStack) {
+        memberTechStacks.add(new MemberTechStack(this, techStack));
     }
 
     /**
      * 회원가입 시 직무와 스킬을 일괄 초기화
      */
-    public void initializeDetails(List<JobPosition> jobPositions, List<Skill> skills) {
+    public void initializeDetails(List<JobPosition> jobPositions, List<TechStack> techStacks) {
         jobPositions.forEach(jobPosition -> addJobPosition(jobPosition));
-        skills.forEach(skill -> addMemberSkill(skill));
+        techStacks.forEach(this::addMemberTechStack);
     }
 
     public void setIntroduction(String introduction) {
