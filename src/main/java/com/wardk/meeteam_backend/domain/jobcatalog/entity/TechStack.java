@@ -1,0 +1,34 @@
+package com.wardk.meeteam_backend.domain.jobcatalog.entity;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Getter
+@Table(
+        name = "tech_stack_catalog",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_tech_stack_catalog_name", columnNames = "name")
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class TechStack {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "tech_stack_catalog_id")
+    private Long id;
+
+    @Column(name = "name", nullable = false, length = 100)
+    private String name;
+
+    private TechStack(String name) {
+        this.name = name;
+    }
+
+    public static TechStack of(String name) {
+        return new TechStack(name);
+    }
+}
