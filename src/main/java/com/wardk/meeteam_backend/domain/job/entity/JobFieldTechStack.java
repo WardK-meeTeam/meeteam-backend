@@ -8,11 +8,11 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @Table(
-        name = "job_field_tech_stack_catalog",
+        name = "job_field_tech_stack",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_job_field_tech_stack_catalog_pair",
-                        columnNames = {"job_field_catalog_id", "tech_stack_catalog_id"}
+                        name = "uk_job_field_tech_stack_pair",
+                        columnNames = {"job_field__id", "tech_stack__id"}
                 )
         }
 )
@@ -21,15 +21,15 @@ public class JobFieldTechStack {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "job_field_tech_stack_catalog_id")
+    @Column(name = "job_field_tech_stack_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "job_field_catalog_id", nullable = false)
+    @JoinColumn(name = "job_field_id", nullable = false)
     private JobField jobField;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tech_stack_catalog_id", nullable = false)
+    @JoinColumn(name = "tech_stack_id", nullable = false)
     private TechStack techStack;
 
     private JobFieldTechStack(JobField jobField, TechStack techStack) {

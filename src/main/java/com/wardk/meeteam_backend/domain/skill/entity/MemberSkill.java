@@ -31,5 +31,4 @@ public class MemberSkill {
         this.member = member;
         this.skill = skill;
     }
-
 }

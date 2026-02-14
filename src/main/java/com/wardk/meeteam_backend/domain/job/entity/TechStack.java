@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @Table(
-        name = "tech_stack_catalog",
+        name = "tech_stack",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_tech_stack_catalog_name", columnNames = "name")
+                @UniqueConstraint(name = "uk_tech_stack_name", columnNames = "name")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,7 +18,7 @@ public class TechStack {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "tech_stack_catalog_id")
+    @Column(name = "tech_stack_id")
     private Long id;
 
     @Column(name = "name", nullable = false, length = 100)
