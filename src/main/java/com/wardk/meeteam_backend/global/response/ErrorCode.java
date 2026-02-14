@@ -52,6 +52,12 @@ public enum ErrorCode {
     PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "이미 종료된 프로젝트입니다."),
     PROJECT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "아직 종료되지 않은 프로젝트입니다."),
 
+    // JOB
+    JOB_FIELD_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 직무를 찾을 수 없습니다."),
+    JOB_POSITION_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 포지션을 찾을 수 없습니다."),
+    IS_NOT_ALLOWED_POSITION(HttpStatus.BAD_REQUEST, "JOB400", "해당 포지션의 직무에 맞지 않습니다."),
+    TECH_STACK_IS_NOT_MATCHING(HttpStatus.BAD_REQUEST, "JOB400", "해당 기술 스택은 직무의 기술 스택이 아닙니다."),
+
     // PROJECT MEMBER
     PROJECT_MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "이미 프로젝트에 참여 중입니다."),
     PROJECT_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_MEMBER404", "프로젝트 멤버가 존재하지 않습니다."),

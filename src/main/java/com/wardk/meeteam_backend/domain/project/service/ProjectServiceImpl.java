@@ -451,30 +451,43 @@ public class ProjectServiceImpl implements ProjectService {
 
     private void applyRecruitments(List<ProjectRecruitRequest> recruitments, Project project) {
         for (ProjectRecruitRequest recruitment : recruitments) {
-            JobField jobField = jobFieldRepository.findById(recruitment.jobFieldId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
-            JobPosition jobPosition = jobPositionRepository.findById(recruitment.jobPositionId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
-
-            if (!jobPosition.getJobField().getId().equals(jobField.getId())) {
-                throw new CustomException(ErrorCode.INVALID_REQUEST);
-            }
-
+            JobField jobField = getJobField(recruitment);
+            JobPosition jobPosition = getJobPosition(recruitment);
+            validatePositionAndField(jobPosition, jobField);
             RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
                     jobField, jobPosition, recruitment.recruitmentCount());
 
-            for (Long techStackId : recruitment.techStackIds()) {
-                TechStack techStack = techStackRepository.findById(techStackId)
-                        .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
-
-                if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
-                    throw new CustomException(ErrorCode.INVALID_REQUEST);
-                }
-
+            List<TechStack> techStacks = techStackRepository.findByIdIn(recruitment.techStackIds());
+            for (TechStack techStack : techStacks) {
+                validateFieldAndTechStack(techStack, jobField);
                 recruitmentState.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
             }
             project.addRecruitment(recruitmentState);
         }
+    }
+
+    private void validateFieldAndTechStack(TechStack techStack, JobField jobField) {
+        if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
+            throw new CustomException(ErrorCode.TECH_STACK_IS_NOT_MATCHING);
+        }
+    }
+
+    private static void validatePositionAndField(JobPosition jobPosition, JobField jobField) {
+        if (!jobPosition.getJobField().getId().equals(jobField.getId())) {
+            throw new CustomException(ErrorCode.IS_NOT_ALLOWED_POSITION);
+        }
+    }
+
+    private JobPosition getJobPosition(ProjectRecruitRequest recruitment) {
+        JobPosition jobPosition = jobPositionRepository.findById(recruitment.jobPositionId())
+                .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
+        return jobPosition;
+    }
+
+    private JobField getJobField(ProjectRecruitRequest recruitment) {
+        JobField jobField = jobFieldRepository.findById(recruitment.jobFieldId())
+                .orElseThrow(() -> new CustomException(ErrorCode.JOB_FIELD_NOT_FOUND));
+        return jobField;
     }
 
 }
