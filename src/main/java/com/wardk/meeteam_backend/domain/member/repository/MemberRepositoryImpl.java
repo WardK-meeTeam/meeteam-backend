@@ -7,8 +7,6 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.wardk.meeteam_backend.domain.job.JobField;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.repository.Querydsl4RepositorySupport;
 import lombok.extern.slf4j.Slf4j;
@@ -19,13 +17,11 @@ import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.List;
 
-import static java.util.Arrays.stream;
-import static com.wardk.meeteam_backend.domain.job.JobPosition.values;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.member;
 import static com.wardk.meeteam_backend.domain.member.entity.QMemberJobPosition.memberJobPosition;
+import static com.wardk.meeteam_backend.domain.member.entity.QMemberTechStack.memberTechStack;
 import static com.wardk.meeteam_backend.domain.projectmember.entity.QProjectMember.projectMember;
-import static com.wardk.meeteam_backend.domain.skill.entity.QMemberSkill.memberSkill;
-import static com.wardk.meeteam_backend.domain.skill.entity.QSkill.skill;
+import static com.wardk.meeteam_backend.domain.job.entity.QTechStack.techStack;
 
 @Slf4j
 public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements MemberRepositoryCustom {
@@ -38,7 +34,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     }
 
     @Override
-    public Page<Member> searchMembers(List<JobField> jobFields, List<String> skills, Pageable pageable) {
+    public Page<Member> searchMembers(List<Long> jobFieldIds, List<Long> skillIds, Pageable pageable) {
 
         // projectCount 정렬이 있는지 확인
         boolean hasProjectCountSort = pageable.getSort().stream()
@@ -46,7 +42,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
 
         if (hasProjectCountSort) {
             // projectCount 정렬이 있으면 수동 처리
-            return searchWithProjectCountSort(jobFields, skills, pageable);
+            return searchWithProjectCountSort(jobFieldIds, skillIds, pageable);
         }
 
         // 일반 정렬은 applyPagination이 자동 처리
@@ -54,8 +50,8 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                 qf.select(member)
                         .from(member)
                         .where(
-                                jobFieldExists(jobFields),
-                                skillExists(skills)
+                                jobFieldExists(jobFieldIds),
+                                skillExists(skillIds)
                         )
         );
     }
@@ -63,16 +59,16 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     /**
      * projectCount 정렬 처리 (수동 페이징 및 정렬)
      */
-    private Page<Member> searchWithProjectCountSort(List<JobField> jobFields,
-                                                    List<String> skills,
+    private Page<Member> searchWithProjectCountSort(List<Long> jobFieldIds,
+                                                    List<Long> skillIds,
                                                     Pageable pageable) {
 
         JPAQuery<Member> query = queryFactory
                 .select(member)
                 .from(member)
                 .where(
-                        jobFieldExists(jobFields),
-                        skillExists(skills)
+                        jobFieldExists(jobFieldIds),
+                        skillExists(skillIds)
                 );
 
         // 정렬 적용
@@ -104,8 +100,8 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                 .select(member.count())
                 .from(member)
                 .where(
-                        jobFieldExists(jobFields),
-                        skillExists(skills)
+                        jobFieldExists(jobFieldIds),
+                        skillExists(skillIds)
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -115,26 +111,18 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
      * 대분류(JobField) 조건 (서브쿼리 EXISTS)
      * OR 조건: 여러 대분류 중 하나라도 가지고 있으면 매칭
      */
-    private BooleanExpression jobFieldExists(List<JobField> jobFields) {
-        if (jobFields == null || jobFields.isEmpty()) {
+    private BooleanExpression jobFieldExists(List<Long> jobFieldIds) {
+        if (jobFieldIds == null || jobFieldIds.isEmpty()) {
             return null;
-        }
-
-        List<JobPosition> validPositions = stream(values())
-                .filter(p -> jobFields.contains(p.getJobField()))
-                .toList();
-
-        if (validPositions.isEmpty()) {
-             // If no positions match the fields (which is unlikely if fields are valid), return false
-             return com.querydsl.core.types.dsl.Expressions.asBoolean(false).isTrue();
         }
 
         return JPAExpressions
                 .selectOne()
                 .from(memberJobPosition)
+                .join(memberJobPosition.jobPosition)
                 .where(
                         memberJobPosition.member.eq(member),
-                        memberJobPosition.jobPosition.in(validPositions)
+                        memberJobPosition.jobPosition.jobField.id.in(jobFieldIds)
                 )
                 .exists();
     }
@@ -143,22 +131,22 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
      * 기술스택 조건 (AND 조건)
      * 요청한 모든 스킬을 가지고 있어야 매칭
      */
-    private BooleanExpression skillExists(List<String> skills) {
-        if (skills == null || skills.isEmpty()) {
+    private BooleanExpression skillExists(List<Long> skillIds) {
+        if (skillIds == null || skillIds.isEmpty()) {
             return null;
         }
 
         // 각 스킬마다 EXISTS 조건을 만들어서 AND로 연결
         BooleanExpression result = null;
 
-        for (String skillName : skills) {
+        for (Long skillId : skillIds) {
             BooleanExpression skillExpr = JPAExpressions
                     .selectOne()
-                    .from(memberSkill)
-                    .join(memberSkill.skill, skill)
+                    .from(memberTechStack)
+                    .join(memberTechStack.techStack, techStack)
                     .where(
-                            memberSkill.member.eq(member),
-                            skill.skillName.eq(skillName)
+                            memberTechStack.member.eq(member),
+                            techStack.id.eq(skillId)
                     )
                     .exists();
 

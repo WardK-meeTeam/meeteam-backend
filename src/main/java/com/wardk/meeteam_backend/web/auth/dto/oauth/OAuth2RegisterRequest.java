@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.web.auth.dto.oauth;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -38,7 +38,7 @@ public class OAuth2RegisterRequest {
 
   @Schema(description = "관심분야 (직무 포지션 목록)", example = "[\"WEB_SERVER\", \"WEB_FRONTEND\"]", requiredMode = Schema.RequiredMode.REQUIRED)
   @NotEmpty(message = "관심분야를 최소 1개 이상 선택해주세요")
-  private List<JobPosition> jobPositions;
+  private List<Long> jobPositionIds;
 
   @Schema(description = "프로젝트 경험 횟수", example = "3", minimum = "0", requiredMode = Schema.RequiredMode.REQUIRED)
   @NotNull(message = "프로젝트 경험 횟수를 입력해주세요")

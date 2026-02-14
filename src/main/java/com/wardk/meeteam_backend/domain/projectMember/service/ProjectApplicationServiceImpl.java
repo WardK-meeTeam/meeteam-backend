@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.projectmember.service;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.Notification;
@@ -39,18 +40,17 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository applicationRepository;
     private final ProjectMemberService projectMemberService;
+    private final JobPositionRepository jobPositionRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
-
 
     @Counted("project.apply")
     @Override
     public ApplicationResponse apply(ApplicationRequest request, String applicantEmail) {
-
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        project.isCompleted();
+        validateIsCommpleted(project);
 
         Member member = memberRepository.findOptionByEmail(applicantEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
@@ -63,7 +63,8 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        JobPosition jobPosition = request.getJobPosition();
+        JobPosition jobPosition = jobPositionRepository.findById(request.getJobPositionId())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
 
         List<WeekDay> weekDays = Arrays.stream(request.getAvailableDays().split(","))
                 .map(String::trim)
@@ -121,6 +122,12 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         return ApplicationResponse.responseDto(memberApplication);
     }
 
+    private static void validateIsCommpleted(Project project) {
+        if (project.isCompleted()) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+    }
+
     private Notification createNotification(Member receiver, Project project, Long actorId, NotificationType type, Long applicationId) {
         return Notification.builder()
                 .receiver(receiver)
@@ -171,7 +178,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         ProjectApplication application = applicationRepository.findById(request.getApplicationId())
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
-        if (application.getProject().getStatus() == ProjectStatus.COMPLETED) {
+        if (application.getProject().isCompleted()) {
             throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
 

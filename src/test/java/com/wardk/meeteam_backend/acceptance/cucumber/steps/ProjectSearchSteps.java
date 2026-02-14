@@ -11,9 +11,11 @@ import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
+import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
@@ -574,16 +576,20 @@ public class ProjectSearchSteps {
             LocalDate endDate
     ) {
         Member leader = createOrFindMember(leaderName);
-        Project project = Project.createProject(
-                leader,
+        ProjectPostCommand command = new ProjectPostCommand(
                 projectName,
-                description,
-                toProjectCategoryEnum(category),
-                toPlatformCategoryEnum(platform),
                 null,
-                false,
+                null,
+                toProjectCategoryEnum(category),
+                description,
+                toPlatformCategoryEnum(platform),
+                JobPosition.WEB_SERVER,
+                List.of(),
+                List.of(),
+                RecruitmentDeadlineType.END_DATE,
                 endDate
         );
+        Project project = Project.createProject(command, leader, null);
 
         RecruitmentState recruitment = RecruitmentState.createRecruitmentState(JobPosition.WEB_FRONTEND, 2);
         project.addRecruitment(recruitment);

@@ -46,10 +46,17 @@ public enum ErrorCode {
     // PROJECT
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT404", "프로젝트를 찾을 수 없습니다."),
     INVALID_PROJECT_DATE(HttpStatus.BAD_REQUEST, "PROJECT400", "종료일은 시작일 이후여야 합니다."),
+    INVALID_RECRUITMENT_DEADLINE_POLICY(HttpStatus.BAD_REQUEST, "PROJECT400", "마감 방식과 마감일 설정이 올바르지 않습니다."),
     RECRUITMENT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "완료된 모집은 인원을 줄일 수 없습니다."),
     INVALID_RECRUITMENT_COUNT(HttpStatus.BAD_REQUEST, "PROJECT400", "잘못된 모집 인원 입력입니다."),
     PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "이미 종료된 프로젝트입니다."),
     PROJECT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "아직 종료되지 않은 프로젝트입니다."),
+
+    // JOB
+    JOB_FIELD_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 직무를 찾을 수 없습니다."),
+    JOB_POSITION_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 포지션을 찾을 수 없습니다."),
+    IS_NOT_ALLOWED_POSITION(HttpStatus.BAD_REQUEST, "JOB400", "해당 포지션의 직무에 맞지 않습니다."),
+    TECH_STACK_IS_NOT_MATCHING(HttpStatus.BAD_REQUEST, "JOB400", "해당 기술 스택은 직무의 기술 스택이 아닙니다."),
 
     // PROJECT MEMBER
     PROJECT_MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "이미 프로젝트에 참여 중입니다."),

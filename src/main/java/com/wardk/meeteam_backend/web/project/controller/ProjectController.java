@@ -1,12 +1,12 @@
 package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
+import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
 import com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto;
-import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
 import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -27,18 +27,19 @@ public class ProjectController {
 
     private final ProjectService projectService;
 
-    @Operation(summary = "프로젝트 등록")
+    @Operation(summary = "프로젝트 등록",
+            description = "프로젝트 마감 방식 ex) END_DATE(마감 날짜 방식), RECRUITMENT_COMPLETED(모집 완료 시). 모집 정보는 jobFieldId/jobPositionId/techStackIds 기반으로 전달합니다.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<ProjectPostResponse> projectPost(
             @RequestPart @Validated ProjectPostRequest projectPostRequest,
             @RequestPart(name = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        log.info("Project Post Request: {}", projectPostRequest);
-        ProjectPostResponse projectPostResponse = projectService.postProject(projectPostRequest, file, userDetails.getUsername());
-
+        ProjectPostResponse projectPostResponse = projectService.postProject(
+                ProjectPostCommand.from(projectPostRequest),
+                file,
+                userDetails.getUsername());
         return SuccessResponse.onSuccess(projectPostResponse);
-
     }
 
     @Operation(summary = "프로젝트 목록 조회")
@@ -121,11 +122,12 @@ public class ProjectController {
     }
 
     @Operation(summary = "프로젝트 종료")
-    @PostMapping("/{projectId}/complete")
-    public SuccessResponse<ProjectEndResponse> endProject(@PathVariable Long projectId,
-                                                          @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    @PostMapping("/{projectId}/end")
+    public SuccessResponse<ProjectEndResponse> endProject(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        ProjectEndResponse response = projectService.endProject(projectId, userDetails.getUsername());
-        return SuccessResponse.onSuccess(response);
+        ProjectEndResponse projectEndResponse = projectService.endProject(projectId, userDetails.getUsername());
+        return SuccessResponse.onSuccess(projectEndResponse);
     }
 }

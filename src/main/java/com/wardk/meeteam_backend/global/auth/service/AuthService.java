@@ -1,10 +1,11 @@
 package com.wardk.meeteam_backend.global.auth.service;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
+import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.skill.entity.Skill;
-import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
@@ -41,7 +42,8 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final S3FileService s3FileService;
-    private final SkillRepository skillRepository;
+    private final JobPositionRepository jobPositionRepository;
+    private final TechStackRepository techStackRepository;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final OAuthTokenRevokeService oAuthTokenRevokeService;
@@ -53,7 +55,8 @@ public class AuthService {
         validateEmailNotDuplicated(command.email());
         validatePassword(command.password());
 
-        List<Skill> skills = fetchSkillsByNames(command.skills());
+        List<JobPosition> jobPositions = fetchJobPositionsByIds(command.jobPositionIds());
+        List<TechStack> techStacks = fetchSkillsByTechStackIds(command.techStackIds());
         String imageUrl = uploadFile(file);
 
         Member member = Member.createMember(
@@ -61,7 +64,7 @@ public class AuthService {
                 bCryptPasswordEncoder.encode(command.password()),
                 imageUrl
         );
-        member.initializeDetails(command.jobPositions(), skills);
+        member.initializeDetails(jobPositions, techStacks);
         memberRepository.save(member);
 
         return new RegisterResponse(member.getRealName(), member.getId());
@@ -74,7 +77,8 @@ public class AuthService {
 
         validateOAuthNotDuplicated(registerInfo.getProvider(), registerInfo.getProviderId());
 
-        List<Skill> skills = fetchSkillsByNames(command.skills());
+        List<JobPosition> jobPositions = fetchJobPositionsByIds(command.jobPositionIds());
+        List<TechStack> techStacks = fetchTechStacksByNames(command.skills());
         String imageUrl = uploadFile(file);
 
         Member member = Member.createOAuthMember(
@@ -83,7 +87,7 @@ public class AuthService {
             bCryptPasswordEncoder.encode(UUID.randomUUID().toString()),
             imageUrl
         );
-        member.initializeDetails(command.jobPositions(), skills);
+        member.initializeDetails(jobPositions, techStacks);
 
         if (registerInfo.getOauthAccessToken() != null) {
             member.setOauthAccessToken(registerInfo.getOauthAccessToken());
@@ -138,12 +142,31 @@ public class AuthService {
         }
     }
 
-    private List<Skill> fetchSkillsByNames(List<String> skillNames) {
-        List<Skill> skills = skillRepository.findBySkillNameIn(skillNames);
-        if (skills.size() != skillNames.size()) {
-            throw new CustomException(ErrorCode.SKILL_NOT_FOUND);
+    private List<TechStack> fetchSkillsByTechStackIds(List<Long> techStackIds) {
+        List<TechStack> techStacks = techStackRepository.findAllById(techStackIds);
+        if (techStacks.size() != techStackIds.size()) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
-        return skills;
+        return techStacks;
+    }
+
+    private List<TechStack> fetchTechStacksByNames(List<String> techStackNames) {
+        if (techStackNames == null) {
+            return List.of();
+        }
+
+        return techStackNames.stream()
+                .map(name -> techStackRepository.findByName(name)
+                        .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST)))
+                .toList();
+    }
+
+    private List<JobPosition> fetchJobPositionsByIds(List<Long> jobPositionIds) {
+        List<JobPosition> jobPositions = jobPositionRepository.findAllById(jobPositionIds);
+        if (jobPositions.size() != jobPositionIds.size()) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST);
+        }
+        return jobPositions;
     }
 
     @Transactional

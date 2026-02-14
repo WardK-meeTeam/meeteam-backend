@@ -1,8 +1,7 @@
 package com.wardk.meeteam_backend.web.member.dto.response;
 
-
-import com.wardk.meeteam_backend.domain.job.JobField;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

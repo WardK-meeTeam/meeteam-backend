@@ -13,9 +13,7 @@ import java.time.LocalDateTime;
 public class ProjectPostResponse {
 
     private Long id;
-
     private String title;
-
     private LocalDateTime createdAt;
 
     public ProjectPostResponse(Project project) {
@@ -24,10 +22,7 @@ public class ProjectPostResponse {
         this.createdAt = project.getCreatedAt();
     }
 
-
-    // or static factory
     public static ProjectPostResponse from(Project project) {
         return new ProjectPostResponse(project);
     }
-
 }

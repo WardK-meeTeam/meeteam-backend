@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.domain.applicant.entity;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -8,6 +9,9 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -20,8 +24,12 @@ public class RecruitmentState {
     @Column(name = "recruitment_state_id")
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "job_position", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "job_field_catalog_id", nullable = false)
+    private JobField jobField;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "job_position_id", nullable = false)
     private JobPosition jobPosition;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -34,6 +42,9 @@ public class RecruitmentState {
     @Version
     @Column(name = "current_count")
     private Integer currentCount;
+
+    @OneToMany(mappedBy = "recruitmentState", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RecruitmentTechStack> recruitmentTechStacks = new ArrayList<>();
 
     public void assignProject(Project project) {
         this.project = project;
@@ -63,15 +74,22 @@ public class RecruitmentState {
         this.recruitmentCount = newRecruitmentCount;
     }
 
+    public void addRecruitmentTechStack(RecruitmentTechStack recruitmentTechStack) {
+        this.recruitmentTechStacks.add(recruitmentTechStack);
+        recruitmentTechStack.assignRecruitmentState(this);
+    }
+
     @Builder
-    public RecruitmentState(JobPosition jobPosition, Integer recruitmentCount) {
+    public RecruitmentState(JobField jobField, JobPosition jobPosition, Integer recruitmentCount) {
+        this.jobField = jobField;
         this.jobPosition = jobPosition;
         this.recruitmentCount = recruitmentCount;
         this.currentCount = 0;
     }
 
-    public static RecruitmentState createRecruitmentState(JobPosition jobPosition, Integer recruitmentCount) {
+    public static RecruitmentState createRecruitmentState(JobField jobField, JobPosition jobPosition, Integer recruitmentCount) {
         return RecruitmentState.builder()
+                .jobField(jobField)
                 .jobPosition(jobPosition)
                 .recruitmentCount(recruitmentCount)
                 .build();

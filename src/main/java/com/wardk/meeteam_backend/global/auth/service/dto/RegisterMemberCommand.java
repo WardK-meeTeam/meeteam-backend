@@ -1,9 +1,7 @@
 package com.wardk.meeteam_backend.global.auth.service.dto;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.web.auth.dto.register.RegisterRequest;
-import com.wardk.meeteam_backend.web.auth.dto.register.JobPositionRequest;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,8 +12,8 @@ public record RegisterMemberCommand(
         String name,
         LocalDate birthDate,
         Gender gender,
-        List<JobPosition> jobPositions,
-        List<String> skills,
+        List<Long> jobPositionIds,
+        List<Long> techStackIds,
         Integer projectExperienceCount,
         String githubUrl,
         String blogUrl
@@ -27,8 +25,8 @@ public record RegisterMemberCommand(
                 request.getName(),
                 request.getBirthDate(),
                 request.getGender(),
-                request.getJobPositions(),
-                request.getSkills(),
+                request.getJobPositionIds(),
+                request.getTechStackIds(),
                 request.getProjectExperienceCount(),
                 request.getGithubUrl(),
                 request.getBlogUrl()

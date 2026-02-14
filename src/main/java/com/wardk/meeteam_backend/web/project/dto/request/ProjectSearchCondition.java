@@ -1,11 +1,10 @@
 package com.wardk.meeteam_backend.web.project.dto.request;
 
-
-import com.wardk.meeteam_backend.domain.job.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
-import com.wardk.meeteam_backend.domain.project.entity.TechStack;
 import lombok.Data;
 
 @Data

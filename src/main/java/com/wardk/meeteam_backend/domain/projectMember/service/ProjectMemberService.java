@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.projectmember.service;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
 import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 

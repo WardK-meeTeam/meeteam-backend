@@ -54,7 +54,7 @@ public class ProjectConditionRequest {
         this.projectName = project.getName();
         this.creatorName = project.getCreator().getRealName();
         this.startDate = LocalDate.from(project.getCreatedAt());
-        this.endDate = LocalDate.from(project.getEndDate());
+        this.endDate = project.getEndDate();
         this.projectImageUrl = project.getImageUrl();
         this.isLiked = isLiked;
         this.likeCount = project.getLikeCount();

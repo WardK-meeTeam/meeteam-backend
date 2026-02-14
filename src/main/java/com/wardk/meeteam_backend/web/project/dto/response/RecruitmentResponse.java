@@ -1,8 +1,8 @@
 package com.wardk.meeteam_backend.web.project.dto.response;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
-import com.wardk.meeteam_backend.domain.job.JobField;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,7 +19,7 @@ public class RecruitmentResponse {
     public static RecruitmentResponse responseDto(RecruitmentState recruitment) {
         JobPosition position = recruitment.getJobPosition();
         return RecruitmentResponse.builder()
-                .jobField(position.getJobField())
+                .jobField(recruitment.getJobField())
                 .jobPosition(position)
                 .recruitmentCount(recruitment.getRecruitmentCount())
                 .currentCount(recruitment.getCurrentCount())

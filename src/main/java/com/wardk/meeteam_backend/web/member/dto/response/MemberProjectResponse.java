@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.web.member.dto.response;
 
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
+import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -18,6 +19,5 @@ public class MemberProjectResponse {
 
     private String imageUrl;
 
-    private ProjectStatus status;
-
+    private Recruitment status;
 }
