@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.global.config;
 
+import com.wardk.meeteam_backend.global.auth.cookie.RefreshTokenCookieProvider;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
 import com.wardk.meeteam_backend.global.auth.service.CustomOidcUserService;
 import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
@@ -48,6 +49,7 @@ public class SecurityConfig {
     private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
     private final CorsProperties corsProperties; // CORS 설정 주입
     private final TokenBlacklistRepository tokenBlacklistRepository; // 토큰 블랙리스트 저장소
+    private final RefreshTokenCookieProvider cookieProvider; // 쿠키 설정 공통화
 
     /**
      * Security Filter Chain 설정
@@ -56,7 +58,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         // 로그인 경로를 설정하기 위해 LoginFilter 생성
-        LoginFilter loginFilter = new LoginFilter(jwtUtil, authenticationManager(authenticationConfiguration));
+        LoginFilter loginFilter = new LoginFilter(jwtUtil, authenticationManager(authenticationConfiguration), cookieProvider);
         loginFilter.setFilterProcessesUrl("/api/auth/login"); // TODO: 로그인 경로 커스텀 "/api/auth/login"
         //->경로를 커스텀 할 수 있다.
         return http

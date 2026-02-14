@@ -155,6 +155,10 @@ app:
                 user-name-attribute: "name"
                 email-attribute: "email"
                 id-attribute: "id"
+    cookie:
+        domain: .meeteam.alom-sejong.com
+        secure: true
+        same-site: None
 
 # CORS 설정 추가
 cors:
