@@ -89,8 +89,8 @@ public class ProjectServiceImpl implements ProjectService {
     @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Counted("post.project")
     @Override
-    public ProjectPostResponse postProject(ProjectPostCommand projectPostCommand, MultipartFile file, String requesterEmail) {
-        Member creator = memberRepository.findOptionByEmail(requesterEmail)
+    public ProjectPostResponse postProject(ProjectPostCommand projectPostCommand, MultipartFile file, String email) {
+        Member creator = memberRepository.findOptionByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         String imageUrl = getImageUrl(file, creator.getId());
@@ -430,15 +430,11 @@ public class ProjectServiceImpl implements ProjectService {
         RecruitmentDeadlineType deadlineType = projectPostCommand.recruitmentDeadlineType();
         LocalDate endDate = projectPostCommand.endDate();
 
-        if (deadlineType == null) {
-            throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
-        }
-
         if (deadlineType == RecruitmentDeadlineType.END_DATE) {
             if (endDate == null) {
                 throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
             }
-            if (!endDate.isAfter(LocalDate.now())) {
+            if (endDate.isBefore(LocalDate.now())) {
                 throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
             }
             return;
