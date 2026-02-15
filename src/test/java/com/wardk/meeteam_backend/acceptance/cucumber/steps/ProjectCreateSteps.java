@@ -29,8 +29,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ProjectCreateSteps {
 
-    private static final String OPEN_ENDED_DATE = "9999-12-31";
-
     @Autowired
     private ProjectCreateApi projectCreateApi;
 
@@ -93,8 +91,8 @@ public class ProjectCreateSteps {
     public void 모집_마감일을_설정하고_프로젝트를_등록하면(String deadlineLabel) {
         Map<String, Object> request = defaultProjectRequest();
         if ("모집 완료 시까지".equals(deadlineLabel)) {
-            // 현재 API는 endDate가 필수이므로 open-ended를 센티넬 날짜로 표현한다.
-            request.put("endDate", OPEN_ENDED_DATE);
+            request.put("recruitmentDeadlineType", "RECRUITMENT_COMPLETED");
+            request.put("endDate", null);
         }
         lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
         context.setLastResponse(lastResponse);
@@ -113,6 +111,32 @@ public class ProjectCreateSteps {
     public void 모집_포지션을_추가하지_않고_등록을_요청하면() {
         Map<String, Object> request = defaultProjectRequest();
         request.put("recruitments", List.of());
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
+        context.setLastResponse(lastResponse);
+    }
+
+    @When("마감 방식을 입력하지 않고 프로젝트 등록을 요청하면")
+    public void 마감_방식을_입력하지_않고_프로젝트_등록을_요청하면() {
+        Map<String, Object> request = defaultProjectRequest();
+        request.put("recruitmentDeadlineType", null);
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
+        context.setLastResponse(lastResponse);
+    }
+
+    @When("마감 방식을 {string}로 하고 마감일 없이 프로젝트 등록을 요청하면")
+    public void 마감_방식을_end_date로_하고_마감일_없이_프로젝트_등록을_요청하면(String deadlineType) {
+        Map<String, Object> request = defaultProjectRequest();
+        request.put("recruitmentDeadlineType", deadlineType);
+        request.put("endDate", null);
+        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
+        context.setLastResponse(lastResponse);
+    }
+
+    @When("마감 방식을 {string}로 하고 마감일을 함께 프로젝트 등록을 요청하면")
+    public void 마감_방식을_recruitment_completed로_하고_마감일을_함께_프로젝트_등록을_요청하면(String deadlineType) {
+        Map<String, Object> request = defaultProjectRequest();
+        request.put("recruitmentDeadlineType", deadlineType);
+        request.put("endDate", LocalDate.now().plusDays(7).toString());
         lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
         context.setLastResponse(lastResponse);
     }
@@ -181,7 +205,7 @@ public class ProjectCreateSteps {
 
         String endDate = detail.jsonPath().getString("result.endDate");
         if ("모집 완료 시까지".equals(expectedLabel)) {
-            assertEquals(OPEN_ENDED_DATE, endDate);
+            assertNull(endDate);
         } else {
             assertNotNull(endDate);
         }
@@ -214,6 +238,7 @@ public class ProjectCreateSteps {
         request.put("jobPosition", "WEB_SERVER");
         request.put("recruitments", new ArrayList<>(List.of(recruitment("WEB_FRONTEND", 2))));
         request.put("skills", new ArrayList<>(List.of("React Native", "Python")));
+        request.put("recruitmentDeadlineType", "END_DATE");
         request.put("endDate", LocalDate.now().plusDays(30).toString());
         return request;
     }

@@ -240,6 +240,8 @@ security:
           uri: /api/projects/* # 특정 사용자 프로필 보기
         - method: GET
           uri: /api/projects/V2/* # 프로젝트 상세 조회
+        - method: GET
+          uri: /api/jobs/options # 직군/포지션/기술스택 조회
         - method: "*"
           uri: /oauth2/redirect # OAuth2 리다이렉트 url
         - method: "*"

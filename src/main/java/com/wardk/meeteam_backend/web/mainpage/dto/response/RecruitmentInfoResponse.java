@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.web.mainpage.dto.response;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import lombok.*;
 
 @Getter

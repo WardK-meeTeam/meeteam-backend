@@ -96,6 +96,8 @@ security:
     - method: GET
       uri: /api/projects/**
     - method: GET
+      uri: /api/jobs/options
+    - method: GET
       uri: /api/main/**
 
 # OAuth2 및 쿠키 설정

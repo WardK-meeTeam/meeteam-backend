@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.domain.projectmember.service;
 
 import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
@@ -31,7 +31,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Override
     public void addCreator(Long projectId, Long memberId, JobPosition jobPosition) {
-
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
@@ -44,7 +43,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
         ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition);
         project.joinMember(projectMember);
-
         projectMemberRepository.save(projectMember);
     }
 
@@ -66,24 +64,21 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         project.joinMember(projectMember);
 
         RecruitmentState recruitmentState = project.getRecruitments().stream()
-                .filter(r -> r.getJobPosition() == jobPosition)
+                .filter(r -> r.getJobPosition().getId().equals(jobPosition.getId()))
                 .findFirst()
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
 
         recruitmentState.increaseCurrentCount();
         project.updateRecruitmentsStatus();
-
         projectMemberRepository.save(projectMember);
     }
 
     @Override
     public List<ProjectMemberListResponse> getProjectMembers(Long projectId) {
-
         Project project = projectRepository.findByIdWithMembers(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Long creatorId = project.getCreator().getId();
-
         return project.getMembers().stream()
                 .map(pm -> {
                     Member member = pm.getMember();
@@ -98,11 +93,10 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Override
     public DeleteResponse deleteProjectMember(DeleteRequest request, String requesterEmail) {
-
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if (project.getStatus() == ProjectStatus.COMPLETED) {
+        if (project.isCompleted()) {
             throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
 
@@ -134,7 +128,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = projectRepository.findActiveById(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        if (project.getStatus() == ProjectStatus.COMPLETED) {
+        if (project.isCompleted()) {
             throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
 

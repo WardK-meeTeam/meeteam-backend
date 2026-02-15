@@ -1,6 +1,5 @@
 package com.wardk.meeteam_backend.web.member.controller;
 
-import com.wardk.meeteam_backend.domain.job.JobField;
 import com.wardk.meeteam_backend.web.member.dto.request.*;
 import com.wardk.meeteam_backend.web.member.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -87,14 +86,14 @@ public class MemberController {
     @Operation(summary = "사용자 조건 검색", description = "사용자 이름, 플랫폼, 분야, 기술 스택 등 다양한 조건으로 사용자를 검색합니다.")
     @GetMapping("api/members/search")
     public SuccessResponse<Page<MemberCardResponse>> searchMembers (
-            @RequestParam(value = "jobFields", required = false) List<JobField> jobFields,
-            @RequestParam(value = "skills", required = false) List<String> skills,
+            @RequestParam(value = "jobFieldIds", required = false) List<Long> jobFieldIds,
+            @RequestParam(value = "skillIds", required = false) List<Long> skillIds,
             @ParameterObject Pageable pageable
             ) {
 
         MemberSearchRequest searchRequest = new MemberSearchRequest();
-        searchRequest.setJobFields(jobFields);
-        searchRequest.setSkills(skills);
+        searchRequest.setJobFieldIds(jobFieldIds);
+        searchRequest.setSkillIds(skillIds);
 
         Page<MemberCardResponse> searchResults = memberProfileService.searchMembers(searchRequest, pageable);
         return SuccessResponse.onSuccess(searchResults);

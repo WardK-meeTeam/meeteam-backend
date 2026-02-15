@@ -1,7 +1,7 @@
 package com.wardk.meeteam_backend.domain.projectmember.entity;
 
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
@@ -35,8 +35,8 @@ public class ProjectApplication extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Member applicant;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "job_position", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_position_id")
     private JobPosition jobPosition;
 
     @Column(length = 800)

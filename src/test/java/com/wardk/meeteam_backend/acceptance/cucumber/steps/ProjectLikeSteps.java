@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
+import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
 import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
 import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
@@ -373,7 +374,7 @@ public class ProjectLikeSteps {
                 ProjectCategory.AI_TECH,
                 PlatformCategory.WEB,
                 null,
-                false,
+                RecruitmentDeadlineType.END_DATE,
                 LocalDate.now().plusDays(30)
         );
         project.addRecruitment(RecruitmentState.createRecruitmentState(JobPosition.WEB_FRONTEND, 2));
