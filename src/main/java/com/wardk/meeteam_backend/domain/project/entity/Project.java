@@ -1,20 +1,20 @@
 package com.wardk.meeteam_backend.domain.project.entity;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
-import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
+import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
 import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectApplication;
+import com.wardk.meeteam_backend.domain.application.entity.ProjectApplication;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import com.wardk.meeteam_backend.web.project.dto.request.ProjectPostRequest;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -25,9 +25,13 @@ import java.util.stream.Collectors;
 
 import static com.wardk.meeteam_backend.global.response.ErrorCode.PROJECT_ALREADY_COMPLETED;
 
-@Data
+/**
+ * 프로젝트 엔티티.
+ * 팀 매칭 및 프로젝트 협업의 핵심 도메인 객체입니다.
+ */
+@Getter
 @Entity
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Project extends BaseEntity {
 
     @Id
@@ -133,24 +137,34 @@ public class Project extends BaseEntity {
         this.isDeleted = isDeleted;
     }
 
-    public static Project createProject(
-            ProjectPostCommand projectPostCommand,
+    /**
+     * 프로젝트를 생성하는 정적 팩토리 메서드.
+     *
+     * @param command   프로젝트 생성 커맨드
+     * @param creator   프로젝트 생성자
+     * @param deadline  모집 마감 정책 (값 객체)
+     * @param imageUrl  프로젝트 이미지 URL
+     * @return 생성된 프로젝트
+     */
+    public static Project create(
+            ProjectPostCommand command,
             Member creator,
+            RecruitmentDeadline deadline,
             String imageUrl
     ) {
         return Project.builder()
                 .creator(creator)
-                .name(projectPostCommand.projectName())
-                .description(projectPostCommand.description())
-                .projectCategory(projectPostCommand.projectCategory())
-                .platformCategory(projectPostCommand.platformCategory())
+                .name(command.projectName())
+                .description(command.description())
+                .projectCategory(command.projectCategory())
+                .platformCategory(command.platformCategory())
                 .imageUrl(imageUrl)
                 .recruitmentStatus(Recruitment.RECRUITING)
-                .recruitmentDeadlineType(projectPostCommand.recruitmentDeadlineType())
+                .recruitmentDeadlineType(deadline.type())
                 .startDate(LocalDate.now())
-                .endDate(projectPostCommand.recruitmentDeadlineType().equals(RecruitmentDeadlineType.END_DATE) ? projectPostCommand.endDate() : null)
-                .githubRepositoryUrl(projectPostCommand.githubRepositoryUrl())
-                .communicationChannelUrl(projectPostCommand.communicationChannelUrl())
+                .endDate(deadline.resolveEndDate())
+                .githubRepositoryUrl(command.githubRepositoryUrl())
+                .communicationChannelUrl(command.communicationChannelUrl())
                 .isDeleted(false)
                 .build();
     }

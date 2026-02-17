@@ -2,7 +2,8 @@ package com.wardk.meeteam_backend.acceptance.cucumber.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
+import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ExtractableResponse;
@@ -27,7 +28,7 @@ public class AuthAPI {
      */
     public ExtractableResponse<Response> 일반회원가입_요청(
             String email, String password, String name, String birthDate,
-            String gender, List<JobPosition> jobPositions) {
+            String gender, List<JobPositionCode> jobPositions) {
         return 일반회원가입_요청(email, password, name, birthDate, gender, jobPositions, 0);
     }
 
@@ -36,7 +37,12 @@ public class AuthAPI {
      */
     public ExtractableResponse<Response> 일반회원가입_요청(
             String email, String password, String name, String birthDate,
-            String gender, List<JobPosition> jobPositions, Integer projectExperienceCount) {
+            String gender, List<JobPositionCode> jobPositions, Integer projectExperienceCount) {
+
+        // JobPositionCode -> MemberJobPositionRequest 구조로 변환
+        List<Map<String, Object>> jobPositionRequests = jobPositions.stream()
+                .map(this::toJobPositionRequest)
+                .toList();
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("email", email);
@@ -44,7 +50,7 @@ public class AuthAPI {
         params.put("name", name);
         params.put("birthDate", birthDate);
         params.put("gender", toGender(gender));
-        params.put("jobPositions", jobPositions.stream().map(Enum::name).toList());
+        params.put("jobPositions", jobPositionRequests);
         params.put("projectExperienceCount", projectExperienceCount != null ? projectExperienceCount : 0);
 
         String jsonBody = toJson(params);
@@ -65,7 +71,7 @@ public class AuthAPI {
      */
     public ExtractableResponse<Response> OAuth회원가입_요청(
             String oauthCode, String name, String birthDate,
-            String gender, List<JobPosition> jobPositions, List<String> skills) {
+            String gender, List<JobPositionCode> jobPositions, List<String> skills) {
         return OAuth회원가입_요청(oauthCode, name, birthDate, gender, jobPositions, skills, 0);
     }
 
@@ -74,15 +80,19 @@ public class AuthAPI {
      */
     public ExtractableResponse<Response> OAuth회원가입_요청(
             String oauthCode, String name, String birthDate,
-            String gender, List<JobPosition> jobPositions, List<String> skills, Integer projectExperienceCount) {
+            String gender, List<JobPositionCode> jobPositions, List<String> skills, Integer projectExperienceCount) {
+
+        // JobPositionCode -> MemberJobPositionRequest 구조로 변환
+        List<Map<String, Object>> jobPositionRequests = jobPositions.stream()
+                .map(this::toJobPositionRequest)
+                .toList();
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("code", oauthCode);
         params.put("name", name);
         params.put("birthDate", birthDate);
         params.put("gender", toGender(gender));
-        params.put("jobPositions", jobPositions.stream().map(Enum::name).toList());
-        params.put("skills", skills != null ? skills : List.of());
+        params.put("jobPositions", jobPositionRequests);
         params.put("projectExperienceCount", projectExperienceCount != null ? projectExperienceCount : 0);
 
         String jsonBody = toJson(params);
@@ -204,6 +214,18 @@ public class AuthAPI {
             case "여성" -> "FEMALE";
             default -> gender;
         };
+    }
+
+    /**
+     * JobPositionCode를 MemberJobPositionRequest 구조로 변환
+     * JobPositionCode enum에 포함된 JobFieldCode를 활용
+     */
+    private Map<String, Object> toJobPositionRequest(JobPositionCode positionCode) {
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("jobFieldCode", positionCode.getJobFieldCode().name());
+        request.put("jobPositionCode", positionCode.name());
+        request.put("techStacks", List.of());  // 테스트에서는 기술스택 빈 배열
+        return request;
     }
 
     private String toJson(Map<String, Object> params) {

@@ -1,12 +1,15 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
-import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentTechStack;
-import com.wardk.meeteam_backend.domain.applicant.repository.RecruitmentStateRepository;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentTechStack;
+import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
+import com.wardk.meeteam_backend.domain.recruitment.service.RecruitmentDomainService;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.job.entity.JobField;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.job.repository.JobFieldRepository;
 import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackRepository;
@@ -21,6 +24,8 @@ import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
+import com.wardk.meeteam_backend.domain.project.service.dto.RecruitmentCommand;
+import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
 import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
@@ -37,10 +42,6 @@ import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectConditionMainP
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
 import com.wardk.meeteam_backend.web.recruitmentState.dto.response.ProjectCounts;
-import com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto;
-import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
-import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
-import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
 import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
@@ -85,48 +86,78 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberServiceImpl projectMemberServiceImpl;
     private final WebClient.Builder webClientBuilder;
     private final ApplicationEventPublisher eventPublisher;
+    private final RecruitmentDomainService recruitmentDomainService;
 
     @CacheEvict(value = "mainPageProjects", allEntries = true)
-    @Counted("post.project")
+    @Counted("project.create")
     @Override
-    public ProjectPostResponse postProject(ProjectPostCommand projectPostCommand, MultipartFile file, String email) {
-        Member creator = memberRepository.findOptionByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    public ProjectPostResponse createProject(ProjectPostCommand command, MultipartFile file, String requesterEmail) {
+        Member creator = findMemberByEmail(requesterEmail);
+        String imageUrl = uploadProjectImage(file, creator.getId());
 
-        String imageUrl = getImageUrl(file, creator.getId());
-        validateRecruitmentDeadline(projectPostCommand);
-        Project project = Project.createProject(
-                projectPostCommand,
-                creator,
-                imageUrl
+        // 값 객체로 마감 정책 검증 캡슐화
+        RecruitmentDeadline deadline = new RecruitmentDeadline(
+                command.recruitmentDeadlineType(),
+                command.endDate()
         );
 
-        applyRecruitments(projectPostCommand.recruitments(), project);
+        // 프로젝트 생성
+        Project project = Project.create(command, creator, deadline, imageUrl);
+
+        // 모집 정보 생성 및 추가 (도메인 서비스 위임)
+        List<RecruitmentState> recruitmentStates = recruitmentDomainService.createRecruitmentStates(command.recruitments());
+        recruitmentStates.forEach(project::addRecruitment);
+
         projectRepository.save(project);
-        JobPosition creatorPosition = jobPositionRepository
-                .findById(projectPostCommand.creatorJobPositionId())
-                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
-        projectMemberService.addCreator(
-                project.getId(),
-                creator.getId(),
-                creatorPosition
-        );
+
+        // 생성자를 프로젝트 멤버로 추가
+        addCreatorAsProjectMember(project, creator, command.creatorJobPositionCode());
+
         return ProjectPostResponse.from(project);
     }
 
+    private Member findMemberByEmail(String email) {
+        return memberRepository.findOptionByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private String uploadProjectImage(MultipartFile file, Long uploaderId) {
+        if (file != null && !file.isEmpty()) {
+            return s3FileService.uploadFile(file, "images", uploaderId);
+        }
+        return null;
+    }
+
+    private void addCreatorAsProjectMember(Project project, Member creator, JobPositionCode creatorJobPositionCode) {
+        JobPosition creatorPosition = jobPositionRepository
+                .findByCode(creatorJobPositionCode)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
+        projectMemberService.addCreator(project.getId(), creator.getId(), creatorPosition);
+    }
+
     @Override
-    public List<ProjectListResponse> getProjectList() {
+    public List<ProjectListResponse> findAllProjects() {
         List<Project> projects = projectRepository.findAllWithCreatorAndSkills();
         return projects.stream()
                 .map(ProjectListResponse::responseDto)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     @Override
-    public ProjectWithLikeDto getProjectV2(Long projectId) {
-        ProjectWithLikeDto projectWithLikeDto = projectRepository.findProjectWithLikeCount(projectId)
+    public ProjectDetailResponse findProjectById(Long projectId, Long memberId) {
+        Project project = projectRepository.findProjectDetailById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-        return projectWithLikeDto;
+
+        // 좋아요 여부 확인 (비로그인 시 false)
+        boolean isLiked = memberId != null
+                && projectLikeRepository.existsByMemberIdAndProjectId(memberId, projectId);
+
+        // 리더 여부 확인 (비로그인 시 false)
+        boolean isLeader = memberId != null
+                && project.getCreator().getId().equals(memberId);
+
+        return ProjectDetailResponse.from(project, isLiked, isLeader);
     }
 
     @CacheEvict(value = "mainPageProjects", allEntries = true)
@@ -149,11 +180,10 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
         }
 
-        String imageUrl = getImageUrl(file, creator.getId());
+        String imageUrl = uploadProjectImage(file, creator.getId());
         if (imageUrl == null) {
             imageUrl = project.getImageUrl();
         }
-
         project.updateProject(
                 request.getName(),
                 request.getDescription(),
@@ -166,24 +196,24 @@ public class ProjectServiceImpl implements ProjectService {
 
         List<RecruitmentState> recruitments = request.getRecruitments().stream()
                 .map(recruitment -> {
-                    JobField jobField = jobFieldRepository.findById(recruitment.jobFieldId())
-                            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
-            JobPosition jobPosition = jobPositionRepository.findById(recruitment.jobPositionId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+                    JobField jobField = jobFieldRepository.findByCode(recruitment.jobFieldCode())
+                            .orElseThrow(() -> new CustomException(ErrorCode.JOB_FIELD_NOT_FOUND));
+                    JobPosition jobPosition = jobPositionRepository.findByCode(recruitment.jobPositionCode())
+                            .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
 
                     if (!jobPosition.getJobField().getId().equals(jobField.getId())) {
-                        throw new CustomException(ErrorCode.INVALID_REQUEST);
+                        throw new CustomException(ErrorCode.IS_NOT_ALLOWED_POSITION);
                     }
 
                     RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
-                            jobField, jobPosition, recruitment.recruitmentCount());
+                            jobPosition, recruitment.recruitmentCount());
 
                     for (Long techStackId : recruitment.techStackIds()) {
                         TechStack techStack = techStackRepository.findById(techStackId)
-                                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+                                .orElseThrow(() -> new CustomException(ErrorCode.TECH_STACK_NOT_FOUND));
 
                         if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
-                            throw new CustomException(ErrorCode.INVALID_REQUEST);
+                            throw new CustomException(ErrorCode.TECH_STACK_IS_NOT_MATCHING);
                         }
 
                         recruitmentState.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
@@ -302,31 +332,25 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    @Transactional
-    public Page<ProjectConditionRequest> searchProject(
+    @Transactional(readOnly = true)
+    public Page<ProjectConditionRequest> searchProjects(
             ProjectSearchCondition condition, Pageable pageable,
             CustomSecurityUserDetails userDetails) {
 
-        Page<Project> content = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
+        Page<Project> projects = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
 
-        Page<ProjectConditionRequest> map = content.map(
-                project -> {
+        return projects.map(project -> {
+            ProjectCounts totalCounts = recruitmentStateRepository.findTotalCountsByProject(project);
+            List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
 
-                    ProjectCounts totalCountsByProject = recruitmentStateRepository.findTotalCountsByProject(project);
-                    List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
+            Long currentCount = totalCounts != null ? totalCounts.getCurrentCount() : 0L;
+            Long recruitmentCount = totalCounts != null ? totalCounts.getRecruitmentCount() : 0L;
 
-                    Long currentCount = totalCountsByProject != null ? totalCountsByProject.getCurrentCount() : 0L;
-                    Long recruitmentCount = totalCountsByProject != null ? totalCountsByProject.getRecruitmentCount() : 0L;
-                    log.info("userDetails={}", userDetails);
-                    boolean isLiked = false;
-                    if (userDetails != null) {
-                        isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
-                    }
-                    return new ProjectConditionRequest(project, isLiked, currentCount, recruitmentCount, projectMembers);
-                }
-        );
+            boolean isLiked = userDetails != null
+                    && projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
 
-        return map;
+            return new ProjectConditionRequest(project, isLiked, currentCount, recruitmentCount, projectMembers);
+        });
     }
 
     @Cacheable(
@@ -335,43 +359,30 @@ public class ProjectServiceImpl implements ProjectService {
             condition = "#pageable.pageNumber == 0 && #userDetails == null && #pageable.pageSize == 20 && #condition.projectCategory == null"
     )
     @Override
-    public Page<ProjectConditionMainPageResponse> searchMainPageProject(CategoryCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails) {
-        Page<Project> content = projectRepository.findProjectsFromMainPageCondition(condition, pageable);
+    public Page<ProjectConditionMainPageResponse> searchMainPageProjects(CategoryCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails) {
+        Page<Project> projects = projectRepository.findProjectsFromMainPageCondition(condition, pageable);
 
-        Page<ProjectConditionMainPageResponse> map = content.map(
-                project -> {
-                    ProjectCounts totalCountsByProject = recruitmentStateRepository.findTotalCountsByProject(project);
-                    List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
+        return projects.map(project -> {
+            ProjectCounts totalCounts = recruitmentStateRepository.findTotalCountsByProject(project);
+            List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
 
-                    Long currentCount = totalCountsByProject != null ? totalCountsByProject.getCurrentCount() : 0L;
-                    Long recruitmentCount = totalCountsByProject != null ? totalCountsByProject.getRecruitmentCount() : 0L;
+            Long currentCount = totalCounts != null ? totalCounts.getCurrentCount() : 0L;
+            Long recruitmentCount = totalCounts != null ? totalCounts.getRecruitmentCount() : 0L;
 
-                    boolean isLiked = false;
-                    if (userDetails != null) {
-                        isLiked = projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
-                    }
+            boolean isLiked = userDetails != null
+                    && projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
 
-                    return new ProjectConditionMainPageResponse(project, isLiked, currentCount, recruitmentCount, projectMembers);
-                }
-        );
-
-        return map;
+            return new ProjectConditionMainPageResponse(project, isLiked, currentCount, recruitmentCount, projectMembers);
+        });
     }
 
 
     @Override
-    public List<MyProjectResponse> getMyProject(CustomSecurityUserDetails userDetails) {
+    public List<MyProjectResponse> findMyProjects(CustomSecurityUserDetails userDetails) {
         List<ProjectMember> projectMembers = projectMemberRepository.findAllByMemberId(userDetails.getMemberId());
         return projectMembers.stream()
                 .map(MyProjectResponse::responseDto)
                 .toList();
-    }
-
-    private String getImageUrl(MultipartFile file, Long uploaderId) {
-        if (file != null && !file.isEmpty()) {
-            return s3FileService.uploadFile(file, "images", uploaderId);
-        }
-        return null;
     }
 
     private String extractRepoFullName(String url) {
@@ -395,15 +406,15 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<ProjectRepoResponse> getProjectRepos(Long projectId) {
-        Project project = projectRepository.findById(projectId)
+    public List<ProjectRepoResponse> findProjectRepos(Long projectId) {
+        projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         List<ProjectRepo> repos = projectRepoRepository.findAllByProjectId(projectId);
 
         return repos.stream()
                 .map(ProjectRepoResponse::responseDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -425,65 +436,4 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
     }
-
-    private void validateRecruitmentDeadline(ProjectPostCommand projectPostCommand) {
-        RecruitmentDeadlineType deadlineType = projectPostCommand.recruitmentDeadlineType();
-        LocalDate endDate = projectPostCommand.endDate();
-
-        if (deadlineType == RecruitmentDeadlineType.END_DATE) {
-            if (endDate == null) {
-                throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
-            }
-            if (endDate.isBefore(LocalDate.now())) {
-                throw new CustomException(ErrorCode.INVALID_PROJECT_DATE);
-            }
-            return;
-        }
-
-        if (deadlineType == RecruitmentDeadlineType.RECRUITMENT_COMPLETED && endDate != null) {
-            throw new CustomException(ErrorCode.INVALID_RECRUITMENT_DEADLINE_POLICY);
-        }
-    }
-
-    private void applyRecruitments(List<ProjectRecruitRequest> recruitments, Project project) {
-        for (ProjectRecruitRequest recruitment : recruitments) {
-            JobField jobField = getJobField(recruitment);
-            JobPosition jobPosition = getJobPosition(recruitment);
-            validatePositionAndField(jobPosition, jobField);
-            RecruitmentState recruitmentState = RecruitmentState.createRecruitmentState(
-                    jobField, jobPosition, recruitment.recruitmentCount());
-
-            List<TechStack> techStacks = techStackRepository.findByIdIn(recruitment.techStackIds());
-            for (TechStack techStack : techStacks) {
-                validateFieldAndTechStack(techStack, jobField);
-                recruitmentState.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
-            }
-            project.addRecruitment(recruitmentState);
-        }
-    }
-
-    private void validateFieldAndTechStack(TechStack techStack, JobField jobField) {
-        if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
-            throw new CustomException(ErrorCode.TECH_STACK_IS_NOT_MATCHING);
-        }
-    }
-
-    private static void validatePositionAndField(JobPosition jobPosition, JobField jobField) {
-        if (!jobPosition.getJobField().getId().equals(jobField.getId())) {
-            throw new CustomException(ErrorCode.IS_NOT_ALLOWED_POSITION);
-        }
-    }
-
-    private JobPosition getJobPosition(ProjectRecruitRequest recruitment) {
-        JobPosition jobPosition = jobPositionRepository.findById(recruitment.jobPositionId())
-                .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
-        return jobPosition;
-    }
-
-    private JobField getJobField(ProjectRecruitRequest recruitment) {
-        JobField jobField = jobFieldRepository.findById(recruitment.jobFieldId())
-                .orElseThrow(() -> new CustomException(ErrorCode.JOB_FIELD_NOT_FOUND));
-        return jobField;
-    }
-
 }

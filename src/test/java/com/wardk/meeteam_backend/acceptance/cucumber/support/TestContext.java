@@ -18,7 +18,6 @@ public class TestContext {
     // === 공통 필드 ===
     private String accessToken;
     private ExtractableResponse<Response> response;
-    private io.restassured.response.Response lastResponse; // 기존 코드 호환용
     private String lastMessage;
 
     // === 도메인별 데이터 클래스 ===
@@ -58,15 +57,6 @@ public class TestContext {
         this.response = response;
     }
 
-    // 기존 코드 호환용 (Response 타입)
-    public io.restassured.response.Response getLastResponse() {
-        return lastResponse;
-    }
-
-    public void setLastResponse(io.restassured.response.Response lastResponse) {
-        this.lastResponse = lastResponse;
-    }
-
     public String getLastMessage() {
         return lastMessage;
     }
@@ -84,11 +74,4 @@ public class TestContext {
         return projectData;
     }
 
-    // === 초기화 ===
-    public void clear() {
-        this.accessToken = null;
-        this.response = null;
-        this.lastResponse = null;
-        this.lastMessage = null;
-    }
 }

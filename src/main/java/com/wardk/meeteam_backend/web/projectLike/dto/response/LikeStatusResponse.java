@@ -9,5 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LikeStatusResponse {
 
-    private boolean status;
+    private boolean isLiked;
 }

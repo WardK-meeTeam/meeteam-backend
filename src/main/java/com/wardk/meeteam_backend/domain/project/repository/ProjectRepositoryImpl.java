@@ -11,7 +11,7 @@ import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import static com.wardk.meeteam_backend.domain.applicant.entity.QRecruitmentState.*;
+import static com.wardk.meeteam_backend.domain.recruitment.entity.QRecruitmentState.*;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProject.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProjectSkill.*;
@@ -80,7 +80,7 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
                 .from(recruitmentState)
                 .where(
                         recruitmentState.project.eq(project),
-                        recruitmentState.jobField.eq(jobField)
+                        recruitmentState.jobPosition.jobField.eq(jobField)
                 )
                 .exists();
     }

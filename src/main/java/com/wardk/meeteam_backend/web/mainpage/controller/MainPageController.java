@@ -39,7 +39,7 @@ public class MainPageController {
             ) Pageable pageable,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
-        return SuccessResponse.onSuccess(projectService.searchMainPageProject(condition, pageable, userDetails));
+        return SuccessResponse.onSuccess(projectService.searchMainPageProjects(condition, pageable, userDetails));
 
     }
 

@@ -53,10 +53,11 @@ public enum ErrorCode {
     PROJECT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "아직 종료되지 않은 프로젝트입니다."),
 
     // JOB
-    JOB_FIELD_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 직무를 찾을 수 없습니다."),
+    JOB_FIELD_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 직군을 찾을 수 없습니다."),
     JOB_POSITION_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 포지션을 찾을 수 없습니다."),
-    IS_NOT_ALLOWED_POSITION(HttpStatus.BAD_REQUEST, "JOB400", "해당 포지션의 직무에 맞지 않습니다."),
-    TECH_STACK_IS_NOT_MATCHING(HttpStatus.BAD_REQUEST, "JOB400", "해당 기술 스택은 직무의 기술 스택이 아닙니다."),
+    IS_NOT_ALLOWED_POSITION(HttpStatus.BAD_REQUEST, "JOB400", "해당 포지션의 직군에 맞지 않습니다."),
+    TECH_STACK_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 기술스택을 찾을 수 없습니다."),
+    TECH_STACK_IS_NOT_MATCHING(HttpStatus.BAD_REQUEST, "JOB400", "해당 기술 스택은 직군의 기술 스택이 아닙니다."),
 
     // PROJECT MEMBER
     PROJECT_MEMBER_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "이미 프로젝트에 참여 중입니다."),
@@ -71,6 +72,8 @@ public enum ErrorCode {
     APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_APPLICATION404", "프로젝트 지원이 존재하지 않습니다."),
     APPLICATION_ALREADY_DECIDED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 처리된 지원입니다."),
     PROJECT_APPLICATION_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 신청한 프로젝트입니다."),
+    APPLICATION_SELF_PROJECT_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT_APPLICATION403", "자신의 프로젝트에는 지원할 수 없습니다."),
+    RECRUITMENT_POSITION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 포지션은 모집 중이 아니거나 마감되었습니다."),
 
     // MEMBER SKILL
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND, "SKILL404", "해당 기술스택이 존재하지 않습니다."),
@@ -140,6 +143,10 @@ public enum ErrorCode {
     CODE_REVIEW_PROCESSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CODE_REVIEW500", "코드 리뷰 처리 중 오류가 발생했습니다."),
 
     UNSUPPORTED_TASK_TYPE(HttpStatus.BAD_REQUEST, "AI400", "지원하지 않는 태스크 유형입니다."),
+
+    // Q&A
+    QNA_NOT_FOUND(HttpStatus.NOT_FOUND, "QNA404", "해당 Q&A를 찾을 수 없습니다."),
+    QNA_ANSWER_FORBIDDEN(HttpStatus.FORBIDDEN, "QNA403", "질문자 또는 프로젝트 리더만 답변할 수 있습니다."),
 
     //DB
     DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반"), DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST,"EMAIL_400","이미 존재하는 이메일 입니다." ),
