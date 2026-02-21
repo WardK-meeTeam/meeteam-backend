@@ -1,8 +1,7 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.RestAssured;
+import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -10,156 +9,82 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+/**
+ * 프로젝트 관리 관련 API 호출 클래스
+ */
 @Component
 public class ProjectManagementApi {
 
-    private final ObjectMapper objectMapper;
-
-    public ProjectManagementApi(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
-    public Response getProjectMembers(Long projectId) {
-        return RestAssured.given()
+    public ExtractableResponse<Response> 팀원_목록_조회(String token, Long projectId) {
+        return RestAssured.given().log().all()
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .accept(MediaType.APPLICATION_JSON_VALUE)
                 .when()
                 .get("/api/project-members/{projectId}", projectId)
-                .then()
-                .extract()
-                .response();
+                .then().log().all()
+                .extract();
     }
 
-    public Response deleteProjectMember(Long projectId, Long memberId, String accessToken) {
-        var spec = RestAssured.given()
+    public ExtractableResponse<Response> 팀원_삭제(String token, Long projectId, Long memberId) {
+        return RestAssured.given().log().all()
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .accept(MediaType.APPLICATION_JSON_VALUE)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .body(Map.of(
                         "projectId", projectId,
                         "memberId", memberId
-                ));
-
-        if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        }
-
-        return spec.when()
+                ))
+                .when()
                 .post("/api/project-members")
-                .then()
-                .extract()
-                .response();
+                .then().log().all()
+                .extract();
     }
 
-    public Response applyProject(Long projectId, String jobPosition, String motivation, String accessToken) {
-        var spec = RestAssured.given()
+    public ExtractableResponse<Response> 종료(String token, Long projectId) {
+        return RestAssured.given().log().all()
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .accept(MediaType.APPLICATION_JSON_VALUE)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .formParam("projectId", projectId)
-                .formParam("jobPosition", jobPosition)
-                .formParam("motivation", motivation)
-                .formParam("availableHoursPerWeek", 10)
-                .formParam("availableDays", "MONDAY,FRIDAY")
-                .formParam("offlineAvailable", true);
-
-        if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        }
-
-        return spec.when()
-                .post("/api/projects-application")
-                .then()
-                .extract()
-                .response();
-    }
-
-    public Response getApplications(Long projectId, String accessToken) {
-        var spec = RestAssured.given().accept(MediaType.APPLICATION_JSON_VALUE);
-        if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        }
-        return spec.when()
-                .get("/api/projects-application/{projectId}", projectId)
-                .then()
-                .extract()
-                .response();
-    }
-
-    public Response getApplicationDetail(Long projectId, Long applicationId, String accessToken) {
-        var spec = RestAssured.given().accept(MediaType.APPLICATION_JSON_VALUE);
-        if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        }
-        return spec.when()
-                .get("/api/projects-application/{projectId}/{applicationId}", projectId, applicationId)
-                .then()
-                .extract()
-                .response();
-    }
-
-    public Response updateProject(Long projectId, Map<String, Object> updateRequest, String accessToken) {
-        var spec = RestAssured.given()
-                .accept(MediaType.APPLICATION_JSON_VALUE)
-                .multiPart("projectUpdateRequest", toJson(updateRequest), MediaType.APPLICATION_JSON_VALUE);
-
-        if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        }
-
-        return spec.when()
-                .post("/api/projects/{projectId}", projectId)
-                .then()
-                .extract()
-                .response();
-    }
-
-    public Response completeProject(Long projectId, String accessToken) {
-        var spec = RestAssured.given().accept(MediaType.APPLICATION_JSON_VALUE);
-        if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        }
-        return spec.when()
+                .when()
                 .post("/api/projects/{projectId}/complete", projectId)
-                .then()
-                .extract()
-                .response();
+                .then().log().all()
+                .extract();
     }
 
-    public Response deleteProject(Long projectId, String accessToken) {
-        var spec = RestAssured.given().accept(MediaType.APPLICATION_JSON_VALUE);
-        if (accessToken != null) {
-            spec.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        }
-        return spec.when()
+    public ExtractableResponse<Response> 삭제(String token, Long projectId) {
+        return RestAssured.given().log().all()
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .when()
                 .delete("/api/projects/{projectId}", projectId)
-                .then()
-                .extract()
-                .response();
+                .then().log().all()
+                .extract();
     }
 
-    public Response getProjectDetail(Long projectId) {
-        return RestAssured.given()
+    public ExtractableResponse<Response> 상세_조회(Long projectId) {
+        return RestAssured.given().log().all()
                 .accept(MediaType.APPLICATION_JSON_VALUE)
                 .when()
                 .get("/api/projects/V2/{projectId}", projectId)
-                .then()
-                .extract()
-                .response();
+                .then().log().all()
+                .extract();
     }
 
-    public Response getProjectList() {
-        return RestAssured.given()
+    public ExtractableResponse<Response> 목록_조회() {
+        return RestAssured.given().log().all()
                 .accept(MediaType.APPLICATION_JSON_VALUE)
                 .when()
                 .get("/api/projects")
-                .then()
-                .extract()
-                .response();
+                .then().log().all()
+                .extract();
     }
 
-    private String toJson(Map<String, Object> body) {
-        try {
-            return objectMapper.writeValueAsString(body);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("요청 바디 직렬화에 실패했습니다.", e);
-        }
+    public ExtractableResponse<Response> 모집_상태_토글(String token, Long projectId) {
+        return RestAssured.given().log().all()
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .accept(MediaType.APPLICATION_JSON_VALUE)
+                .when()
+                .post("/api/projects/{projectId}/recruitment/toggle", projectId)
+                .then().log().all()
+                .extract();
     }
 }

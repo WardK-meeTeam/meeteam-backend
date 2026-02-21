@@ -6,6 +6,8 @@ import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.projectlike.dto.response.LikeStatusResponse;
 import com.wardk.meeteam_backend.web.projectlike.dto.response.ToggleLikeResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +51,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @see OptimisticLockRetryAspect
  * @see com.wardk.meeteam_backend.global.aop.Retry
  */
+@Tag(name = "Project Like", description = "프로젝트 좋아요 API")
 @RestController
 @RequiredArgsConstructor
 public class ProjectLikeController {
@@ -56,6 +59,7 @@ public class ProjectLikeController {
     private final ProjectLikeService projectLikeService;
 
 
+    @Operation(summary = "좋아요 토글", description = "프로젝트 좋아요를 등록하거나 취소합니다.")
     @PostMapping("api/project/like/{projectId}")
     public SuccessResponse<ToggleLikeResponse> toggleLike(
             @PathVariable Long projectId,
@@ -65,6 +69,7 @@ public class ProjectLikeController {
     }
 
 
+    @Operation(summary = "좋아요 상태 조회", description = "프로젝트에 대한 좋아요 여부를 조회합니다.")
     @GetMapping("api/project/like/{projectId}")
     public SuccessResponse<LikeStatusResponse> likeStatus(
             @PathVariable Long projectId,

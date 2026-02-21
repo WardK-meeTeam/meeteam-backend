@@ -5,14 +5,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 직무(JobPosition) 엔티티.
+ * 각 직군(JobField)에 속하는 세부 직무를 정의합니다.
+ */
 @Entity
 @Getter
-@Table(
-        name = "job_position",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_job_position_code", columnNames = "code")
-        }
-)
+@Table(name = "job_position")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class JobPosition {
 
@@ -25,19 +24,20 @@ public class JobPosition {
     @JoinColumn(name = "job_field_id", nullable = false)
     private JobField jobField;
 
-    @Column(name = "code", nullable = false, length = 70)
-    private String code;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "code", nullable = false, unique = true, length = 70)
+    private JobPositionCode code;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    private JobPosition(JobField jobField, String code, String name) {
+    private JobPosition(JobField jobField, JobPositionCode code) {
         this.jobField = jobField;
         this.code = code;
-        this.name = name;
+        this.name = code.getDisplayName();
     }
 
-    public static JobPosition of(JobField jobField, String code, String name) {
-        return new JobPosition(jobField, code, name);
+    public static JobPosition of(JobField jobField, JobPositionCode code) {
+        return new JobPosition(jobField, code);
     }
 }

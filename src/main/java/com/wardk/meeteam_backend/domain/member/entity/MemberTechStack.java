@@ -25,8 +25,12 @@ public class MemberTechStack {
     @JoinColumn(name = "tech_stack_id")
     private TechStack techStack;
 
-    public MemberTechStack(Member member, TechStack techStack) {
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
+
+    public MemberTechStack(Member member, TechStack techStack, Integer displayOrder) {
         this.member = member;
         this.techStack = techStack;
+        this.displayOrder = displayOrder;
     }
 }

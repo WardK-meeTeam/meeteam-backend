@@ -176,8 +176,9 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
 
-        for (TechStack techStack : techStacks) {
-            member.addMemberTechStack(techStack);
+        // 리스트 순서를 displayOrder로 사용
+        for (int i = 0; i < techStacks.size(); i++) {
+            member.addMemberTechStack(techStacks.get(i), i + 1);
         }
     }
 

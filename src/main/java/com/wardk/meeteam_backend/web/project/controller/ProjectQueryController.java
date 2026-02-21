@@ -29,7 +29,7 @@ public class ProjectQueryController {
             @ParameterObject ProjectSearchCondition condition,
             @ParameterObject Pageable pageable) {
 
-        return projectService.searchProject(condition, pageable, userDetails);
+        return projectService.searchProjects(condition, pageable, userDetails);
     }
 
 

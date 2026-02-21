@@ -32,20 +32,26 @@ public class ProjectMember extends BaseEntity {
     @JoinColumn(name = "job_position_id")
     private JobPosition jobPosition;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "project_member_role")
+    private ProjectMemberRole role;
+
     public void assignProject(Project project) {
         this.project = project;
     }
 
     @Builder
-    public ProjectMember(Member member, JobPosition jobPosition) {
+    public ProjectMember(Member member, JobPosition jobPosition, ProjectMemberRole role) {
         this.member = member;
         this.jobPosition = jobPosition;
+        this.role = role;
     }
 
-    public static ProjectMember createProjectMember(Member member, JobPosition jobPosition) {
+    public static ProjectMember createProjectMember(Member member, JobPosition jobPosition, ProjectMemberRole role) {
         return ProjectMember.builder()
                 .member(member)
                 .jobPosition(jobPosition)
+                .role(role)
                 .build();
     }
 }

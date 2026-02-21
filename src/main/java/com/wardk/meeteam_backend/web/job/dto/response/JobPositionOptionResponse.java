@@ -1,22 +1,17 @@
 package com.wardk.meeteam_backend.web.job.dto.response;
 
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
-import lombok.Builder;
 
-@Builder
+/**
+ * 직무(JobPosition) 옵션 응답 DTO.
+ */
 public record JobPositionOptionResponse(
-        Long id,
-        Long fieldId,
         String code,
         String name
 ) {
-    public static JobPositionOptionResponse of(
-            JobPosition jobPosition
-    ) {
+    public static JobPositionOptionResponse of(JobPosition jobPosition) {
         return new JobPositionOptionResponse(
-                jobPosition.getId(),
-                jobPosition.getJobField().getId(),
-                jobPosition.getCode(),
+                jobPosition.getCode().name(),
                 jobPosition.getName()
         );
     }

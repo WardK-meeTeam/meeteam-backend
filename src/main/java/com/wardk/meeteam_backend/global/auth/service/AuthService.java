@@ -1,16 +1,21 @@
 package com.wardk.meeteam_backend.global.auth.service;
 
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
+import com.wardk.meeteam_backend.domain.job.entity.JobField;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.repository.JobFieldRepository;
+import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackRepository;
 import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
+import com.wardk.meeteam_backend.global.auth.service.dto.MemberJobPositionCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.TechStackOrderCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
@@ -42,8 +47,10 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final S3FileService s3FileService;
+    private final JobFieldRepository jobFieldRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
+    private final JobFieldTechStackRepository jobFieldTechStackRepository;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final OAuthTokenRevokeService oAuthTokenRevokeService;
@@ -55,8 +62,6 @@ public class AuthService {
         validateEmailNotDuplicated(command.email());
         validatePassword(command.password());
 
-        List<JobPosition> jobPositions = fetchJobPositionsByIds(command.jobPositionIds());
-        List<TechStack> techStacks = fetchSkillsByTechStackIds(command.techStackIds());
         String imageUrl = uploadFile(file);
 
         Member member = Member.createMember(
@@ -64,7 +69,10 @@ public class AuthService {
                 bCryptPasswordEncoder.encode(command.password()),
                 imageUrl
         );
-        member.initializeDetails(jobPositions, techStacks);
+
+        // 직군/직무/기술스택 처리 및 Member에 추가
+        processAndAddJobPositions(member, command.jobPositions());
+
         memberRepository.save(member);
 
         return new RegisterResponse(member.getRealName(), member.getId());
@@ -77,8 +85,6 @@ public class AuthService {
 
         validateOAuthNotDuplicated(registerInfo.getProvider(), registerInfo.getProviderId());
 
-        List<JobPosition> jobPositions = fetchJobPositionsByIds(command.jobPositionIds());
-        List<TechStack> techStacks = fetchTechStacksByNames(command.skills());
         String imageUrl = uploadFile(file);
 
         Member member = Member.createOAuthMember(
@@ -87,7 +93,9 @@ public class AuthService {
             bCryptPasswordEncoder.encode(UUID.randomUUID().toString()),
             imageUrl
         );
-        member.initializeDetails(jobPositions, techStacks);
+
+        // 직군/직무/기술스택 처리 및 Member에 추가
+        processAndAddJobPositions(member, command.jobPositions());
 
         if (registerInfo.getOauthAccessToken() != null) {
             member.setOauthAccessToken(registerInfo.getOauthAccessToken());
@@ -142,31 +150,47 @@ public class AuthService {
         }
     }
 
-    private List<TechStack> fetchSkillsByTechStackIds(List<Long> techStackIds) {
-        List<TechStack> techStacks = techStackRepository.findAllById(techStackIds);
-        if (techStacks.size() != techStackIds.size()) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
-        }
-        return techStacks;
-    }
+    /**
+     * 직군/직무/기술스택 정보를 처리하여 Member에 추가합니다.
+     * 각 직무에 대한 기술스택이 해당 직군에 속하는지 검증하고,
+     * 기술스택의 displayOrder를 함께 저장합니다.
+     *
+     * @param member 회원 엔티티
+     * @param commands 직군/직무/기술스택 커맨드 목록
+     */
+    private void processAndAddJobPositions(Member member, List<MemberJobPositionCommand> commands) {
+        for (MemberJobPositionCommand command : commands) {
+            // 직군 조회 (ENUM 코드로)
+            JobField jobField = jobFieldRepository.findByCode(command.jobFieldCode())
+                    .orElseThrow(() -> new CustomException(ErrorCode.JOB_FIELD_NOT_FOUND));
 
-    private List<TechStack> fetchTechStacksByNames(List<String> techStackNames) {
-        if (techStackNames == null) {
-            return List.of();
-        }
+            // 직무 포지션 조회 (ENUM 코드로)
+            JobPosition jobPosition = jobPositionRepository.findByCode(command.jobPositionCode())
+                    .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
 
-        return techStackNames.stream()
-                .map(name -> techStackRepository.findByName(name)
-                        .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST)))
-                .toList();
-    }
+            // 직무가 해당 직군에 속하는지 검증
+            if (!jobPosition.getJobField().getId().equals(jobField.getId())) {
+                throw new CustomException(ErrorCode.IS_NOT_ALLOWED_POSITION);
+            }
 
-    private List<JobPosition> fetchJobPositionsByIds(List<Long> jobPositionIds) {
-        List<JobPosition> jobPositions = jobPositionRepository.findAllById(jobPositionIds);
-        if (jobPositions.size() != jobPositionIds.size()) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
+            member.addJobPosition(jobPosition);
+
+            // 기술스택 조회 및 검증 (ID + displayOrder)
+            if (command.techStacks() != null && !command.techStacks().isEmpty()) {
+                for (TechStackOrderCommand techStackCommand : command.techStacks()) {
+                    TechStack techStack = techStackRepository.findById(techStackCommand.id())
+                            .orElseThrow(() -> new CustomException(ErrorCode.TECH_STACK_NOT_FOUND));
+
+                    // 기술스택이 해당 직군에 속하는지 검증
+                    if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
+                        throw new CustomException(ErrorCode.TECH_STACK_IS_NOT_MATCHING);
+                    }
+
+                    // displayOrder와 함께 추가
+                    member.addMemberTechStack(techStack, techStackCommand.displayOrder());
+                }
+            }
         }
-        return jobPositions;
     }
 
     @Transactional

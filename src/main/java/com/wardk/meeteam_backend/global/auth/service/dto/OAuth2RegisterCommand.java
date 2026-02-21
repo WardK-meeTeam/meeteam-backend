@@ -15,20 +15,22 @@ public record OAuth2RegisterCommand(
         String name,
         LocalDate birthDate,
         Gender gender,
-        List<Long> jobPositionIds,
-        List<String> skills,
+        List<MemberJobPositionCommand> jobPositions,
         Integer projectExperienceCount,
         String githubUrl,
         String blogUrl
 ) {
     public static OAuth2RegisterCommand from(OAuth2RegisterRequest request) {
+        List<MemberJobPositionCommand> jobPositionCommands = request.getJobPositions().stream()
+                .map(MemberJobPositionCommand::from)
+                .toList();
+
         return new OAuth2RegisterCommand(
                 request.getCode(),
                 request.getName(),
                 request.getBirthDate(),
                 request.getGender(),
-                request.getJobPositionIds(),
-                request.getSkills(),
+                jobPositionCommands,
                 request.getProjectExperienceCount(),
                 request.getGithubUrl(),
                 request.getBlogUrl()
