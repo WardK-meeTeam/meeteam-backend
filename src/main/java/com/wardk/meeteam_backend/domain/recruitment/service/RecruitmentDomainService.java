@@ -41,7 +41,7 @@ public class RecruitmentDomainService {
      */
     public List<RecruitmentState> createRecruitmentStates(List<RecruitmentCommand> commands) {
         return commands.stream()
-                .map(this::createRecruitmentState)
+                .map(command -> createRecruitmentState(command))
                 .toList();
     }
 

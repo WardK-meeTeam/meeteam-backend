@@ -39,6 +39,9 @@ public class RecruitmentState {
     @Column(name = "current_count")
     private Integer currentCount;
 
+    @Column(name = "is_closed", nullable = false)
+    private boolean isClosed = false;
+
     @OneToMany(mappedBy = "recruitmentState", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecruitmentTechStack> recruitmentTechStacks = new ArrayList<>();
 
@@ -49,12 +52,34 @@ public class RecruitmentState {
         return this.jobPosition.getJobField();
     }
 
+    /**
+     * 해당 포지션의 모집이 마감되었는지 확인합니다.
+     * 수동 마감이거나 모집 인원이 다 찼으면 true.
+     */
+    public boolean isClosed() {
+        return this.isClosed || this.currentCount >= this.recruitmentCount;
+    }
+
+    /**
+     * 포지션 모집을 마감합니다.
+     */
+    public void close() {
+        this.isClosed = true;
+    }
+
+    /**
+     * 포지션 모집을 재개합니다.
+     */
+    public void reopen() {
+        this.isClosed = false;
+    }
+
     public void assignProject(Project project) {
         this.project = project;
     }
 
     public void increaseCurrentCount() {
-        if (this.currentCount >= this.recruitmentCount) {
+        if (isClosed()) {
             throw new CustomException(ErrorCode.RECRUITMENT_FULL);
         }
         this.currentCount++;
@@ -87,6 +112,7 @@ public class RecruitmentState {
         this.jobPosition = jobPosition;
         this.recruitmentCount = recruitmentCount;
         this.currentCount = 0;
+        this.isClosed = false;
     }
 
     public static RecruitmentState createRecruitmentState(JobPosition jobPosition, Integer recruitmentCount) {

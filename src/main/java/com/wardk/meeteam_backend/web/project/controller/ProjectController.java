@@ -92,13 +92,13 @@ public class ProjectController {
         return SuccessResponse.onSuccess(response);
     }
 
-    @Operation(summary = "프로젝트 종료", description = "프로젝트를 종료 상태로 변경합니다.")
-    @PostMapping("/{projectId}/end")
-    public SuccessResponse<ProjectEndResponse> endProject(
+    @Operation(summary = "모집 상태 토글", description = "프로젝트 모집 상태를 토글합니다. (모집중 ↔ 모집완료)")
+    @PostMapping("/{projectId}/recruitment/toggle")
+    public SuccessResponse<RecruitmentStatusResponse> toggleRecruitmentStatus(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        ProjectEndResponse response = projectService.endProject(projectId, userDetails.getUsername());
+        RecruitmentStatusResponse response = projectService.toggleRecruitmentStatus(projectId, userDetails.getUsername());
         return SuccessResponse.onSuccess(response);
     }
 
