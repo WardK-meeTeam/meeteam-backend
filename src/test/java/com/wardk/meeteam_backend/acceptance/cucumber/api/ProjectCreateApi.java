@@ -12,7 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +114,79 @@ public class ProjectCreateApi {
         recruitment.put("recruitmentCount", recruitmentCount);
         recruitment.put("techStackIds", getDefaultTechStackIds(fieldCode));
         return recruitment;
+    }
+
+    /**
+     * 모집 포지션 데이터 생성 - 직군/포지션 직접 지정
+     */
+    public Map<String, Object> 모집포지션_생성_직접(JobFieldCode fieldCode, JobPositionCode positionCode, int recruitmentCount) {
+        Map<String, Object> recruitment = new LinkedHashMap<>();
+        recruitment.put("jobFieldCode", fieldCode.name());
+        recruitment.put("jobPositionCode", positionCode.name());
+        recruitment.put("recruitmentCount", recruitmentCount);
+        recruitment.put("techStackIds", getDefaultTechStackIds(fieldCode));
+        return recruitment;
+    }
+
+    /**
+     * 한글 직군/포지션명을 기반으로 모집 포지션 생성
+     * @param jobFieldName 직군명 (예: "백엔드", "프론트", "디자인")
+     * @param positionName 포지션명 (예: "Java/Spring", "웹 프론트엔드")
+     * @param recruitmentCount 모집 인원
+     */
+    public Map<String, Object> 모집포지션_생성(String jobFieldName, String positionName, int recruitmentCount) {
+        JobFieldCode fieldCode = 직군명_파싱(jobFieldName);
+        JobPositionCode positionCode = 포지션명_파싱(positionName);
+        return 모집포지션_생성_직접(fieldCode, positionCode, recruitmentCount);
+    }
+
+    /**
+     * 한글 직군명을 JobFieldCode로 변환
+     */
+    public JobFieldCode 직군명_파싱(String fieldName) {
+        return switch (fieldName) {
+            case "백엔드" -> JobFieldCode.BACKEND;
+            case "프론트", "프론트엔드" -> JobFieldCode.FRONTEND;
+            case "디자인" -> JobFieldCode.DESIGN;
+            case "기획" -> JobFieldCode.PLANNING;
+            case "AI" -> JobFieldCode.AI;
+            case "인프라", "인프라/운영" -> JobFieldCode.INFRA_OPERATION;
+            default -> throw new IllegalArgumentException("알 수 없는 직군: " + fieldName);
+        };
+    }
+
+    /**
+     * 한글 포지션명을 JobPositionCode로 변환
+     */
+    public JobPositionCode 포지션명_파싱(String positionName) {
+        return switch (positionName) {
+            case "Java/Spring" -> JobPositionCode.JAVA_SPRING;
+            case "Kotlin/Spring" -> JobPositionCode.KOTLIN_SPRING;
+            case "웹 프론트엔드" -> JobPositionCode.WEB_FRONTEND;
+            case "UI/UX 디자이너" -> JobPositionCode.UI_UX_DESIGNER;
+            case "LLM" -> JobPositionCode.LLM;
+            default -> throw new IllegalArgumentException("알 수 없는 포지션: " + positionName);
+        };
+    }
+
+    /**
+     * "직군 - 포지션" 형식의 문자열에서 JobPositionCode 추출
+     */
+    public JobPositionCode 포지션_문자열_파싱(String positionString) {
+        String[] parts = positionString.split(" - ");
+        String positionName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+        return 포지션명_파싱(positionName);
+    }
+
+    /**
+     * "직군 - 포지션" 형식의 문자열에서 JobFieldCode 추출
+     */
+    public JobFieldCode 직군_문자열_파싱(String positionString) {
+        String[] parts = positionString.split(" - ");
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("포지션 형식이 올바르지 않습니다: " + positionString);
+        }
+        return 직군명_파싱(parts[0].trim());
     }
 
     // === Validation 테스트용 요청 데이터 ===
