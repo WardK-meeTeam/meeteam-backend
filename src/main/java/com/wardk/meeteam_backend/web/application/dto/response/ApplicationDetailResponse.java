@@ -34,7 +34,10 @@ public record ApplicationDetailResponse(
         JobPositionInfo jobPosition,
 
         @Schema(description = "지원 사유 및 자기소개")
-        String motivation
+        String motivation,
+
+        @Schema(description = "지원 상태")
+        String status
 ) {
     @Schema(description = "지원 포지션 정보")
     public record JobPositionInfo(
@@ -67,7 +70,8 @@ public record ApplicationDetailResponse(
                         application.getJobPosition().getJobField().getId(),
                         application.getJobPosition().getJobField().getName()
                 ),
-                application.getMotivation()
+                application.getMotivation(),
+                application.getStatus().getDisplayName()
         );
     }
 }
