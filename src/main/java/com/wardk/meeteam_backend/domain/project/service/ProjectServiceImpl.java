@@ -106,7 +106,7 @@ public class ProjectServiceImpl implements ProjectService {
 
         // 모집 정보 생성 및 추가 (도메인 서비스 위임)
         List<RecruitmentState> recruitmentStates = recruitmentDomainService.createRecruitmentStates(command.recruitments());
-        recruitmentStates.forEach(project::addRecruitment);
+        recruitmentStates.forEach(recruitment -> project.addRecruitment(recruitment));
 
         projectRepository.save(project);
 
@@ -418,7 +418,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectEndResponse endProject(Long projectId, String requesterEmail) {
+    public RecruitmentStatusResponse toggleRecruitmentStatus(Long projectId, String requesterEmail) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
@@ -426,14 +426,7 @@ public class ProjectServiceImpl implements ProjectService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
-        validateIsCompleted(project);
-        project.endProject();
-        return ProjectEndResponse.responseDto(projectId);
-    }
-
-    private static void validateIsCompleted(Project project) {
-        if (project.isCompleted()) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
+        project.toggleRecruitmentStatus();
+        return RecruitmentStatusResponse.from(project);
     }
 }

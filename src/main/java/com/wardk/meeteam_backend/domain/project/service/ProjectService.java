@@ -72,8 +72,9 @@ public interface ProjectService {
     List<ProjectRepoResponse> findProjectRepos(Long projectId);
 
     /**
-     * 프로젝트를 종료합니다.
+     * 프로젝트 모집 상태를 토글합니다.
+     * 모집중 ↔ 모집완료
      */
-    ProjectEndResponse endProject(Long projectId, String requesterEmail);
+    RecruitmentStatusResponse toggleRecruitmentStatus(Long projectId, String requesterEmail);
 }
 
