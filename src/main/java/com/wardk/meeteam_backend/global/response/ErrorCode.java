@@ -49,7 +49,7 @@ public enum ErrorCode {
     INVALID_RECRUITMENT_DEADLINE_POLICY(HttpStatus.BAD_REQUEST, "PROJECT400", "마감 방식과 마감일 설정이 올바르지 않습니다."),
     RECRUITMENT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "완료된 모집은 인원을 줄일 수 없습니다."),
     INVALID_RECRUITMENT_COUNT(HttpStatus.BAD_REQUEST, "PROJECT400", "잘못된 모집 인원 입력입니다."),
-    PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "이미 종료된 프로젝트입니다."),
+    PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "해당 프로젝트는 모집이 마감되었습니다."),
     PROJECT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "아직 종료되지 않은 프로젝트입니다."),
 
     // JOB
