@@ -53,12 +53,14 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Counted("project.apply")
     @Override
     public ApplicationResponse apply(Long projectId, Long memberId, ApplicationRequest request) {
+        // Todo : 프로젝트 종료 요구사항 사라짐, 모집완료만 가능, Project 에 isClosed 제거 바람
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         validateProjectNotCompleted(project);
 
         // 프로젝트 리더는 자신의 프로젝트에 지원 불가
+        // Todo : project 엔티티 내부에서 확인가능 (엔티티로 위임) + 메서드로 분리
         if (project.getCreator().getId().equals(memberId)) {
             throw new CustomException(ErrorCode.APPLICATION_SELF_PROJECT_FORBIDDEN);
         }
@@ -66,18 +68,22 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
+
+        // Todo : 메서드 분리
         if (applicationRepository.existsByProjectAndApplicant(project, member)) {
             throw new CustomException(ErrorCode.PROJECT_APPLICATION_ALREADY_EXISTS);
         }
 
+        // Todo : 메서드 분리
         if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
+        // Todo : 메서드 분리
         JobPosition jobPosition = jobPositionRepository.findByCode(request.jobPositionCode())
                 .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
 
-        // 해당 프로젝트에서 해당 포지션으로 모집 중인지 확인
+        // Todo: 메서드 분리
         recruitmentStateRepository.findAvailableByProjectIdAndJobPosition(projectId, jobPosition)
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_POSITION_NOT_AVAILABLE));
 
