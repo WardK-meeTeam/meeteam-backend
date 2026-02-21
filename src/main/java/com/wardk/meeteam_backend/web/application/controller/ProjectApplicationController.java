@@ -22,17 +22,6 @@ public class ProjectApplicationController {
 
     private final ProjectApplicationService applicationService;
 
-    @Operation(summary = "지원서 폼 조회", description = "프로젝트 지원 전 지원자 정보와 모집 포지션 목록을 조회합니다.")
-    @GetMapping("/{projectId}/application/form")
-    public SuccessResponse<ApplicationFormResponse> getApplicationForm(
-            @PathVariable Long projectId,
-            @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
-
-        ApplicationFormResponse response = applicationService.getApplicationForm(projectId, userDetails.getMemberId());
-
-        return SuccessResponse.onSuccess(response);
-    }
-
     @Operation(summary = "프로젝트 지원", description = "프로젝트에 지원합니다. 프로젝트 리더는 자신의 프로젝트에 지원할 수 없습니다.")
     @PostMapping("/{projectId}/application")
     public SuccessResponse<ApplicationResponse> apply(
@@ -52,7 +41,6 @@ public class ProjectApplicationController {
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
         List<ProjectApplicationListResponse> applicationList = applicationService.getApplicationList(projectId, userDetails.getUsername());
-
         return SuccessResponse.onSuccess(applicationList);
     }
 

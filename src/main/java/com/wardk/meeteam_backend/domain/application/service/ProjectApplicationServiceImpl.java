@@ -50,36 +50,6 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    @Override
-    @Transactional(readOnly = true)
-    public ApplicationFormResponse getApplicationForm(Long projectId, Long memberId) {
-        Project project = projectRepository.findActiveById(projectId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-
-        // 프로젝트 리더는 자신의 프로젝트에 지원 불가
-        if (project.getCreator().getId().equals(memberId)) {
-            throw new CustomException(ErrorCode.APPLICATION_SELF_PROJECT_FORBIDDEN);
-        }
-
-        // 이미 지원한 경우
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-
-        if (applicationRepository.existsByProjectAndApplicant(project, member)) {
-            throw new CustomException(ErrorCode.PROJECT_APPLICATION_ALREADY_EXISTS);
-        }
-
-        // 이미 프로젝트 멤버인 경우
-        if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
-            throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
-        }
-
-        // 모집 포지션 목록 조회
-        List<RecruitmentState> recruitments = recruitmentStateRepository.findByProjectIdWithJobPosition(projectId);
-
-        return ApplicationFormResponse.of(projectId, project.getName(), member, recruitments);
-    }
-
     @Counted("project.apply")
     @Override
     public ApplicationResponse apply(Long projectId, Long memberId, ApplicationRequest request) {
@@ -185,8 +155,16 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
 
+        List<RecruitmentState> recruitmentStates = recruitmentStateRepository.findByProjectIdWithJobPosition(projectId);
+
         return applicationRepository.findPendingByProjectIdOrderByCreatedAtDesc(projectId).stream()
-                .map(ProjectApplicationListResponse::from)
+                .map(application -> {
+                    RecruitmentState recruitmentState = recruitmentStates.stream()
+                            .filter(rs -> rs.getJobPosition().getId().equals(application.getJobPosition().getId()))
+                            .findFirst()
+                            .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_NOT_FOUND));
+                    return ProjectApplicationListResponse.from(application, recruitmentState);
+                })
                 .toList();
     }
 

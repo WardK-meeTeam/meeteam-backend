@@ -12,12 +12,6 @@ import java.util.List;
 public interface ProjectApplicationService {
 
     /**
-     * 지원서 폼 정보 조회.
-     * 지원자 정보와 프로젝트의 모집 포지션 목록을 반환합니다.
-     */
-    ApplicationFormResponse getApplicationForm(Long projectId, Long memberId);
-
-    /**
      * 프로젝트 지원.
      */
     ApplicationResponse apply(Long projectId, Long memberId, ApplicationRequest request);
