@@ -1,6 +1,8 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.factory;
 
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+
+import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
+import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,9 @@ public class MemberFactory {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private JobPositionRepository jobPositionRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -38,7 +43,8 @@ public class MemberFactory {
      */
     public Member create(String name, String email, String password) {
         Member member = Member.createForTest(email, name, passwordEncoder.encode(password));
-        member.addJobPosition(JobPosition.WEB_SERVER);
+        jobPositionRepository.findByCode(JobPositionCode.JAVA_SPRING)
+                .ifPresent(member::addJobPosition);
         return memberRepository.save(member);
     }
 
@@ -47,7 +53,8 @@ public class MemberFactory {
      */
     public Member createOAuthMember(String name, String email, String provider, String providerId) {
         Member member = Member.createOAuthForTest(email, name, provider, providerId);
-        member.addJobPosition(JobPosition.WEB_FRONTEND);
+        jobPositionRepository.findByCode(JobPositionCode.WEB_FRONTEND)
+                .ifPresent(member::addJobPosition);
         return memberRepository.save(member);
     }
 

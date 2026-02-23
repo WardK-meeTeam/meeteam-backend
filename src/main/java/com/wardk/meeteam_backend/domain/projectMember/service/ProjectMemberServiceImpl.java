@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.projectmember.service;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMemberRole;
 import com.wardk.meeteam_backend.global.aop.Retry;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -41,7 +42,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition);
+        ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition, ProjectMemberRole.LEADER);
         project.joinMember(projectMember);
         projectMemberRepository.save(projectMember);
     }
@@ -60,7 +61,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
 
-        ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition);
+        ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition, ProjectMemberRole.MEMBER);
         project.joinMember(projectMember);
 
         RecruitmentState recruitmentState = project.getRecruitments().stream()
@@ -78,7 +79,6 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Project project = projectRepository.findByIdWithMembers(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        Long creatorId = project.getCreator().getId();
         return project.getMembers().stream()
                 .map(pm -> {
                     Member member = pm.getMember();
@@ -86,7 +86,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                             member.getId(),
                             member.getRealName(),
                             member.getStoreFileName(),
-                            creatorId.equals(member.getId())
+                            pm.getRole() == ProjectMemberRole.LEADER
                     );
                 }).toList();
     }

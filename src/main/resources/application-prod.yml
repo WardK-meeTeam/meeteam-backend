@@ -46,9 +46,9 @@ spring:
 
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: create
         show-sql: true
-        defer-datasource-initialization: false # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
+        defer-datasource-initialization: true # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
         properties:
             hibernate:
                 format_sql: true

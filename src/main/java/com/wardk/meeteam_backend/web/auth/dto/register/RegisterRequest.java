@@ -4,6 +4,7 @@ package com.wardk.meeteam_backend.web.auth.dto.register;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -18,7 +19,7 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"email", "password", "name", "birthDate", "gender", "jobPositions", "skills", "projectExperienceCount", "githubUrl", "blogUrl"})
+@JsonPropertyOrder({"email", "password", "name", "birthDate", "gender", "jobPositions", "projectExperienceCount", "githubUrl", "blogUrl"})
 public class RegisterRequest {
 
     // === 필수 입력 (인증 정보) ===
@@ -45,18 +46,16 @@ public class RegisterRequest {
     @NotNull(message = "성별을 선택해주세요")
     private Gender gender;
 
-    @Schema(description = "관심분야 (직무 포지션 목록)", example = "[\"WEB_SERVER\", \"WEB_FRONTEND\"]", requiredMode = Schema.RequiredMode.REQUIRED)
+
     @NotEmpty(message = "관심분야를 최소 1개 이상 선택해주세요")
-    private List<Long> jobPositionIds;
+    @Valid
+    private List<MemberJobPositionRequest> jobPositions = new ArrayList<>();
 
     @Schema(description = "프로젝트 경험 횟수", example = "3", minimum = "0", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "프로젝트 경험 횟수를 입력해주세요")
     private Integer projectExperienceCount;
 
     // === 선택 입력 ===
-    @Schema(description = "기술스택", example = "[\"1\", \"2\"]")
-    private List<Long> techStackIds = new ArrayList<>();
-
     @Schema(description = "GitHub URL", example = "https://github.com/username")
     private String githubUrl;
 
@@ -64,9 +63,3 @@ public class RegisterRequest {
     private String blogUrl;
 
 }
-
-/*
-{"name":"박희운" , "email" : "phu98@naver.com" , "password" : 1234 , "jobtype": WEB }
-
-
- */

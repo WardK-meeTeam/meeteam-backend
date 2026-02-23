@@ -202,16 +202,15 @@ public class Member extends BaseEntity {
         jobPositions.add(new MemberJobPosition(this, jobPosition));
     }
 
-    public void addMemberTechStack(TechStack techStack) {
-        memberTechStacks.add(new MemberTechStack(this, techStack));
+    public void addMemberTechStack(TechStack techStack, Integer displayOrder) {
+        memberTechStacks.add(new MemberTechStack(this, techStack, displayOrder));
     }
 
     /**
-     * 회원가입 시 직무와 스킬을 일괄 초기화
+     * 회원가입 시 직무 목록을 초기화합니다.
      */
-    public void initializeDetails(List<JobPosition> jobPositions, List<TechStack> techStacks) {
-        jobPositions.forEach(jobPosition -> addJobPosition(jobPosition));
-        techStacks.forEach(this::addMemberTechStack);
+    public void initializeJobPositions(List<JobPosition> jobPositions) {
+        jobPositions.forEach(this::addJobPosition);
     }
 
     public void setIntroduction(String introduction) {

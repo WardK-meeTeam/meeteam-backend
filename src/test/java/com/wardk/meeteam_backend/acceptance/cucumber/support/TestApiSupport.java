@@ -2,6 +2,8 @@ package com.wardk.meeteam_backend.acceptance.cucumber.support;
 
 import com.wardk.meeteam_backend.acceptance.cucumber.api.AuthAPI;
 import com.wardk.meeteam_backend.acceptance.cucumber.api.MemberAPI;
+import com.wardk.meeteam_backend.acceptance.cucumber.api.NotificationApi;
+import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectApplicationApi;
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectCreateApi;
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectLikeApi;
 import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectManagementApi;
@@ -33,6 +35,12 @@ public class TestApiSupport {
     @Autowired
     private ProjectSearchApi projectSearchApi;
 
+    @Autowired
+    private ProjectApplicationApi projectApplicationApi;
+
+    @Autowired
+    private NotificationApi notificationApi;
+
     public AuthAPI auth() {
         return authAPI;
     }
@@ -55,5 +63,13 @@ public class TestApiSupport {
 
     public ProjectSearchApi projectSearch() {
         return projectSearchApi;
+    }
+
+    public ProjectApplicationApi projectApplication() {
+        return projectApplicationApi;
+    }
+
+    public NotificationApi notification() {
+        return notificationApi;
     }
 }

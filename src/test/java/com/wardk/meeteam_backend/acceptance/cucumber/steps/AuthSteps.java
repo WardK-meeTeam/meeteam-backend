@@ -4,7 +4,8 @@ import com.wardk.meeteam_backend.acceptance.cucumber.factory.MemberFactory;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestApiSupport;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestRepositorySupport;
-import com.wardk.meeteam_backend.domain.job.JobPosition;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
+import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
@@ -61,7 +62,7 @@ public class AuthSteps {
     @먼저("{string} 이메일로 가입된 일반회원이 존재한다")
     public void 이메일로_가입된_일반회원이_존재한다(String email) {
         if (repository.member().findByEmail(email).isEmpty()) {
-            api.auth().일반회원가입_요청(email, 기본_비밀번호, "테스트회원", "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+            api.auth().일반회원가입_요청(email, 기본_비밀번호, "테스트회원", "1998-03-15", "남성", List.of(JobPositionCode.JAVA_SPRING));
         }
         Member member = repository.member().findByEmail(email).orElseThrow();
         context.member().setId(member.getId());
@@ -87,7 +88,7 @@ public class AuthSteps {
                 name,
                 "1998-03-15",
                 "남성",
-                List.of(JobPosition.WEB_SERVER)
+                List.of(JobPositionCode.JAVA_SPRING)
         );
 
         Member member = repository.member().findByEmail(email)
@@ -144,7 +145,7 @@ public class AuthSteps {
 
         // 1. 회원가입 (이미 존재할 수 있으므로 실패해도 무시하거나, repository에서 체크)
         if (repository.member().findByEmail(email).isEmpty()) {
-            api.auth().일반회원가입_요청(email, password, name, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+            api.auth().일반회원가입_요청(email, password, name, "1998-03-15", "남성", List.of(JobPositionCode.JAVA_SPRING));
         }
 
         // 2. 로그인하여 토큰 획득
@@ -198,13 +199,16 @@ public class AuthSteps {
                 ? Integer.parseInt(row.get("프로젝트경험횟수").trim())
                 : 0;
 
+        // 직군/직무 코드로 변환
+        JobPositionCode positionCode = toJobPositionCode(row.get("직군"), row.get("직무"));
+
         var response = api.auth().일반회원가입_요청(
                 row.get("이메일"),
                 row.get("비밀번호"),
                 row.get("이름"),
                 row.get("생년월일"),
                 row.get("성별"),
-                List.of(toJobPosition(row.get("직무"))),
+                List.of(positionCode),
                 projectExperienceCount
         );
         context.setResponse(response);
@@ -212,25 +216,25 @@ public class AuthSteps {
 
     @만약("동일한 이메일 {string}으로 일반회원가입을 요청하면")
     public void 동일한_이메일로_일반회원가입을_요청하면(String email) {
-        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of(JobPositionCode.JAVA_SPRING));
         context.setResponse(response);
     }
 
     @만약("비밀번호 {string}으로 일반회원가입을 요청하면")
     public void 비밀번호로_일반회원가입을_요청하면(String password) {
-        var response = api.auth().일반회원가입_요청(기본_이메일, password, 기본_이름, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+        var response = api.auth().일반회원가입_요청(기본_이메일, password, 기본_이름, "1998-03-15", "남성", List.of(JobPositionCode.JAVA_SPRING));
         context.setResponse(response);
     }
 
     @만약("이메일 {string}로 일반회원가입을 요청하면")
     public void 이메일로_일반회원가입을_요청하면(String email) {
-        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+        var response = api.auth().일반회원가입_요청(email, 기본_비밀번호, 기본_이름, "1998-03-15", "남성", List.of(JobPositionCode.JAVA_SPRING));
         context.setResponse(response);
     }
 
     @만약("이름을 입력하지 않고 일반회원가입을 요청하면")
     public void 이름을_입력하지_않고_일반회원가입을_요청하면() {
-        var response = api.auth().일반회원가입_요청(기본_이메일, 기본_비밀번호, null, "1998-03-15", "남성", List.of(JobPosition.WEB_SERVER));
+        var response = api.auth().일반회원가입_요청(기본_이메일, 기본_비밀번호, null, "1998-03-15", "남성", List.of(JobPositionCode.JAVA_SPRING));
         context.setResponse(response);
     }
 
@@ -283,12 +287,15 @@ public class AuthSteps {
                 ? Integer.parseInt(row.get("프로젝트경험횟수").trim())
                 : 0;
 
+        // 직군/직무 코드로 변환
+        JobPositionCode positionCode = toJobPositionCode(row.get("직군"), row.get("직무"));
+
         var response = api.auth().OAuth회원가입_요청(
                 context.member().getOauthCode(),
                 row.get("이름"),
                 row.get("생년월일"),
                 row.get("성별"),
-                List.of(toJobPosition(row.get("직무"))),
+                List.of(positionCode),
                 List.of(),
                 projectExperienceCount
         );
@@ -380,27 +387,12 @@ public class AuthSteps {
         context.setResponse(response);
     }
 
-    private JobPosition toJobPosition(String description) {
-        if (description == null) return JobPosition.WEB_SERVER;
-        return switch (description) {
-            case "웹서버", "백엔드" -> JobPosition.WEB_SERVER;
-            case "웹프론트엔드", "프론트엔드" -> JobPosition.WEB_FRONTEND;
-            case "iOS" -> JobPosition.IOS;
-            case "안드로이드" -> JobPosition.ANDROID;
-            case "UI/UX디자인", "디자인" -> JobPosition.UI_UX_DESIGN;
-            case "AI" -> JobPosition.AI;
-            case "기획", "프로덕트매니저", "프로덕트 매니저/오너" -> JobPosition.PRODUCT_MANAGER;
-            case "그래픽디자인" -> JobPosition.GRAPHIC_DESIGN;
-            case "모션 디자인" -> JobPosition.MOTION_DESIGN;
-            case "크로스플랫폼" -> JobPosition.CROSS_PLATFORM;
-            default -> {
-                try {
-                    yield JobPosition.valueOf(description);
-                } catch (IllegalArgumentException e) {
-                    yield JobPosition.WEB_SERVER;
-                }
-            }
-        };
+    /**
+     * 직무 코드를 JobPositionCode로 변환합니다.
+     * feature 파일에서 직접 enum 코드(JAVA_SPRING 등)를 입력받습니다.
+     */
+    private JobPositionCode toJobPositionCode(String jobFieldCode, String jobPositionCode) {
+        return JobPositionCode.valueOf(jobPositionCode);
     }
 
     // ==================== Then Steps ====================
@@ -428,20 +420,12 @@ public class AuthSteps {
     @그리고("{string} 메시지를 확인한다")
     public void 메시지를_확인한다(String expectedMessage) {
         ExtractableResponse<Response> extractableResponse = context.getResponse();
-        io.restassured.response.Response lastResponse = context.getLastResponse();
 
         String actualMessage = null;
         if (extractableResponse != null) {
             actualMessage = extractableResponse.jsonPath().getString("message");
             if (actualMessage == null) {
                 actualMessage = extractableResponse.jsonPath().getString("result.message");
-            }
-        }
-
-        if (actualMessage == null && lastResponse != null) {
-            actualMessage = lastResponse.jsonPath().getString("message");
-            if (actualMessage == null) {
-                actualMessage = lastResponse.jsonPath().getString("result.message");
             }
         }
 

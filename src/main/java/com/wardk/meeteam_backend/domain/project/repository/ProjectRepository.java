@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.domain.project.repository;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
@@ -72,4 +72,15 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Project p where p.id = :id AND p.isDeleted = false")
     Optional<Project> findByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * 프로젝트 상세 조회용 (creator와 recruitments fetch join)
+     */
+    @Query("""
+       SELECT DISTINCT p FROM Project p
+       JOIN FETCH p.creator c
+       LEFT JOIN FETCH p.recruitments r
+       WHERE p.id = :projectId AND p.isDeleted = false
+       """)
+    Optional<Project> findProjectDetailById(@Param("projectId") Long projectId);
 }

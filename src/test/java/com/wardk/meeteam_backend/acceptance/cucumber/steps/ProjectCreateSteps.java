@@ -1,328 +1,204 @@
 package com.wardk.meeteam_backend.acceptance.cucumber.steps;
 
-import com.wardk.meeteam_backend.acceptance.cucumber.api.ProjectCreateApi;
+import com.wardk.meeteam_backend.acceptance.cucumber.factory.MemberFactory;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.TestApiSupport;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
-import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.acceptance.cucumber.support.TestRepositorySupport;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMemberRole;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
-import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
-import com.wardk.meeteam_backend.global.util.JwtUtil;
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.And;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.ko.그러면;
+import io.cucumber.java.ko.그리고;
+import io.cucumber.java.ko.만약;
+import io.cucumber.java.ko.먼저;
+import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.wardk.meeteam_backend.acceptance.cucumber.steps.constant.TestConstants.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 프로젝트 생성 관련 Step 정의
+ */
 public class ProjectCreateSteps {
-
-    @Autowired
-    private ProjectCreateApi projectCreateApi;
-
-    @Autowired
-    private MemberRepository memberRepository;
-
-    @Autowired
-    private ProjectRepository projectRepository;
-
-    @Autowired
-    private ProjectMemberRepository projectMemberRepository;
-
-    @Autowired
-    private JwtUtil jwtUtil;
 
     @Autowired
     private TestContext context;
 
-    private Response lastResponse;
-    private Long createdProjectId;
-    private Map<String, Object> pendingProjectRequest;
+    @Autowired
+    private TestApiSupport api;
 
-    @Before("@create")
-    public void setUpScenarioState() {
-        lastResponse = null;
-        createdProjectId = null;
-        pendingProjectRequest = null;
-        context.clear();
+    @Autowired
+    private TestRepositorySupport repository;
+
+    @Autowired
+    private MemberFactory memberFactory;
+
+    // ==================== Given Steps ====================
+
+    @먼저("로그인하지 않은 상태이다")
+    public void 로그인하지_않은_상태이다() {
+        context.setAccessToken(null);
     }
 
-    @When("다음 정보로 프로젝트 등록을 요청하면:")
-    public void 다음_정보로_프로젝트_등록을_요청하면(DataTable dataTable) {
-        Map<String, String> row = dataTable.asMaps().get(0);
+    // ==================== When Steps ====================
 
-        Map<String, Object> request = defaultProjectRequest();
-        request.put("projectName", row.get("프로젝트명"));
-        request.put("projectCategory", toProjectCategory(row.get("카테고리")));
-        request.put("platformCategory", toPlatformCategory(row.get("플랫폼")));
-        request.put("description", row.get("소개글"));
-        pendingProjectRequest = request;
-    }
+    @만약("다음 조건으로 프로젝트를 등록하면:")
+    public void 다음_조건으로_프로젝트를_등록하면(DataTable dataTable) {
+        List<Map<String, String>> rows = dataTable.asMaps();
 
-    @And("다음 모집 포지션을 추가하면:")
-    public void 다음_모집_포지션을_추가하면(DataTable dataTable) {
-        ensurePendingRequestExists();
+        // 첫 번째 행에서 프로젝트 기본 정보 추출
+        Map<String, String> firstRow = rows.get(0);
+        String projectName = firstRow.get("프로젝트명");
+        String category = firstRow.get("카테고리");
 
+        // 모집 포지션 목록 생성
         List<Map<String, Object>> recruitments = new ArrayList<>();
-        for (Map<String, String> row : dataTable.asMaps()) {
-            String jobPosition = toJobPosition(row.get("분야"), row.get("상세 분야"));
-            recruitments.add(recruitment(jobPosition, parseCount(row.get("모집 인원"))));
+        for (Map<String, String> row : rows) {
+            String jobFieldCode = row.get("모집직군");
+            if (jobFieldCode != null && !jobFieldCode.isBlank()) {
+                int recruitmentCount = parseRecruitmentCount(row.get("모집인원"));
+                recruitments.add(api.projectCreate().모집포지션_생성(jobFieldCode, recruitmentCount));
+            }
         }
 
-        pendingProjectRequest.put("recruitments", recruitments);
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), pendingProjectRequest);
-        context.setLastResponse(lastResponse);
-        createdProjectId = getCreatedProjectId(lastResponse);
-    }
-
-    @When("모집 마감일을 {string}로 설정하고 프로젝트를 등록하면")
-    public void 모집_마감일을_설정하고_프로젝트를_등록하면(String deadlineLabel) {
-        Map<String, Object> request = defaultProjectRequest();
-        if ("모집 완료 시까지".equals(deadlineLabel)) {
-            request.put("recruitmentDeadlineType", "RECRUITMENT_COMPLETED");
-            request.put("endDate", null);
-        }
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
-        context.setLastResponse(lastResponse);
-        createdProjectId = getCreatedProjectId(lastResponse);
-    }
-
-    @When("프로젝트명을 입력하지 않고 등록을 요청하면")
-    public void 프로젝트명을_입력하지_않고_등록을_요청하면() {
-        Map<String, Object> request = defaultProjectRequest();
-        request.put("projectName", null);
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
-        context.setLastResponse(lastResponse);
-    }
-
-    @When("모집 포지션을 추가하지 않고 등록을 요청하면")
-    public void 모집_포지션을_추가하지_않고_등록을_요청하면() {
-        Map<String, Object> request = defaultProjectRequest();
-        request.put("recruitments", List.of());
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
-        context.setLastResponse(lastResponse);
-    }
-
-    @When("마감 방식을 입력하지 않고 프로젝트 등록을 요청하면")
-    public void 마감_방식을_입력하지_않고_프로젝트_등록을_요청하면() {
-        Map<String, Object> request = defaultProjectRequest();
-        request.put("recruitmentDeadlineType", null);
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
-        context.setLastResponse(lastResponse);
-    }
-
-    @When("마감 방식을 {string}로 하고 마감일 없이 프로젝트 등록을 요청하면")
-    public void 마감_방식을_end_date로_하고_마감일_없이_프로젝트_등록을_요청하면(String deadlineType) {
-        Map<String, Object> request = defaultProjectRequest();
-        request.put("recruitmentDeadlineType", deadlineType);
-        request.put("endDate", null);
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
-        context.setLastResponse(lastResponse);
-    }
-
-    @When("마감 방식을 {string}로 하고 마감일을 함께 프로젝트 등록을 요청하면")
-    public void 마감_방식을_recruitment_completed로_하고_마감일을_함께_프로젝트_등록을_요청하면(String deadlineType) {
-        Map<String, Object> request = defaultProjectRequest();
-        request.put("recruitmentDeadlineType", deadlineType);
-        request.put("endDate", LocalDate.now().plusDays(7).toString());
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
-        context.setLastResponse(lastResponse);
-    }
-
-    @When("프로젝트 등록을 요청하면")
-    public void 프로젝트_등록을_요청하면() {
-        Map<String, Object> request = defaultProjectRequest();
-        lastResponse = projectCreateApi.createProject(context.getAccessToken(), request);
-        context.setLastResponse(lastResponse);
-    }
-
-    @Then("프로젝트 등록에 성공한다")
-    public void 프로젝트_등록에_성공한다() {
-        assertNotNull(lastResponse, "응답이 존재해야 합니다.");
-        assertEquals(200, lastResponse.statusCode());
-        assertEquals("COMMON200", lastResponse.jsonPath().getString("code"));
-        assertNotNull(getCreatedProjectId(lastResponse), "생성된 프로젝트 ID가 있어야 합니다.");
-    }
-
-    @Then("프로젝트 등록에 실패한다")
-    public void 프로젝트_등록에_실패한다() {
-        assertNotNull(lastResponse, "응답이 존재해야 합니다.");
-        assertTrue(lastResponse.statusCode() >= 400, "4xx 이상 응답이어야 합니다.");
-    }
-
-    @And("{string}이 프로젝트 리더로 지정된다")
-    public void 프로젝트_리더로_지정된다(String memberName) {
-        assertNotNull(createdProjectId, "생성된 프로젝트 ID가 필요합니다.");
-
-        Project project = projectRepository.findById(createdProjectId)
-                .orElseThrow(() -> new AssertionError("생성된 프로젝트를 찾을 수 없습니다."));
-
-        Member leader = createOrFindMember(memberName);
-        assertEquals(leader.getId(), project.getCreator().getId(), "프로젝트 생성자가 리더여야 합니다.");
-        assertTrue(
-                projectMemberRepository.existsByProjectIdAndMemberId(createdProjectId, leader.getId()),
-                "리더가 프로젝트 멤버로 등록되어야 합니다."
+        var response = api.projectCreate().생성_여러_포지션(
+                context.getAccessToken(),
+                projectName,
+                category,
+                recruitments
         );
-    }
+        context.setResponse(response);
 
-    @And("프로젝트 상세 페이지에서 등록된 정보를 확인할 수 있다")
-    public void 프로젝트_상세_페이지에서_등록된_정보를_확인할_수_있다() {
-        assertNotNull(createdProjectId, "생성된 프로젝트 ID가 필요합니다.");
-        Response detail = projectCreateApi.getProjectDetail(createdProjectId);
-
-        assertEquals(200, detail.statusCode());
-        assertEquals("COMMON200", detail.jsonPath().getString("code"));
-        if (pendingProjectRequest != null) {
-            String actualName = Optional.ofNullable(detail.jsonPath().getString("result.name"))
-                    .orElse(detail.jsonPath().getString("result.projectName"));
-            assertNotNull(actualName);
-            assertFalse(actualName.isBlank());
-            String description = detail.jsonPath().getString("result.description");
-            assertNotNull(description);
-            assertFalse(description.isBlank());
-            assertNotNull(detail.jsonPath().getString("result.projectCategory"));
-            assertNotNull(detail.jsonPath().getString("result.platformCategory"));
+        // 성공 시 프로젝트 ID 저장
+        if (response.statusCode() == HTTP_OK) {
+            Long projectId = response.jsonPath().getLong("result.id");
+            context.project().setId(projectId);
+            context.project().setName(projectName);
         }
     }
 
-    @And("프로젝트 상세에서 {string} 표시를 확인할 수 있다")
-    public void 프로젝트_상세에서_표시를_확인할_수_있다(String expectedLabel) {
-        assertNotNull(createdProjectId, "생성된 프로젝트 ID가 필요합니다.");
-        Response detail = projectCreateApi.getProjectDetail(createdProjectId);
-        assertEquals(200, detail.statusCode());
+    @만약("마감 방식을 {string}로 설정하고 프로젝트를 등록하면")
+    public void 마감_방식을_설정하고_프로젝트를_등록하면(String deadlineType) {
+        LocalDate endDate = "END_DATE".equals(deadlineType) ? LocalDate.now().plusMonths(1) : null;
+        var response = api.projectCreate().생성_마감방식(context.getAccessToken(), deadlineType, endDate);
+        context.setResponse(response);
 
-        String endDate = detail.jsonPath().getString("result.endDate");
-        if ("모집 완료 시까지".equals(expectedLabel)) {
-            assertNull(endDate);
-        } else {
-            assertNotNull(endDate);
+        if (response.statusCode() == HTTP_OK) {
+            Long projectId = response.jsonPath().getLong("result.id");
+            context.project().setId(projectId);
         }
     }
 
-    private void ensurePendingRequestExists() {
-        if (pendingProjectRequest == null) {
-            pendingProjectRequest = defaultProjectRequest();
+    @만약("마감 방식을 {string}로 하고 마감일을 지정하여 프로젝트를 등록하면")
+    public void 마감_방식을_하고_마감일을_지정하여_프로젝트를_등록하면(String deadlineType) {
+        var response = api.projectCreate().생성_마감방식(
+                context.getAccessToken(),
+                deadlineType,
+                LocalDate.now().plusMonths(1)
+        );
+        context.setResponse(response);
+
+        if (response.statusCode() == HTTP_OK) {
+            Long projectId = response.jsonPath().getLong("result.id");
+            context.project().setId(projectId);
         }
     }
 
-    private Long getCreatedProjectId(Response response) {
-        if (response == null || response.statusCode() >= 400) {
-            return null;
-        }
-        Object id = response.jsonPath().get("result.id");
-        if (id instanceof Number number) {
-            return number.longValue();
-        }
-        return null;
+    @만약("프로젝트명 없이 등록을 요청하면")
+    public void 프로젝트명_없이_등록을_요청하면() {
+        var response = api.projectCreate().프로젝트명_누락_요청(context.getAccessToken());
+        context.setResponse(response);
     }
 
-    private Map<String, Object> defaultProjectRequest() {
-        Map<String, Object> request = new LinkedHashMap<>();
-        request.put("projectName", "기본 프로젝트");
-        request.put("description", "테스트용 프로젝트 설명");
-        request.put("projectCategory", "AI_TECH");
-        request.put("platformCategory", "WEB");
-        request.put("offlineRequired", Boolean.FALSE);
-        request.put("jobPosition", "WEB_SERVER");
-        request.put("recruitments", new ArrayList<>(List.of(recruitment("WEB_FRONTEND", 2))));
-        request.put("skills", new ArrayList<>(List.of("React Native", "Python")));
-        request.put("recruitmentDeadlineType", "END_DATE");
-        request.put("endDate", LocalDate.now().plusDays(30).toString());
-        return request;
+    @만약("모집 포지션 없이 등록을 요청하면")
+    public void 모집_포지션_없이_등록을_요청하면() {
+        var response = api.projectCreate().모집포지션_누락_요청(context.getAccessToken());
+        context.setResponse(response);
     }
 
-    private Map<String, Object> recruitment(String jobPosition, int recruitmentCount) {
-        Map<String, Object> recruitment = new LinkedHashMap<>();
-        recruitment.put("jobPosition", jobPosition);
-        recruitment.put("recruitmentCount", recruitmentCount);
-        return recruitment;
+    @만약("마감 방식 없이 프로젝트 등록을 요청하면")
+    public void 마감_방식_없이_프로젝트_등록을_요청하면() {
+        var response = api.projectCreate().마감방식_누락_요청(context.getAccessToken());
+        context.setResponse(response);
     }
 
-    private Member createOrFindMember(String memberName) {
-        String email = toEmail(memberName);
-        return memberRepository.findByEmail(email)
-                .orElseGet(() -> memberRepository.save(Member.createForTest(email, memberName)));
+    @만약("마감 방식을 {string}로 하고 마감일 없이 등록을 요청하면")
+    public void 마감_방식을_하고_마감일_없이_등록을_요청하면(String deadlineType) {
+        var response = api.projectCreate().마감일_누락_요청(context.getAccessToken());
+        context.setResponse(response);
     }
 
-    private String toEmail(String memberName) {
-        return switch (memberName) {
-            case "홍길동" -> "hong@example.com";
-            case "김철수" -> "kim@example.com";
-            case "이영희" -> "lee@example.com";
-            case "박지민" -> "park@example.com";
-            default -> "user" + Math.abs(memberName.hashCode()) + "@example.com";
-        };
+    @만약("마감 방식을 {string}로 하고 마감일을 함께 등록을 요청하면")
+    public void 마감_방식을_하고_마감일을_함께_등록을_요청하면(String deadlineType) {
+        var response = api.projectCreate().모집완료_마감일_포함_요청(context.getAccessToken());
+        context.setResponse(response);
     }
 
-    private String toProjectCategory(String category) {
-        String normalized = category.replace(" ", "").toLowerCase(Locale.ROOT);
-        return switch (normalized) {
-            case "ai/테크", "ai/tech", "ai테크" -> "AI_TECH";
-            case "헬스케어" -> "HEALTHCARE";
-            case "반려동물" -> "PET";
-            case "환경", "친환경" -> "ENVIRONMENT";
-            case "교육", "교육/학습" -> "EDUCATION";
-            case "패션", "뷰티", "패션/뷰티" -> "FASHION_BEAUTY";
-            case "금융", "생산성", "금융/생산성" -> "FINANCE_PRODUCTIVITY";
-            default -> "ETC";
-        };
+    @만약("프로젝트 등록을 요청하면")
+    public void 프로젝트_등록을_요청하면() {
+        var response = api.projectCreate().비인증_생성_요청();
+        context.setResponse(response);
     }
 
-    private String toPlatformCategory(String platform) {
-        String normalized = platform.replace(" ", "").toUpperCase(Locale.ROOT);
-        return switch (normalized) {
-            case "WEB" -> "WEB";
-            case "IOS" -> "IOS";
-            case "ANDROID" -> "ANDROID";
-            default -> throw new IllegalArgumentException("지원하지 않는 플랫폼입니다: " + platform);
-        };
-    }
+    // ==================== Then Steps ====================
 
-    private String toJobPosition(String field, String detailField) {
-        String detail = detailField == null ? "" : detailField.trim().toLowerCase(Locale.ROOT);
-        if (detail.contains("react native")) {
-            return "CROSS_PLATFORM";
+    @그러면("프로젝트 등록에 성공한다")
+    public void 프로젝트_등록에_성공한다() {
+        ExtractableResponse<Response> response = context.getResponse();
+        if (response.statusCode() != HTTP_OK) {
+            System.out.println("프로젝트 등록 실패 응답: " + response.body().asString());
         }
-        if (detail.contains("ui/ux")) {
-            return "UI_UX_DESIGN";
-        }
-        if (detail.contains("ios")) {
-            return "IOS";
-        }
-        if (detail.contains("android")) {
-            return "ANDROID";
-        }
-        if (detail.contains("ai")) {
-            return "AI";
-        }
-
-        String normalizedField = field == null ? "" : field.trim();
-        return switch (normalizedField) {
-            case "프론트엔드" -> "WEB_FRONTEND";
-            case "디자인" -> "UI_UX_DESIGN";
-            case "백엔드" -> "WEB_SERVER";
-            case "기획" -> "PRODUCT_MANAGER";
-            default -> "ETC";
-        };
+        assertThat(response.statusCode()).isEqualTo(HTTP_OK);
     }
 
-    private int parseCount(String rawCount) {
-        String numeric = rawCount.replaceAll("[^0-9]", "");
-        if (numeric.isEmpty()) {
-            throw new IllegalArgumentException("모집 인원을 파싱할 수 없습니다: " + rawCount);
+    @그러면("프로젝트 등록에 실패한다")
+    public void 프로젝트_등록에_실패한다() {
+        assertThat(context.getResponse().statusCode()).isGreaterThanOrEqualTo(HTTP_BAD_REQUEST);
+    }
+
+    @그리고("{string}이 프로젝트 리더로 지정된다")
+    public void 이_프로젝트_리더로_지정된다(String memberName) {
+        Long projectId = context.project().getId();
+        assertThat(projectId).isNotNull();
+
+        // 프로젝트 멤버 조회하여 리더 확인
+        var projectMembers = repository.projectMember().findAllByProjectIdWithMember(projectId);
+        boolean hasLeader = projectMembers.stream()
+                .anyMatch(pm -> pm.getRole() == ProjectMemberRole.LEADER
+                        && pm.getMember().getRealName().equals(memberName));
+
+        assertThat(hasLeader)
+                .overridingErrorMessage("프로젝트 ID %d에서 %s이 리더로 지정되지 않았습니다.", projectId, memberName)
+                .isTrue();
+    }
+
+    @그리고("프로젝트 상세에서 {string} 표시를 확인할 수 있다")
+    public void 프로젝트_상세에서_표시를_확인할_수_있다(String expectedText) {
+        Long projectId = context.project().getId();
+        var response = api.projectCreate().상세조회(projectId);
+
+        assertThat(response.statusCode()).isEqualTo(HTTP_OK);
+        // 마감 방식 확인
+        String deadlineType = response.jsonPath().getString("result.recruitmentDeadlineType");
+        if ("모집 완료 시까지".equals(expectedText)) {
+            assertThat(deadlineType).isEqualTo("RECRUITMENT_COMPLETED");
         }
-        return Integer.parseInt(numeric);
+    }
+
+    // ==================== Helper Methods ====================
+
+    private int parseRecruitmentCount(String countStr) {
+        if (countStr == null || countStr.isBlank()) {
+            return 1;
+        }
+        // "2명" -> 2, "2" -> 2
+        return Integer.parseInt(countStr.replaceAll("[^0-9]", ""));
     }
 }

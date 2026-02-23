@@ -203,6 +203,7 @@ steps/
 
 - HTTP 요청 로직을 캡슐화
 - RestAssured 기반 BDD 스타일 구현
+- **요청 데이터의 기본값 설정 및 변환 처리**
 
 ### 구현 규칙
 
@@ -210,16 +211,12 @@ steps/
 @Component
 public class EntityAPI {
 
+    // === API 요청 메서드 ===
+
     // 한글 메서드명으로 도메인 언어 표현
-    public ExtractableResponse<Response> 생성(String token, Map<String, Object> params) {
-        return RestAssured.given().log().all()
-            .header("Authorization", "Bearer " + token)
-            .contentType(ContentType.JSON)
-            .body(params)
-            .when()
-            .post("/api/entities")
-            .then().log().all()
-            .extract();
+    public ExtractableResponse<Response> 생성(String token, String name, String category) {
+        Map<String, Object> params = 생성_기본_요청(name, category);
+        return 생성_요청(token, params);
     }
 
     public ExtractableResponse<Response> 조회(String token, Long id) {
@@ -231,32 +228,46 @@ public class EntityAPI {
             .extract();
     }
 
-    public ExtractableResponse<Response> 수정(String token, Long id, String newStatus) {
-        return RestAssured.given().log().all()
-            .header("Authorization", "Bearer " + token)
+    // === 요청 데이터 생성 (기본값 포함) ===
+
+    /**
+     * 기본 요청 데이터 생성 - 필수값 외 기본값 자동 설정
+     */
+    public Map<String, Object> 생성_기본_요청(String name, String category) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", name);
+        params.put("category", category);
+        params.put("description", "테스트 설명");           // 기본값
+        params.put("type", "DEFAULT");                      // 기본값
+        params.put("status", "ACTIVE");                     // 기본값
+        return params;
+    }
+
+    /**
+     * 특정 필드 누락 요청 (Validation 테스트용)
+     */
+    public Map<String, Object> 이름_누락_요청() {
+        Map<String, Object> params = 생성_기본_요청("", "CATEGORY");
+        params.remove("name");  // 필드 제거
+        return params;
+    }
+
+    // === 내부 헬퍼 ===
+
+    private ExtractableResponse<Response> 생성_요청(String token, Map<String, Object> params) {
+        var spec = RestAssured.given().log().all()
             .contentType(ContentType.JSON)
-            .body(Map.of("status", newStatus))
+            .body(params);
+
+        if (token != null) {
+            spec.header("Authorization", "Bearer " + token);
+        }
+
+        return spec
             .when()
-            .patch("/api/entities/{id}", id)
+            .post("/api/entities")
             .then().log().all()
             .extract();
-    }
-
-    public ExtractableResponse<Response> 삭제(String token, Long id) {
-        return RestAssured.given().log().all()
-            .header("Authorization", "Bearer " + token)
-            .when()
-            .delete("/api/entities/{id}", id)
-            .then().log().all()
-            .extract();
-    }
-
-    // 요청 파라미터 생성 헬퍼 (복잡한 요청의 경우)
-    public Map<String, Object> 생성_요청_파라미터(String name, String type) {
-        return Map.of(
-            "name", name,
-            "type", type
-        );
     }
 }
 ```
@@ -266,8 +277,11 @@ public class EntityAPI {
 1. **한글 메서드명**: `생성()`, `조회()`, `수정()`, `삭제()` 등
 2. **로깅**: `log().all()`로 요청/응답 로깅
 3. **반환 타입**: `ExtractableResponse<Response>`
-4. **파라미터**: token, id 등 필수값만 받고, 복잡한 요청은 Map 사용
-5. **헬퍼 메서드**: 요청 파라미터 생성 로직 분리
+4. **기본값 처리**: API 클래스에서 요청 데이터의 기본값 설정
+   - Step 클래스는 비즈니스적으로 의미 있는 값만 전달
+   - 나머지 필드는 API 클래스에서 기본값 자동 설정
+5. **Validation 테스트**: 필드 누락/잘못된 값 요청 메서드 제공
+6. **토큰 처리**: null 체크하여 비인증 요청도 지원
 
 ---
 

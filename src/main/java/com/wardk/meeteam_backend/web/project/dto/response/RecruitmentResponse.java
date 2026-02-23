@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.web.project.dto.response;
 
-import com.wardk.meeteam_backend.domain.applicant.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.job.entity.JobField;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import lombok.Builder;
