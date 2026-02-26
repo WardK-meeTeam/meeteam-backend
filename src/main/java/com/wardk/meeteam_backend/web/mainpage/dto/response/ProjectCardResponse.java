@@ -2,7 +2,6 @@ package com.wardk.meeteam_backend.web.mainpage.dto.response;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import lombok.AllArgsConstructor;

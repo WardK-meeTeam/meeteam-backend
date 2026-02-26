@@ -406,6 +406,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .currentCount(currentCount)
                 .recruitmentCount(recruitmentCount)
                 .isLiked(likedIds.contains(project.getId()))
+                .likeCount(project.getLikeCount())
                 .recruitments(recruitmentResponses)
                 .build();
         });

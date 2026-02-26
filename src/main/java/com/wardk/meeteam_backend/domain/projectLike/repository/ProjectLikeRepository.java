@@ -23,6 +23,6 @@ public interface ProjectLikeRepository extends JpaRepository<ProjectLike, Long> 
     /**
      * 특정 회원이 좋아요한 프로젝트 ID 목록을 한 번에 조회 (N + 1 방지용 배치 쿼리)
      */
-    @Query("SELECT pl.project.id FROM ProjectLike pl WHERE pl.member = :memberId AND pl.project.id IN :projectIds")
+    @Query("SELECT pl.project.id FROM ProjectLike pl WHERE pl.member.id = :memberId AND pl.project.id IN :projectIds")
     Set<Long> findLikedProjectIds(@Param("memberId") Long memberId, @Param("projectIds") List<Long> projectIds);
 }
