@@ -4,7 +4,7 @@ import com.wardk.meeteam_backend.acceptance.cucumber.factory.MemberFactory;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestApiSupport;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestContext;
 import com.wardk.meeteam_backend.acceptance.cucumber.support.TestRepositorySupport;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMemberRole;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberRole;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.ko.그러면;

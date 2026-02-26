@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.web.projectmember.dto.request;
+package com.wardk.meeteam_backend.web.projectMember.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

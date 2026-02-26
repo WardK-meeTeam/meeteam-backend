@@ -1,6 +1,6 @@
-package com.wardk.meeteam_backend.domain.projectmember.repository;
+package com.wardk.meeteam_backend.domain.projectMember.repository;
 
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

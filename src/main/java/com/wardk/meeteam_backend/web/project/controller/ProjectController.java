@@ -5,7 +5,7 @@ import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
-import com.wardk.meeteam_backend.web.projectmember.dto.response.ProjectUpdateResponse;
+import com.wardk.meeteam_backend.web.projectMember.dto.response.ProjectUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

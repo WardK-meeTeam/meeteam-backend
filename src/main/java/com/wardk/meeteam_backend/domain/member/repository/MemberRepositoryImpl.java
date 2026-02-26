@@ -20,7 +20,7 @@ import java.util.List;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.member;
 import static com.wardk.meeteam_backend.domain.member.entity.QMemberJobPosition.memberJobPosition;
 import static com.wardk.meeteam_backend.domain.member.entity.QMemberTechStack.memberTechStack;
-import static com.wardk.meeteam_backend.domain.projectmember.entity.QProjectMember.projectMember;
+import static com.wardk.meeteam_backend.domain.projectMember.entity.QProjectMember.projectMember;
 import static com.wardk.meeteam_backend.domain.job.entity.QTechStack.techStack;
 
 @Slf4j

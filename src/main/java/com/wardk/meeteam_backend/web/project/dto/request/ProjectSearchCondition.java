@@ -20,4 +20,5 @@ public class ProjectSearchCondition {
 
     private TechStack techStack;
 
+    private String keyword; // 프로젝트 이름 또는 리더 이름 검색
 }

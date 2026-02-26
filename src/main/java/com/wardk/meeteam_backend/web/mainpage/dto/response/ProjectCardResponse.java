@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.web.mainpage.dto.response;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,7 +24,7 @@ public class ProjectCardResponse implements Serializable {
 	private String categoryCode; // AI_TECH (enum name)
 	private String platformName; // WEB
 	private String imageUrl; // 커버 이미지
-	private LocalDateTime endDate; // 마감일
+	private LocalDate endDate; // 마감일
 	private String creatorName; // 리더 이름
 	private String creatorImageUrl; // 리더 프로필 이미지
 	private int currentCount; // 현재 합류 인원 (전체 합산)

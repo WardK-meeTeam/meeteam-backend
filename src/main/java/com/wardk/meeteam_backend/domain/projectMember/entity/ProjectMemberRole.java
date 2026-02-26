@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.domain.projectmember.entity;
+package com.wardk.meeteam_backend.domain.projectMember.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
