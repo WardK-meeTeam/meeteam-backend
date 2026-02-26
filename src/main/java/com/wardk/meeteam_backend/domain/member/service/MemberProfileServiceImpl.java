@@ -7,8 +7,14 @@ import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.RecruitmentPositionResponse;
 import com.wardk.meeteam_backend.web.member.dto.request.*;
 import com.wardk.meeteam_backend.web.member.dto.response.*;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +25,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,6 +41,8 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
     private final S3FileService s3FileService;
+    private final RecruitmentStateRepository recruitmentStateRepository;
+    private final ProjectLikeRepository projectLikeRepository;
 
     /**
      * 나의 프로필 조회 (프로필 사진 분기처리 포함)
@@ -53,7 +66,66 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             log.debug("프로필 사진 없음 - 회원 ID: {}", memberId);
         }
 
+        // 참여 프로젝트 -> ProjectCardResponse 변환 (배치 쿼리)
+        List<Project> projects = member.getProjectMembers().stream()
+            .map(pm -> pm.getProject())
+            .filter(p -> !p.isDeleted())
+            .toList();
 
+        if (!projects.isEmpty()) {
+            List<Long> projectIds = projects.stream().map(Project::getId).toList();
+
+            Map<Long, List<RecruitmentState>> recruitmentMap = recruitmentStateRepository
+                .findAllByProjectIdsWithDetails(projectIds).stream()
+                .collect(Collectors.groupingBy(rs -> rs.getProject().getId()));
+
+            Set<Long> likedIds = projectLikeRepository.findLikedProjectIds(memberId, projectIds);
+
+            List<ProjectCardResponse> cards = projects.stream().map(project -> {
+                List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(), Collections.emptyList());
+
+                int currentTotal = recs.stream().mapToInt(RecruitmentState::getCurrentCount).sum();
+                int recruitTotal = recs.stream().mapToInt(RecruitmentState::getRecruitmentCount).sum();
+
+                List<RecruitmentPositionResponse> recruitments = recs.stream().map(rs ->
+                    RecruitmentPositionResponse.builder()
+                        .jobFieldName(rs.getJobPosition().getJobField().getName())
+                        .jobPositionName(rs.getJobPosition().getName())
+                        .currentCount(rs.getCurrentCount())
+                        .recruitmentCount(rs.getRecruitmentCount())
+                        .isClosed(rs.isClosed())
+                        .techStacks(rs.getRecruitmentTechStacks().stream()
+                            .map(rts -> rts.getTechStack().getName())
+                            .toList())
+                        .build()
+                ).toList();
+
+                return ProjectCardResponse.builder()
+                    .projectId(project.getId())
+                    .projectName(project.getName())
+                    .categoryName(project.getProjectCategory() != null
+                        ? project.getProjectCategory().getDisplayName() : null)
+                    .categoryCode(project.getProjectCategory() != null
+                        ? project.getProjectCategory().name() : null)
+                    .platformName(project.getPlatformCategory() != null
+                        ? project.getPlatformCategory().name() : null)
+                    .imageUrl(project.getImageUrl())
+                    .endDate(project.getEndDate())
+                    .creatorName(project.getCreator().getRealName())
+                    .creatorImageUrl(project.getCreator().getStoreFileName())
+                    .currentCount(currentTotal)
+                    .recruitmentCount(recruitTotal)
+                    .isLiked(likedIds.contains(project.getId()))
+                    .likeCount(project.getLikeCount())
+                    .recruitments(recruitments)
+                    .build();
+
+            }).toList();
+
+            memberProfileResponse.setProjectCards(cards);
+        } else {
+            memberProfileResponse.setProjectCards(List.of());
+        }
 
         return memberProfileResponse;
     }
