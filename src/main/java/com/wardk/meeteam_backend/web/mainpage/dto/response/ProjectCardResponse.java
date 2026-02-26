@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.web.mainpage.dto.response;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProjectCardResponse {
+public class ProjectCardResponse implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
