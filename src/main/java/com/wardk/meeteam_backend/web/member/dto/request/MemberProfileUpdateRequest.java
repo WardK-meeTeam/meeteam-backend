@@ -49,8 +49,8 @@ public class MemberProfileUpdateRequest {
     private String introduction;
 
     @Schema(description = "GitHub URL", example = "https://github.com/username")
-    String githubUrl;
+    private String githubUrl;
 
     @Schema(description = "블로그 URL", example = "https://velog.io/@username")
-    String blogUrl;
+    private String blogUrl;
 }

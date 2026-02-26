@@ -26,7 +26,7 @@ public class MemberProfileResponse {
     private Gender gender;
     private String email;
 
-    @Schema(description = "GutHub URL")
+    @Schema(description = "GitHub URL")
     private String githubUrl;
 
     @Schema(description = "블로그 URL")
