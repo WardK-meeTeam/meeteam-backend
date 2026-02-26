@@ -1,0 +1,33 @@
+package com.wardk.meeteam_backend.web.mainpage.dto.response;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class ProjectCardResponse {
+
+	private static final long serialVersionUID = 1L;
+
+	private Long projectId;
+	private String projectName;
+	private String categoryName; // AI/테크 (한글 displayName)
+	private String categoryCode; // AI_TECH (enum name)
+	private String platformName; // WEB
+	private String imageUrl; // 커버 이미지
+	private LocalDateTime endDate; // 마감일
+	private String creatorName; // 리더 이름
+	private String creatorImageUrl; // 리더 프로필 이미지
+	private int currentCount; // 현재 합류 인원 (전체 합산)
+	private int recruitmentCount; // 모집 정원 (전체 합산)
+	private boolean isLiked; // 좋아요 여부
+	private int likeCount; // 좋아요 수
+	private List<RecruitmentPositionResponse> recruitments; // 포지션별 모집 현황
+}
