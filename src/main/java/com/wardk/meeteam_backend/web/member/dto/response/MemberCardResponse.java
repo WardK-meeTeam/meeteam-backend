@@ -31,7 +31,6 @@ public class MemberCardResponse {
 
         List<String> mainSkills = member.getMemberTechStacks().stream()
             .map(mts -> mts.getTechStack().getName())
-            .limit(3)
             .toList();
 
         return MemberCardResponse.builder()
