@@ -240,4 +240,12 @@ public class Member extends BaseEntity {
     public void setIsParticipating(Boolean isParticipating) {
         this.isParticipating = isParticipating;
     }
+
+    public void setGithubUrl(String githubUrl) {
+        this.githubUrl = githubUrl;
+    }
+
+    public void setBlogUrl(String blogUrl) {
+        this.blogUrl = blogUrl;
+    }
 }

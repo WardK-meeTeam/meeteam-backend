@@ -96,6 +96,8 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         member.setGender(request.getGender());
         member.setIsParticipating(request.getIsParticipating());
         member.setIntroduction(request.getIntroduction());
+        member.setGithubUrl(request.getGithubUrl());
+        member.setBlogUrl(request.getBlogUrl());
 
         // 기존 관심 분야 삭제 후 새로 추가
         updateMemberJobPositions(member, request.getJobPositionIds());

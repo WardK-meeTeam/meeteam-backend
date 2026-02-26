@@ -12,26 +12,30 @@ import java.util.List;
 public class MemberCardResponse {
 
     private Long memberId;
-    private String realName;
-    private String storeFileName;
-    private Long projectCount;
-    private List<String> skills;
-    private List<JobField> jobFields;
+    private String name;
+    private String profileImageUrl;
+    private String jobFieldName; // 대표 직군 한글명
+    private int projectCount;
+    private List<String> mainSkills; // 주요 기술스택
 
 
     public static MemberCardResponse responseToDto(Member member) {
+        String jobFieldName = member.getJobPositions().isEmpty()
+            ? null
+            : member.getJobPositions().get(0).getJobPosition().getJobField().getName();
+
+        List<String> mainSkills = member.getMemberTechStacks().stream()
+            .map(mts -> mts.getTechStack().getName())
+            .limit(3)
+            .toList();
+
         return MemberCardResponse.builder()
-                .memberId(member.getId())
-                .realName(member.getRealName())
-                .storeFileName(member.getStoreFileName())
-                .projectCount((long) member.getProjectMembers().size())
-                .skills(member.getMemberTechStacks().stream()
-                        .map(memberTechStack -> memberTechStack.getTechStack().getName())
-                        .toList())
-                .jobFields(member.getJobPositions().stream()
-                        .map(mjp -> mjp.getJobPosition().getJobField())
-                        .distinct()
-                        .toList())
-                .build();
+            .memberId(member.getId())
+            .name(member.getRealName())
+            .profileImageUrl(member.getStoreFileName())
+            .jobFieldName(jobFieldName)
+            .projectCount(member.getProjectExperienceCount())
+            .mainSkills(mainSkills)
+            .build();
     }
 }

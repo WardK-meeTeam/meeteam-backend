@@ -18,26 +18,31 @@ public class MemberProfileResponse {
 
 
     private String name;
-
     private Long memberId;
 
     @Schema(description = "생년월일", example = "1998-03-15")
     private LocalDate birthDate;
 
     private Gender gender;
-
     private String email;
 
+    @Schema(description = "GutHub URL")
+    private String githubUrl;
 
-    private List<CategoryResponse> categories;
+    @Schema(description = "블로그 URL")
+    private String blogUrl;
 
+    @Schema(description = "프로젝트 경험 횟수")
+    private int projectExperienceCount;
+
+    @Schema(description = "대표 포지션명", example = "웹프론트엔드")
+    private String representativePosition;
+
+    private List<GroupedSkillResponse> groupedSkills;
     private List<String> skills;
 
-
     private Boolean isParticipating;
-
     private int projectCount;
-
     private String introduce;
 
     @Schema(description = "프로필 이미지 URL")
@@ -46,9 +51,7 @@ public class MemberProfileResponse {
     @Schema(description = "프로필 이미지 파일명")
     private String profileImageName;
 
-
     private List<MemberProjectResponse> projectList;
-
 
     public MemberProfileResponse(Member member, Long memberId) {
         this.memberId = memberId;
@@ -56,15 +59,29 @@ public class MemberProfileResponse {
         this.birthDate = member.getBirth();
         this.gender = member.getGender();
         this.email = member.getEmail();
-        this.categories = member.getJobPositions().stream()
-                .map(memberJobPosition -> {
-                    JobPosition jobPosition = memberJobPosition.getJobPosition();
-                    return new CategoryResponse(
-                            jobPosition.getJobField(),
-                            jobPosition
-                    );
-                })
-                .toList();
+        this.githubUrl = member.getGithubUrl();
+        this.blogUrl = member.getBlogUrl();
+        this.projectExperienceCount = member.getProjectExperienceCount();
+
+        // 대표 포지션 (첫 번째 직무 포지션)
+        this.representativePosition = member.getJobPositions().isEmpty()
+            ? null
+            : member.getJobPositions().get(0).getJobPosition().getName();
+
+        // 분야별 기술스택 그룹핑
+        this.groupedSkills = member.getJobPositions().stream()
+            .map(mjp -> {
+                JobPosition jp = mjp.getJobPosition();
+                List<String> techStacks = member.getMemberTechStacks().stream()
+                    .map(mts -> mts.getTechStack().getName())
+                    .toList();
+                return GroupedSkillResponse.builder()
+                    .jobFieldName(jp.getJobField().getName())
+                    .jobPositionName(jp.getName())
+                    .techStacks(techStacks)
+                    .build();
+            }).toList();
+
         this.skills = member.getMemberTechStacks().stream()
                 .map(memberTechStack -> memberTechStack.getTechStack().getName())
                 .toList();
@@ -82,6 +99,5 @@ public class MemberProfileResponse {
                         project.getRecruitmentStatus()
                 ))
                 .toList();
-        // profileImageUrl과 profileImageName은 Service에서 별도로 설정됨
     }
 }
