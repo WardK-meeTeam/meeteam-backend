@@ -14,7 +14,6 @@ import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateR
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
-import com.wardk.meeteam_backend.web.mainpage.dto.response.RecruitmentPositionResponse;
 import com.wardk.meeteam_backend.web.member.dto.request.*;
 import com.wardk.meeteam_backend.web.member.dto.response.*;
 import lombok.RequiredArgsConstructor;
@@ -80,46 +79,12 @@ public class MemberProfileServiceImpl implements MemberProfileService {
 
             Set<Long> likedIds = projectLikeRepository.findLikedProjectIds(memberId, projectIds);
 
-            List<ProjectCardResponse> cards = projects.stream().map(project -> {
-                List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(), Collections.emptyList());
-
-                int currentTotal = recs.stream().mapToInt(RecruitmentState::getCurrentCount).sum();
-                int recruitTotal = recs.stream().mapToInt(RecruitmentState::getRecruitmentCount).sum();
-
-                List<RecruitmentPositionResponse> recruitments = recs.stream().map(rs ->
-                    RecruitmentPositionResponse.builder()
-                        .jobFieldName(rs.getJobPosition().getJobField().getName())
-                        .jobPositionName(rs.getJobPosition().getName())
-                        .currentCount(rs.getCurrentCount())
-                        .recruitmentCount(rs.getRecruitmentCount())
-                        .isClosed(rs.isClosed())
-                        .techStacks(rs.getRecruitmentTechStacks().stream()
-                            .map(rts -> rts.getTechStack().getName())
-                            .toList())
-                        .build()
-                ).toList();
-
-                return ProjectCardResponse.builder()
-                    .projectId(project.getId())
-                    .projectName(project.getName())
-                    .categoryName(project.getProjectCategory() != null
-                        ? project.getProjectCategory().getDisplayName() : null)
-                    .categoryCode(project.getProjectCategory() != null
-                        ? project.getProjectCategory().name() : null)
-                    .platformName(project.getPlatformCategory() != null
-                        ? project.getPlatformCategory().name() : null)
-                    .imageUrl(project.getImageUrl())
-                    .endDate(project.getEndDate())
-                    .creatorName(project.getCreator().getRealName())
-                    .creatorImageUrl(project.getCreator().getStoreFileName())
-                    .currentCount(currentTotal)
-                    .recruitmentCount(recruitTotal)
-                    .isLiked(likedIds.contains(project.getId()))
-                    .likeCount(project.getLikeCount())
-                    .recruitments(recruitments)
-                    .build();
-
-            }).toList();
+            List<ProjectCardResponse> cards = projects.stream()
+                .map(project -> {
+                    List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(),
+                        Collections.emptyList());
+                    return ProjectCardResponse.from(project, recs, likedIds.contains(project.getId()));
+                }).toList();
 
             memberProfileResponse.setProjectCards(cards);
         } else {

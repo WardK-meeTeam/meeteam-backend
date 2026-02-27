@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,4 +34,33 @@ public class ProjectCardResponse implements Serializable {
 	private boolean isLiked; // 좋아요 여부
 	private int likeCount; // 좋아요 수
 	private List<RecruitmentPositionResponse> recruitments; // 포지션별 모집 현황
+
+	public static ProjectCardResponse from(Project project, List<RecruitmentState> recs, boolean isLiked) {
+		int currentCount = recs.stream().mapToInt(RecruitmentState::getCurrentCount).sum();
+		int recruitmentCount = recs.stream().mapToInt(RecruitmentState::getRecruitmentCount).sum();
+
+		List<RecruitmentPositionResponse> recruitments = recs.stream()
+			.map(RecruitmentPositionResponse::from)
+			.toList();
+
+		return ProjectCardResponse.builder()
+			.projectId(project.getId())
+			.projectName(project.getName())
+			.categoryName(project.getProjectCategory() != null
+				? project.getProjectCategory().getDisplayName() : null)
+			.categoryCode(project.getProjectCategory() != null
+				? project.getProjectCategory().name() : null)
+			.platformName(project.getPlatformCategory() != null
+				? project.getPlatformCategory().name() : null)
+			.imageUrl(project.getImageUrl())
+			.endDate(project.getEndDate())
+			.creatorName(project.getCreator().getRealName())
+			.creatorImageUrl(project.getCreator().getStoreFileName())
+			.currentCount(currentCount)
+			.recruitmentCount(recruitmentCount)
+			.isLiked(isLiked)
+			.likeCount(project.getLikeCount())
+			.recruitments(recruitments)
+			.build();
+	}
 }

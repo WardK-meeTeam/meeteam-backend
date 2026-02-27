@@ -36,7 +36,6 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
-import com.wardk.meeteam_backend.web.mainpage.dto.response.RecruitmentPositionResponse;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
 import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
@@ -370,48 +369,20 @@ public class ProjectServiceImpl implements ProjectService {
             .collect(Collectors.groupingBy(rs -> rs.getProject().getId()));
 
         // 배치 쿼리 2: 좋아요 여부 한 번에 조회
-        Set<Long> likedIds = (userDetails != null)
-            ? projectLikeRepository.findLikedProjectIds(userDetails.getMemberId(), projectIds)
-            : Collections.emptySet();
+        Set<Long> likedIds = findLikedProjectIds(userDetails, projectIds);
 
         return projects.map(project -> {
             List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(), Collections.emptyList());
-
-            int currentCount = recs.stream().mapToInt(RecruitmentState::getCurrentCount).sum();
-            int recruitmentCount = recs.stream().mapToInt(RecruitmentState::getRecruitmentCount).sum();
-
-            List<RecruitmentPositionResponse> recruitmentResponses = recs.stream()
-                .map(rs -> RecruitmentPositionResponse.builder()
-                    .jobFieldName(rs.getJobField().getName())
-                    .jobPositionName(rs.getJobPosition().getName())
-                    .currentCount(rs.getCurrentCount())
-                    .recruitmentCount(rs.getRecruitmentCount())
-                    .isClosed(rs.isClosed())
-                    .techStacks(rs.getRecruitmentTechStacks().stream()
-                        .map(rts -> rts.getTechStack().getName())
-                        .toList())
-                    .build())
-                .toList();
-
-            return ProjectCardResponse.builder()
-                .projectId(project.getId())
-                .projectName(project.getName())
-                .categoryName(project.getProjectCategory().getDisplayName())
-                .categoryCode(project.getProjectCategory().name())
-                .platformName(project.getPlatformCategory().name())
-                .imageUrl(project.getImageUrl())
-                .endDate(project.getEndDate())
-                .creatorName(project.getCreator().getRealName())
-                .creatorImageUrl(project.getCreator().getStoreFileName())
-                .currentCount(currentCount)
-                .recruitmentCount(recruitmentCount)
-                .isLiked(likedIds.contains(project.getId()))
-                .likeCount(project.getLikeCount())
-                .recruitments(recruitmentResponses)
-                .build();
+            return ProjectCardResponse.from(project, recs, likedIds.contains(project.getId()));
         });
     }
 
+    private Set<Long> findLikedProjectIds(CustomSecurityUserDetails userDetails, List<Long> projectIds) {
+        if (userDetails == null) {
+            return Collections.emptySet();
+        }
+        return projectLikeRepository.findLikedProjectIds(userDetails.getMemberId(), projectIds);
+    }
 
     @Override
     public List<MyProjectResponse> findMyProjects(CustomSecurityUserDetails userDetails) {
