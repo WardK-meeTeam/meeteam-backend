@@ -262,15 +262,24 @@ public class Project extends BaseEntity {
     }
 
     public String getCategoryDisplayName() {
-        return projectCategory != null ? projectCategory.getDisplayName() : null;
+        if (projectCategory == null) {
+            return null;
+        }
+        return projectCategory.getDisplayName();
     }
 
     public String getCategoryCode() {
-        return projectCategory != null ? projectCategory.name() : null;
+        if (projectCategory == null) {
+            return null;
+        }
+        return projectCategory.name();
     }
 
     public String getPlatformName() {
-        return platformCategory != null ? platformCategory.name() : null;
+        if (platformCategory == null) {
+            return null;
+        }
+        return platformCategory.name();
     }
 
     public boolean isRecruiting() {
