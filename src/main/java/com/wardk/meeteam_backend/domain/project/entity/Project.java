@@ -261,6 +261,18 @@ public class Project extends BaseEntity {
         }
     }
 
+    public String getCategoryDisplayName() {
+        return projectCategory != null ? projectCategory.getDisplayName() : null;
+    }
+
+    public String getCategoryCode() {
+        return projectCategory != null ? projectCategory.name() : null;
+    }
+
+    public String getPlatformName() {
+        return platformCategory != null ? platformCategory.name() : null;
+    }
+
     public boolean isRecruiting() {
         return recruitmentStatus.equals(Recruitment.RECRUITING);
     }

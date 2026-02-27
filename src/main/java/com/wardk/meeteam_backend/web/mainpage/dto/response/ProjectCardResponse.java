@@ -46,12 +46,9 @@ public class ProjectCardResponse implements Serializable {
 		return ProjectCardResponse.builder()
 			.projectId(project.getId())
 			.projectName(project.getName())
-			.categoryName(project.getProjectCategory() != null
-				? project.getProjectCategory().getDisplayName() : null)
-			.categoryCode(project.getProjectCategory() != null
-				? project.getProjectCategory().name() : null)
-			.platformName(project.getPlatformCategory() != null
-				? project.getPlatformCategory().name() : null)
+			.categoryName(project.getCategoryDisplayName())
+			.categoryCode(project.getCategoryCode())
+			.platformName(project.getPlatformName())
 			.imageUrl(project.getImageUrl())
 			.endDate(project.getEndDate())
 			.creatorName(project.getCreator().getRealName())
