@@ -127,13 +127,15 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         }
 
         // 기본 정보 수정
-        member.setRealName(request.getName());
-        member.setAge(request.getAge());
-        member.setGender(request.getGender());
-        member.setIsParticipating(request.getIsParticipating());
-        member.setIntroduction(request.getIntroduction());
-        member.setGithubUrl(request.getGithubUrl());
-        member.setBlogUrl(request.getBlogUrl());
+        member.updateProfile(
+            request.getName(),
+            request.getAge(),
+            request.getGender(),
+            request.getIsParticipating(),
+            request.getIntroduction(),
+            request.getGithubUrl(),
+            request.getBlogUrl()
+        );
 
         // 기존 관심 분야 삭제 후 새로 추가
         updateMemberJobPositions(member, request.getJobPositionIds());

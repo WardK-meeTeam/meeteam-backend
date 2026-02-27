@@ -213,6 +213,19 @@ public class Member extends BaseEntity {
         jobPositions.forEach(this::addJobPosition);
     }
 
+    public void updateProfile(String realName, Integer age, Gender gender,
+                              Boolean isParticipating, String introduction,
+                              String githubUrl, String blogUrl) {
+
+        this.realName = realName;
+        this.age = age;
+        this.gender = gender;
+        this.isParticipating = isParticipating;
+        this.introduction = introduction;
+        this.githubUrl = githubUrl;
+        this.blogUrl = blogUrl;
+    }
+
     public void setIntroduction(String introduction) {
         this.introduction = introduction;
     }
@@ -223,29 +236,5 @@ public class Member extends BaseEntity {
 
     public void setStoreFileName(String storeFileName) {
         this.storeFileName = storeFileName;
-    }
-
-    public void setRealName(String realName) {
-        this.realName = realName;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
-    public void setGender(Gender gender) {
-        this.gender = gender;
-    }
-
-    public void setIsParticipating(Boolean isParticipating) {
-        this.isParticipating = isParticipating;
-    }
-
-    public void setGithubUrl(String githubUrl) {
-        this.githubUrl = githubUrl;
-    }
-
-    public void setBlogUrl(String blogUrl) {
-        this.blogUrl = blogUrl;
     }
 }
