@@ -47,7 +47,7 @@ public record RecruitmentDetailResponse(
         return new RecruitmentDetailResponse(
                 field.getCode().name(),
                 field.getName(),
-                position.getCode().name(),
+                position.getName(),
                 recruitment.getRecruitmentCount(),
                 recruitment.getCurrentCount(),
                 recruitment.getCurrentCount() >= recruitment.getRecruitmentCount(),
