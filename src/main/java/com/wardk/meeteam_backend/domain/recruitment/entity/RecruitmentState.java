@@ -35,7 +35,6 @@ public class RecruitmentState {
     @Column(name = "recruit_count")
     private Integer recruitmentCount;
 
-    @Version
     @Column(name = "current_count")
     private Integer currentCount;
 

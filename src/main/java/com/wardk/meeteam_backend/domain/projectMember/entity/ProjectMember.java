@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.domain.projectMember.entity;
+package com.wardk.meeteam_backend.domain.projectmember.entity;
 
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Member;

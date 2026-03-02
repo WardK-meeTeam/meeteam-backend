@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.web.projectLike.dto.response;
+package com.wardk.meeteam_backend.web.projectlike.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

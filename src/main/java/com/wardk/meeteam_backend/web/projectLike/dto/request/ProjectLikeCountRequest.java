@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.web.projectLike.dto.request;
+package com.wardk.meeteam_backend.web.projectlike.dto.request;
 
 import lombok.Data;
 

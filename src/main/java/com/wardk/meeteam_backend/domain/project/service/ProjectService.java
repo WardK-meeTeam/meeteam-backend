@@ -6,7 +6,7 @@ import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
-import com.wardk.meeteam_backend.web.projectMember.dto.response.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -73,8 +73,13 @@ public interface ProjectService {
 
     /**
      * 프로젝트 모집 상태를 토글합니다.
-     * 모집중 ↔ 모집완료
+     * 모집중 ↔ 모집중단
      */
     RecruitmentStatusResponse toggleRecruitmentStatus(Long projectId, String requesterEmail);
+
+    /**
+     * 프로젝트 팀원 관리 정보를 조회합니다.
+     */
+    TeamManagementResponse getTeamManagement(Long projectId, String requesterEmail);
 }
 

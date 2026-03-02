@@ -1,7 +1,6 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentTechStack;
 import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
@@ -19,15 +18,20 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
+import com.wardk.meeteam_backend.domain.notification.service.NotificationSaveService;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
-import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
-import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberServiceImpl;
+import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
+import com.wardk.meeteam_backend.domain.application.entity.ApplicationStatus;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMemberRole;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectmember.service.ProjectMemberService;
+import com.wardk.meeteam_backend.domain.projectmember.service.ProjectMemberServiceImpl;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
@@ -38,8 +42,7 @@ import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
-import com.wardk.meeteam_backend.web.projectMember.dto.response.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +90,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final WebClient.Builder webClientBuilder;
     private final ApplicationEventPublisher eventPublisher;
     private final RecruitmentDomainService recruitmentDomainService;
+    private final NotificationSaveService notificationSaveService;
 
     @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Counted("project.create")
@@ -248,8 +252,21 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         project.delete();
-        List<Long> membersId = getMembersId(project);
 
+        // 팀원 목록 조회
+        List<Member> members = project.getMembers().stream()
+                .map(pm -> pm.getMember())
+                .toList();
+
+        // 알림 저장 (서비스 레이어에서 동기적으로 저장)
+        notificationSaveService.saveForProjectEnd(project, members);
+
+        // 팀원 ID 목록 생성
+        List<Long> membersId = members.stream()
+                .map(Member::getId)
+                .toList();
+
+        // SSE 전송을 위한 이벤트 발행
         eventPublisher.publishEvent(new ProjectEndEvent(
                 NotificationType.PROJECT_END,
                 membersId,
@@ -259,14 +276,6 @@ public class ProjectServiceImpl implements ProjectService {
         ));
 
         return ProjectDeleteResponse.responseDto(projectId, project.getName());
-    }
-
-    private static List<Long> getMembersId(Project project) {
-        List<Long> membersId = project.getMembers()
-                .stream()
-                .map(p -> p.getMember().getId())
-                .toList();
-        return membersId;
     }
 
     @Override
@@ -426,7 +435,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public RecruitmentStatusResponse toggleRecruitmentStatus(Long projectId, String requesterEmail) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdWithRecruitment(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         if (!project.getCreator().getEmail().equals(requesterEmail)) {
@@ -434,6 +443,50 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         project.toggleRecruitmentStatus();
+        projectRepository.save(project);
         return RecruitmentStatusResponse.from(project);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TeamManagementResponse getTeamManagement(Long projectId, String requesterEmail) {
+        Project project = projectRepository.findByIdWithMembers(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        // 현재 팀원 수
+        int currentMemberCount = project.getMembers().size();
+
+        // 총 모집 정원
+        int totalRecruitmentCount = project.getRecruitments().stream()
+                .mapToInt(r -> r.getRecruitmentCount())
+                .sum();
+
+        // 대기중인 지원서 수
+        long pendingApplicationCount = project.getApplications().stream()
+                .filter(a -> a.getStatus() == ApplicationStatus.PENDING)
+                .count();
+
+        // 팀원 목록
+        List<TeamManagementResponse.TeamMemberInfo> members = project.getMembers().stream()
+                .map(pm -> TeamManagementResponse.TeamMemberInfo.builder()
+                        .memberId(pm.getMember().getId())
+                        .name(pm.getMember().getRealName())
+                        .profileImageUrl(pm.getMember().getStoreFileName())
+                        .jobFieldName(pm.getJobPosition().getJobField().getName())
+                        .jobPositionName(pm.getJobPosition().getName())
+                        .isLeader(pm.getRole() == ProjectMemberRole.LEADER)
+                        .build())
+                .toList();
+
+        return TeamManagementResponse.builder()
+                .currentMemberCount(currentMemberCount)
+                .totalRecruitmentCount(totalRecruitmentCount)
+                .pendingApplicationCount((int) pendingApplicationCount)
+                .members(members)
+                .build();
     }
 }

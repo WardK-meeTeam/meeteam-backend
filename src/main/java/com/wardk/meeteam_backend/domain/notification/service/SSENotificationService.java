@@ -5,10 +5,8 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
 import com.wardk.meeteam_backend.domain.notification.ProjectEndEvent;
-import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
 import com.wardk.meeteam_backend.domain.notification.repository.EmitterRepository;
-import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -41,7 +39,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SSENotificationService {
 
-    private final NotificationRepository notificationRepository;
     private final EmitterRepository emitterRepository;
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
@@ -79,39 +76,29 @@ public class SSENotificationService {
 
     /**
      * ProjectEndEvent 처리 - 다중 수신자 알림
-     * 프로젝트 종료/삭제 시 모든 팀원에게 알림 전송.
+     * 프로젝트 종료/삭제 시 모든 팀원에게 SSE 전송.
+     * 주의: 알림 DB 저장은 서비스 레이어(ProjectServiceImpl)에서 이미 완료됨.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public void notify(ProjectEndEvent event) {
         NotificationType type = event.getType();
         Long projectId = event.getProjectId();
         String projectName = event.getProjectName();
 
-        Project project = findProjectOrThrow(projectId);
-
         for (Long memberId : event.getProjectMembersId()) {
             try {
-                Member receiver = findMemberOrThrow(memberId, "수신자");
-
                 // Context 생성
                 NotificationContext context = NotificationContext.forProjectEnded(
                         memberId, projectId, projectName
                 );
 
-                // DB 저장
-                saveNotification(receiver, project, type, null, null);
-
                 // SSE 전송
-                try {
-                    Payload payload = payloadFactory.create(type, context);
-                    broadcastToReceiver(memberId, type, payload);
-                    log.info("[알림] PROJECT_ENDED 전송 - receiver: {}, project: {}", memberId, projectId);
-                } catch (Exception e) {
-                    log.error("[알림] PROJECT_ENDED 전송 실패 (DB 저장은 완료됨) - receiver: {}, error: {}", memberId, e.getMessage());
-                }
+                Payload payload = payloadFactory.create(type, context);
+                broadcastToReceiver(memberId, type, payload);
+                log.info("[알림] PROJECT_END 전송 - receiver: {}, project: {}", memberId, projectId);
 
             } catch (Exception e) {
-                log.error("[알림] 알림 처리 중 오류 발생 - receiver: {}, error: {}", memberId, e.getMessage());
+                log.error("[알림] PROJECT_END 전송 실패 (DB 저장은 완료됨) - receiver: {}, error: {}", memberId, e.getMessage());
             }
         }
     }
@@ -146,20 +133,6 @@ public class SSENotificationService {
                     .orElseThrow(() -> new CustomException(ErrorCode.ACTOR_NOT_FOUND));
         }
         return null;
-    }
-
-    private void saveNotification(Member receiver, Project project, NotificationType type,
-                                  Long actorId, Long applicationId) {
-        Notification notification = Notification.builder()
-                .receiver(receiver)
-                .project(project)
-                .type(type)
-                .actorId(actorId)
-                .applicationId(applicationId)
-                .isRead(false)
-                .build();
-
-        notificationRepository.save(notification);
     }
 
     private void broadcastToReceiver(Long receiverId, NotificationType type, Payload payload) {

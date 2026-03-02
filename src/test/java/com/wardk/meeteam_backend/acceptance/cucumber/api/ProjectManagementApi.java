@@ -60,15 +60,6 @@ public class ProjectManagementApi {
                 .extract();
     }
 
-    public ExtractableResponse<Response> 상세_조회(Long projectId) {
-        return RestAssured.given().log().all()
-                .accept(MediaType.APPLICATION_JSON_VALUE)
-                .when()
-                .get("/api/projects/V2/{projectId}", projectId)
-                .then().log().all()
-                .extract();
-    }
-
     public ExtractableResponse<Response> 목록_조회() {
         return RestAssured.given().log().all()
                 .accept(MediaType.APPLICATION_JSON_VALUE)

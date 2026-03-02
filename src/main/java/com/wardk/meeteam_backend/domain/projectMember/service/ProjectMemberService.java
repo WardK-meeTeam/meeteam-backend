@@ -1,8 +1,8 @@
-package com.wardk.meeteam_backend.domain.projectMember.service;
+package com.wardk.meeteam_backend.domain.projectmember.service;
 
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
-import com.wardk.meeteam_backend.web.projectMember.dto.request.*;
-import com.wardk.meeteam_backend.web.projectMember.dto.response.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 
 import java.util.List;
 

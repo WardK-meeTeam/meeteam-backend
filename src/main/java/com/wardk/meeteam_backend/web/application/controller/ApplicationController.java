@@ -64,7 +64,7 @@ public class ApplicationController {
             @RequestBody @Validated ApplicationDecisionRequest request,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
-        ApplicationDecisionResponse response = applicationService.decide(request, userDetails.getUsername());
+        ApplicationDecisionResponse response = applicationService.decide(applicationId, request, userDetails.getUsername());
 
         return SuccessResponse.onSuccess(response);
     }

@@ -3,9 +3,8 @@ package com.wardk.meeteam_backend.web.project.controller;
 import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
-import com.wardk.meeteam_backend.web.project.dto.request.*;
+import com.wardk.meeteam_backend.web.project.dto.request.ProjectPostRequest;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
-import com.wardk.meeteam_backend.web.projectMember.dto.response.ProjectUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,9 +18,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * 프로젝트 관련 API 컨트롤러.
+ * 프로젝트 기본 CRUD API 컨트롤러.
+ * 프로젝트 생성, 조회, 삭제를 담당합니다.
  */
-@Tag(name = "Project", description = "프로젝트 관리 API")
+@Tag(name = "Project", description = "프로젝트 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/projects")
@@ -43,9 +43,6 @@ public class ProjectController {
         return SuccessResponse.onSuccess(response);
     }
 
-
-
-
     @Operation(summary = "프로젝트 목록 조회", description = "전체 프로젝트 목록을 조회합니다.")
     @GetMapping
     public SuccessResponse<List<ProjectListResponse>> findAllProjects() {
@@ -64,24 +61,6 @@ public class ProjectController {
         return SuccessResponse.onSuccess(project);
     }
 
-
-
-    @Operation(summary = "프로젝트 수정", description = "프로젝트 정보를 수정합니다.")
-    @PostMapping(value = "/{projectId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public SuccessResponse<ProjectUpdateResponse> updateProject(
-            @PathVariable Long projectId,
-            @Parameter(description = "프로젝트 수정 정보", required = true)
-            @RequestPart @Validated ProjectUpdateRequest request,
-            @Parameter(description = "프로젝트 대표 이미지", required = false)
-            @RequestPart(name = "file", required = false) MultipartFile file,
-            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
-    ) {
-        ProjectUpdateResponse response = projectService.updateProject(
-                projectId, request, file, userDetails.getUsername()
-        );
-        return SuccessResponse.onSuccess(response);
-    }
-
     @Operation(summary = "프로젝트 삭제", description = "프로젝트를 삭제합니다.")
     @DeleteMapping("/{projectId}")
     public SuccessResponse<ProjectDeleteResponse> deleteProject(
@@ -91,38 +70,6 @@ public class ProjectController {
         ProjectDeleteResponse response = projectService.deleteProject(projectId, userDetails.getUsername());
         return SuccessResponse.onSuccess(response);
     }
-
-    @Operation(summary = "모집 상태 토글", description = "프로젝트 모집 상태를 토글합니다. (모집중 ↔ 모집완료)")
-    @PostMapping("/{projectId}/recruitment/toggle")
-    public SuccessResponse<RecruitmentStatusResponse> toggleRecruitmentStatus(
-            @PathVariable Long projectId,
-            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
-    ) {
-        RecruitmentStatusResponse response = projectService.toggleRecruitmentStatus(projectId, userDetails.getUsername());
-        return SuccessResponse.onSuccess(response);
-    }
-
-    @Operation(summary = "GitHub 레포지토리 연결", description = "프로젝트에 GitHub 레포지토리를 연결합니다.")
-    @PostMapping("/{projectId}/repos")
-    public SuccessResponse<List<ProjectRepoResponse>> addRepository(
-            @PathVariable Long projectId,
-            @RequestBody @Validated ProjectRepoRequest request,
-            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
-    ) {
-        List<ProjectRepoResponse> responses = projectService.addRepo(projectId, request, userDetails.getUsername());
-        return SuccessResponse.onSuccess(responses);
-    }
-
-
-
-    @Operation(summary = "프로젝트 레포지토리 조회", description = "프로젝트에 연결된 레포지토리 목록을 조회합니다.")
-    @GetMapping("/{projectId}/repos")
-    public SuccessResponse<List<ProjectRepoResponse>> findProjectRepos(@PathVariable Long projectId) {
-        List<ProjectRepoResponse> responses = projectService.findProjectRepos(projectId);
-        return SuccessResponse.onSuccess(responses);
-    }
-
-
 
     @Operation(summary = "내 프로젝트 조회", description = "로그인한 사용자가 참여 중인/완료한 프로젝트를 조회합니다.")
     @GetMapping("/my")

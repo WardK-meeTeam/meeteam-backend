@@ -3,7 +3,7 @@ package com.wardk.meeteam_backend.web.project.dto.response;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
-import com.wardk.meeteam_backend.web.projectMember.dto.response.*;
+import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
 import lombok.Builder;
 import lombok.Getter;
 

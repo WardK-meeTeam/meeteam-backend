@@ -5,8 +5,8 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
-import com.wardk.meeteam_backend.domain.projectLike.entity.ProjectLike;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.application.entity.ProjectApplication;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -244,16 +244,16 @@ public class Project extends BaseEntity {
 
     /**
      * 모집 상태를 토글합니다.
-     * 모집중 → 모집완료: 모든 포지션 마감
-     * 모집완료 → 모집중: 인원이 안 찬 포지션만 재오픈
+     * 모집중 → 모집중단: 모든 포지션 마감
+     * 모집중단 → 모집중: 인원이 안 찬 포지션만 재오픈
      */
     public void toggleRecruitmentStatus() {
         if (this.recruitmentStatus == Recruitment.RECRUITING) {
-            // 모집중 → 모집완료
+            // 모집중 → 모집중단
             this.recruitmentStatus = Recruitment.CLOSED;
             this.recruitments.forEach(RecruitmentState::close);
         } else {
-            // 모집완료 → 모집중
+            // 모집중단 → 모집중
             this.recruitmentStatus = Recruitment.RECRUITING;
             this.recruitments.stream()
                     .filter(rs -> rs.getCurrentCount() < rs.getRecruitmentCount())
