@@ -43,13 +43,6 @@ public class ProjectController {
         return SuccessResponse.onSuccess(response);
     }
 
-    @Operation(summary = "프로젝트 목록 조회", description = "전체 프로젝트 목록을 조회합니다.")
-    @GetMapping
-    public SuccessResponse<List<ProjectListResponse>> findAllProjects() {
-        List<ProjectListResponse> projects = projectService.findAllProjects();
-        return SuccessResponse.onSuccess(projects);
-    }
-
     @Operation(summary = "프로젝트 상세 조회", description = "프로젝트 상세 정보를 조회합니다. 프로젝트 리더의 관심분야와 기술스택 정보, 좋아요 수, 현재 사용자의 좋아요/리더 여부를 포함합니다.")
     @GetMapping("/{projectId}")
     public SuccessResponse<ProjectDetailResponse> findProject(
@@ -60,6 +53,12 @@ public class ProjectController {
         ProjectDetailResponse project = projectService.findProjectById(projectId, memberId);
         return SuccessResponse.onSuccess(project);
     }
+
+
+
+
+    // ================== Legacy ======================
+
 
     @Operation(summary = "프로젝트 삭제", description = "프로젝트를 삭제합니다.")
     @DeleteMapping("/{projectId}")
@@ -78,5 +77,12 @@ public class ProjectController {
     ) {
         List<MyProjectResponse> myProjects = projectService.findMyProjects(userDetails);
         return SuccessResponse.onSuccess(myProjects);
+    }
+
+    @Operation(summary = "프로젝트 목록 조회", description = "전체 프로젝트 목록을 조회합니다.")
+    @GetMapping
+    public SuccessResponse<List<ProjectListResponse>> findAllProjects() {
+        List<ProjectListResponse> projects = projectService.findAllProjects();
+        return SuccessResponse.onSuccess(projects);
     }
 }

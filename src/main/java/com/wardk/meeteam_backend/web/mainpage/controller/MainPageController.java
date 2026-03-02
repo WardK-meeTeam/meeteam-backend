@@ -26,7 +26,6 @@ public class MainPageController {
     private final ProjectService projectService;
 
 
-
     @Operation(summary = "프로젝트 메인 페이지", description = "메인 페이지에서 프로젝트 카드를 조회")
     @GetMapping("/projects")
     public SuccessResponse<Page<ProjectCardResponse>> getProjects(
@@ -43,6 +42,5 @@ public class MainPageController {
 
     }
 
-    // ...existing code...
 
 }

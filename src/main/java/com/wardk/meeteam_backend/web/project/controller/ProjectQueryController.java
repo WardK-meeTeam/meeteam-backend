@@ -19,6 +19,11 @@ public class ProjectQueryController {
 
     private final ProjectService projectService;
 
+
+
+
+    // ===============Legacy===================
+
     @Operation(summary = "프로젝트 조건 검색", description = "조건과 페이징을 기반으로 프로젝트 목록을 조회합니다.")
     @GetMapping("api/projects/condition")
     public Page<ProjectCardResponse> searchCondition(

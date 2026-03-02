@@ -29,11 +29,6 @@ public interface ProjectService {
     List<ProjectListResponse> findAllProjects();
 
     /**
-     * 프로젝트를 수정합니다.
-     */
-    ProjectUpdateResponse updateProject(Long projectId, ProjectUpdateRequest request, MultipartFile file, String requesterEmail);
-
-    /**
      * 프로젝트를 삭제합니다.
      */
     ProjectDeleteResponse deleteProject(Long projectId, String requesterEmail);

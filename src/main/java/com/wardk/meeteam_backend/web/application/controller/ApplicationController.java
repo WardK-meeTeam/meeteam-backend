@@ -69,6 +69,11 @@ public class ApplicationController {
         return SuccessResponse.onSuccess(response);
     }
 
+
+
+
+    /// Legacy Code
+
     @Operation(summary = "내가 지원한 프로젝트 조회", description = "내가 지원한 프로젝트 목록을 조회합니다.")
     @GetMapping("/my/applications")
     public SuccessResponse<List<AppliedProjectResponse>> getMyAppliedProjects(
