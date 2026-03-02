@@ -7,8 +7,13 @@ import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
+import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
+import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.member.dto.request.*;
 import com.wardk.meeteam_backend.web.member.dto.response.*;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,6 +39,8 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
     private final S3FileService s3FileService;
+    private final RecruitmentStateRepository recruitmentStateRepository;
+    private final ProjectLikeRepository projectLikeRepository;
 
     /**
      * 나의 프로필 조회 (프로필 사진 분기처리 포함)
@@ -53,7 +64,32 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             log.debug("프로필 사진 없음 - 회원 ID: {}", memberId);
         }
 
+        // 참여 프로젝트 -> ProjectCardResponse 변환 (배치 쿼리)
+        List<Project> projects = member.getProjectMembers().stream()
+            .map(pm -> pm.getProject())
+            .filter(p -> !p.isDeleted())
+            .toList();
 
+        if (!projects.isEmpty()) {
+            List<Long> projectIds = projects.stream().map(Project::getId).toList();
+
+            Map<Long, List<RecruitmentState>> recruitmentMap = recruitmentStateRepository
+                .findAllByProjectIdsWithDetails(projectIds).stream()
+                .collect(Collectors.groupingBy(rs -> rs.getProject().getId()));
+
+            Set<Long> likedIds = projectLikeRepository.findLikedProjectIds(memberId, projectIds);
+
+            List<ProjectCardResponse> cards = projects.stream()
+                .map(project -> {
+                    List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(),
+                        Collections.emptyList());
+                    return ProjectCardResponse.from(project, recs, likedIds.contains(project.getId()));
+                }).toList();
+
+            memberProfileResponse.setProjectCards(cards);
+        } else {
+            memberProfileResponse.setProjectCards(List.of());
+        }
 
         return memberProfileResponse;
     }
@@ -91,11 +127,15 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         }
 
         // 기본 정보 수정
-        member.setRealName(request.getName());
-        member.setAge(request.getAge());
-        member.setGender(request.getGender());
-        member.setIsParticipating(request.getIsParticipating());
-        member.setIntroduction(request.getIntroduction());
+        member.updateProfile(
+            request.getName(),
+            request.getAge(),
+            request.getGender(),
+            request.getIsParticipating(),
+            request.getIntroduction(),
+            request.getGithubUrl(),
+            request.getBlogUrl()
+        );
 
         // 기존 관심 분야 삭제 후 새로 추가
         updateMemberJobPositions(member, request.getJobPositionIds());

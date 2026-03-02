@@ -1,13 +1,13 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.wardk.meeteam_backend.domain.projectLike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentTechStack;
 import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
 import com.wardk.meeteam_backend.domain.recruitment.service.RecruitmentDomainService;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.job.entity.JobField;
-import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
@@ -24,13 +24,10 @@ import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
-import com.wardk.meeteam_backend.domain.project.service.dto.RecruitmentCommand;
 import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
-import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
-import com.wardk.meeteam_backend.domain.projectmember.service.ProjectMemberService;
-import com.wardk.meeteam_backend.domain.projectmember.service.ProjectMemberServiceImpl;
+import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
+import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberServiceImpl;
 import com.wardk.meeteam_backend.domain.skill.entity.Skill;
 import com.wardk.meeteam_backend.domain.skill.repository.SkillRepository;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
@@ -38,11 +35,11 @@ import com.wardk.meeteam_backend.global.github.GithubAppAuthService;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
-import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectConditionMainPageResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
-import com.wardk.meeteam_backend.web.recruitmentState.dto.response.ProjectCounts;
-import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.web.projectMember.dto.response.*;
 import io.micrometer.core.annotation.Counted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +57,10 @@ import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -333,24 +333,13 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProjectConditionRequest> searchProjects(
+    public Page<ProjectCardResponse> searchProjects(
             ProjectSearchCondition condition, Pageable pageable,
             CustomSecurityUserDetails userDetails) {
 
         Page<Project> projects = projectRepository.findAllSlicedForSearchAtCondition(condition, pageable);
 
-        return projects.map(project -> {
-            ProjectCounts totalCounts = recruitmentStateRepository.findTotalCountsByProject(project);
-            List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
-
-            Long currentCount = totalCounts != null ? totalCounts.getCurrentCount() : 0L;
-            Long recruitmentCount = totalCounts != null ? totalCounts.getRecruitmentCount() : 0L;
-
-            boolean isLiked = userDetails != null
-                    && projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
-
-            return new ProjectConditionRequest(project, isLiked, currentCount, recruitmentCount, projectMembers);
-        });
+        return toProjectCardPage(projects, userDetails);
     }
 
     @Cacheable(
@@ -359,23 +348,41 @@ public class ProjectServiceImpl implements ProjectService {
             condition = "#pageable.pageNumber == 0 && #userDetails == null && #pageable.pageSize == 20 && #condition.projectCategory == null"
     )
     @Override
-    public Page<ProjectConditionMainPageResponse> searchMainPageProjects(CategoryCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails) {
+    public Page<ProjectCardResponse> searchMainPageProjects(CategoryCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails) {
         Page<Project> projects = projectRepository.findProjectsFromMainPageCondition(condition, pageable);
 
+        return toProjectCardPage(projects, userDetails);
+    }
+
+    private Page<ProjectCardResponse> toProjectCardPage(Page<Project> projects, CustomSecurityUserDetails userDetails) {
+        List<Long> projectIds = projects.getContent().stream()
+            .map(Project::getId)
+            .toList();
+
+        if (projectIds.isEmpty()) {
+            return projects.map(p -> null);
+        }
+
+        // 배치 쿼리 1: 모집 현황 + 기술스택 한 번에 조회
+        List<RecruitmentState> allRecruitments = recruitmentStateRepository.findAllByProjectIdsWithDetails(projectIds);
+        Map<Long, List<RecruitmentState>> recruitmentMap = allRecruitments.stream()
+            .collect(Collectors.groupingBy(rs -> rs.getProject().getId()));
+
+        // 배치 쿼리 2: 좋아요 여부 한 번에 조회
+        Set<Long> likedIds = findLikedProjectIds(userDetails, projectIds);
+
         return projects.map(project -> {
-            ProjectCounts totalCounts = recruitmentStateRepository.findTotalCountsByProject(project);
-            List<ProjectMemberListResponse> projectMembers = projectMemberServiceImpl.getProjectMembers(project.getId());
-
-            Long currentCount = totalCounts != null ? totalCounts.getCurrentCount() : 0L;
-            Long recruitmentCount = totalCounts != null ? totalCounts.getRecruitmentCount() : 0L;
-
-            boolean isLiked = userDetails != null
-                    && projectLikeRepository.existsByMemberIdAndProjectId(userDetails.getMemberId(), project.getId());
-
-            return new ProjectConditionMainPageResponse(project, isLiked, currentCount, recruitmentCount, projectMembers);
+            List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(), Collections.emptyList());
+            return ProjectCardResponse.from(project, recs, likedIds.contains(project.getId()));
         });
     }
 
+    private Set<Long> findLikedProjectIds(CustomSecurityUserDetails userDetails, List<Long> projectIds) {
+        if (userDetails == null) {
+            return Collections.emptySet();
+        }
+        return projectLikeRepository.findLikedProjectIds(userDetails.getMemberId(), projectIds);
+    }
 
     @Override
     public List<MyProjectResponse> findMyProjects(CustomSecurityUserDetails userDetails) {

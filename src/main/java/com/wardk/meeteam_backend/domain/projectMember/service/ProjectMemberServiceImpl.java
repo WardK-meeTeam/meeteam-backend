@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.domain.projectmember.service;
+package com.wardk.meeteam_backend.domain.projectMember.service;
 
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
@@ -6,15 +6,15 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
-import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMemberRole;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMemberRole;
 import com.wardk.meeteam_backend.global.aop.Retry;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.exception.CustomException;
-import com.wardk.meeteam_backend.web.projectmember.dto.request.*;
-import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
+import com.wardk.meeteam_backend.web.projectMember.dto.request.*;
+import com.wardk.meeteam_backend.web.projectMember.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -16,9 +16,6 @@ public record MemberJobPositionResponse(
         @Schema(description = "직군 이름", example = "백엔드")
         String jobFieldName,
 
-        @Schema(description = "직무 코드", example = "JAVA_SPRING")
-        String jobPositionCode,
-
         @Schema(description = "직무 이름", example = "Java/Spring")
         String jobPositionName
 ) {
@@ -29,7 +26,6 @@ public record MemberJobPositionResponse(
         return new MemberJobPositionResponse(
                 field.getCode().name(),
                 field.getName(),
-                position.getCode().name(),
                 position.getName()
         );
     }

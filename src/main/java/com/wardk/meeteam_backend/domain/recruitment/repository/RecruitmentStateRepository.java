@@ -44,4 +44,17 @@ public interface RecruitmentStateRepository extends JpaRepository<RecruitmentSta
     Optional<RecruitmentState> findAvailableByProjectIdAndJobPosition(
             @Param("projectId") Long projectId,
             @Param("jobPosition") JobPosition jobPosition);
+
+    /**
+     * 여러 프로젝트이 모집 현황을 기술스택과 함께 한 번에 조회 (N + 1 방지용 배치 쿼리)
+     */
+    @Query("""
+        SELECT rs FROM RecruitmentState rs
+        JOIN FETCH rs.jobPosition jp
+        JOIN FETCH jp.jobField
+        LEFT JOIN FETCH rs.recruitmentTechStacks rts
+        LEFT JOIN FETCH rts.techStack
+        WHERE rs.project.id IN :projectIds
+        """)
+    List<RecruitmentState> findAllByProjectIdsWithDetails(@Param("projectIds") List<Long> projectIds);
 }

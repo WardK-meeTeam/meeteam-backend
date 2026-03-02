@@ -2,7 +2,7 @@ package com.wardk.meeteam_backend.domain.member.entity;
 
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
@@ -213,6 +213,19 @@ public class Member extends BaseEntity {
         jobPositions.forEach(this::addJobPosition);
     }
 
+    public void updateProfile(String realName, Integer age, Gender gender,
+                              Boolean isParticipating, String introduction,
+                              String githubUrl, String blogUrl) {
+
+        this.realName = realName;
+        this.age = age;
+        this.gender = gender;
+        this.isParticipating = isParticipating;
+        this.introduction = introduction;
+        this.githubUrl = githubUrl;
+        this.blogUrl = blogUrl;
+    }
+
     public void setIntroduction(String introduction) {
         this.introduction = introduction;
     }
@@ -223,21 +236,5 @@ public class Member extends BaseEntity {
 
     public void setStoreFileName(String storeFileName) {
         this.storeFileName = storeFileName;
-    }
-
-    public void setRealName(String realName) {
-        this.realName = realName;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
-    public void setGender(Gender gender) {
-        this.gender = gender;
-    }
-
-    public void setIsParticipating(Boolean isParticipating) {
-        this.isParticipating = isParticipating;
     }
 }

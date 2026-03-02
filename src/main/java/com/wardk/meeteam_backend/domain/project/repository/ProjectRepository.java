@@ -4,8 +4,8 @@ import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectSkill;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
-import com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.web.projectLike.dto.response.ProjectWithLikeDto;
 import jakarta.persistence.Entity;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.OneToMany;
@@ -50,7 +50,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
     List<Project> findProjectsWithSkills(@Param("projects") List<Project> projects);
 
     @Query("""
-       SELECT new com.wardk.meeteam_backend.web.projectlike.dto.response.ProjectWithLikeDto(p, COUNT(pl))
+       SELECT new com.wardk.meeteam_backend.web.projectLike.dto.response.ProjectWithLikeDto(p, COUNT(pl))
        FROM Project p
        LEFT JOIN p.projectLikes pl
        WHERE p.id = :projectId AND p.isDeleted = false

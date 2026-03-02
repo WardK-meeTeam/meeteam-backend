@@ -3,10 +3,10 @@ package com.wardk.meeteam_backend.domain.project.service;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
-import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectConditionMainPageResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import com.wardk.meeteam_backend.web.project.dto.response.*;
-import com.wardk.meeteam_backend.web.projectmember.dto.response.*;
+import com.wardk.meeteam_backend.web.projectMember.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,12 +51,12 @@ public interface ProjectService {
     /**
      * 조건에 맞는 프로젝트를 검색합니다.
      */
-    Page<ProjectConditionRequest> searchProjects(ProjectSearchCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails);
+    Page<ProjectCardResponse> searchProjects(ProjectSearchCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails);
 
     /**
      * 메인 페이지용 프로젝트 목록을 조회합니다.
      */
-    Page<ProjectConditionMainPageResponse> searchMainPageProjects(CategoryCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails);
+    Page<ProjectCardResponse> searchMainPageProjects(CategoryCondition condition, Pageable pageable, CustomSecurityUserDetails userDetails);
 
     /**
      * 프로젝트 상세 정보를 조회합니다.

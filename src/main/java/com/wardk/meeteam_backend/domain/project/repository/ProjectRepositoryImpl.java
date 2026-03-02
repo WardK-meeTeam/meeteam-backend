@@ -28,17 +28,18 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
     public Page<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
         Page<Project> projects = applyPagination(pageable, qf ->
-                qf.select(project)
-                        .from(project)
-                        .join(project.creator, member).fetchJoin()
-                        .where(
-                                notDeleted(),
-                                platformCategoryEq(condition.getPlatformCategory()),
-                                recruitmentEq(condition.getRecruitment()),
-                                projectTechStackNameExists(condition.getTechStack()),
-                                jobFieldExists(condition.getJobField()),
-                                projectCategoryEq(condition.getProjectCategory())
-                        )
+            qf.select(project)
+                .from(project)
+                .join(project.creator, member).fetchJoin()
+                .where(
+                    notDeleted(),
+                    platformCategoryEq(condition.getPlatformCategory()),
+                    recruitmentEq(condition.getRecruitment()),
+                    projectTechStackNameExists(condition.getTechStack()),
+                    jobFieldExists(condition.getJobField()),
+                    projectCategoryEq(condition.getProjectCategory()),
+                    keywordContains(condition.getKeyword())
+                )
         );
 
         return projects;
@@ -100,6 +101,13 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         return (projectCategory == null) ? null : project.projectCategory.eq(projectCategory);
     }
 
+    private BooleanExpression keywordContains(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return project.name.containsIgnoreCase(keyword)
+            .or(project.creator.realName.containsIgnoreCase(keyword));
+    }
 
     private BooleanExpression notDeleted() {
         return project.isDeleted.eq(false);

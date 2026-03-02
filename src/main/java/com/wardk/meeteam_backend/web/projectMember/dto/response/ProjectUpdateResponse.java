@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.web.projectmember.dto.response;
+package com.wardk.meeteam_backend.web.projectMember.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;

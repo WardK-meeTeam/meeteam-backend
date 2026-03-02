@@ -33,12 +33,12 @@ public class MemberProfileUpdateRequest {
 
     @NotEmpty(message = "관심 분야를 하나 이상 선택해주세요.")
     @Schema(description = "관심 직무 포지션 목록",
-            example = "[1, 2]")
+        example = "[1, 2]")
     private List<Long> jobPositionIds;
 
     @NotEmpty(message = "기술 스택을 하나 이상 선택해주세요.")
     @Schema(description = "기술 스택 목록",
-            example = "[1, 2, 3]")
+        example = "[1, 2, 3]")
     private List<Long> techStackIds;
 
     @Schema(description = "프로젝트 참여 가능 여부", example = "true")
@@ -48,4 +48,9 @@ public class MemberProfileUpdateRequest {
     @Schema(description = "자기소개", example = "백엔드 개발에 관심이 많은 개발자입니다.")
     private String introduction;
 
+    @Schema(description = "GitHub URL", example = "https://github.com/username")
+    private String githubUrl;
+
+    @Schema(description = "블로그 URL", example = "https://velog.io/@username")
+    private String blogUrl;
 }

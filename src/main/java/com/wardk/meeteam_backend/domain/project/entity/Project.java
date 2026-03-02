@@ -5,8 +5,8 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
-import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
-import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectLike.entity.ProjectLike;
+import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.application.entity.ProjectApplication;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -259,6 +259,27 @@ public class Project extends BaseEntity {
                     .filter(rs -> rs.getCurrentCount() < rs.getRecruitmentCount())
                     .forEach(RecruitmentState::reopen);
         }
+    }
+
+    public String getCategoryDisplayName() {
+        if (projectCategory == null) {
+            return null;
+        }
+        return projectCategory.getDisplayName();
+    }
+
+    public String getCategoryCode() {
+        if (projectCategory == null) {
+            return null;
+        }
+        return projectCategory.name();
+    }
+
+    public String getPlatformName() {
+        if (platformCategory == null) {
+            return null;
+        }
+        return platformCategory.name();
     }
 
     public boolean isRecruiting() {

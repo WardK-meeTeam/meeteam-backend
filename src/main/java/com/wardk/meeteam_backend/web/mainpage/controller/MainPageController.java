@@ -5,7 +5,7 @@ import com.wardk.meeteam_backend.domain.project.service.ProjectService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
-import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectConditionMainPageResponse;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -29,7 +29,7 @@ public class MainPageController {
 
     @Operation(summary = "프로젝트 메인 페이지", description = "메인 페이지에서 프로젝트 카드를 조회")
     @GetMapping("/projects")
-    public SuccessResponse<Page<ProjectConditionMainPageResponse>> getProjects(
+    public SuccessResponse<Page<ProjectCardResponse>> getProjects(
             @ParameterObject CategoryCondition condition,
             @ParameterObject @PageableDefault(
                     page = 0,

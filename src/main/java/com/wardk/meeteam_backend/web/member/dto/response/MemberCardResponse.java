@@ -12,26 +12,35 @@ import java.util.List;
 public class MemberCardResponse {
 
     private Long memberId;
-    private String realName;
-    private String storeFileName;
-    private Long projectCount;
-    private List<String> skills;
-    private List<JobField> jobFields;
+    private String name;
+    private String profileImageUrl;
+    private String jobFieldName; // 대표 직군 한글명
+    private String jobPositionNameEn; // 대표 직무 영문명 (피그마: "Frontend Dev")
+    private int projectCount;
+    private List<String> mainSkills; // 주요 기술스택 (전체 반환, 프론트에서 + N 처리)
 
 
     public static MemberCardResponse responseToDto(Member member) {
+        String jobFieldName = member.getJobPositions().isEmpty()
+            ? null
+            : member.getJobPositions().get(0).getJobPosition().getJobField().getName();
+
+        String jobPositionNameEn = member.getJobPositions().isEmpty()
+            ? null
+            : member.getJobPositions().get(0).getJobPosition().getCode().getEnglishName();
+
+        List<String> mainSkills = member.getMemberTechStacks().stream()
+            .map(mts -> mts.getTechStack().getName())
+            .toList();
+
         return MemberCardResponse.builder()
-                .memberId(member.getId())
-                .realName(member.getRealName())
-                .storeFileName(member.getStoreFileName())
-                .projectCount((long) member.getProjectMembers().size())
-                .skills(member.getMemberTechStacks().stream()
-                        .map(memberTechStack -> memberTechStack.getTechStack().getName())
-                        .toList())
-                .jobFields(member.getJobPositions().stream()
-                        .map(mjp -> mjp.getJobPosition().getJobField())
-                        .distinct()
-                        .toList())
-                .build();
+            .memberId(member.getId())
+            .name(member.getRealName())
+            .profileImageUrl(member.getStoreFileName())
+            .jobFieldName(jobFieldName)
+            .jobPositionNameEn(jobPositionNameEn)
+            .projectCount(member.getProjectExperienceCount())
+            .mainSkills(mainSkills)
+            .build();
     }
 }

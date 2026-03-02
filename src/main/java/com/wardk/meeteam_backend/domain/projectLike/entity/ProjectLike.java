@@ -1,4 +1,4 @@
-package com.wardk.meeteam_backend.domain.projectlike.entity;
+package com.wardk.meeteam_backend.domain.projectLike.entity;
 
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
