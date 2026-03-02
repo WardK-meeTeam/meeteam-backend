@@ -4,7 +4,7 @@ import com.wardk.meeteam_backend.domain.application.repository.ProjectApplicatio
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
 import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
