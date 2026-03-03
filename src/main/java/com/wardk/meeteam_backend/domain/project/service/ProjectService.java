@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.domain.project.service;
 
+import com.wardk.meeteam_backend.domain.project.service.dto.ProjectEditCommand;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
@@ -76,5 +77,15 @@ public interface ProjectService {
      * 프로젝트 팀원 관리 정보를 조회합니다.
      */
     TeamManagementResponse getTeamManagement(Long projectId, String requesterEmail);
+
+    /**
+     * 프로젝트 수정 페이지용 Pre-fill 정보를 조회합니다.
+     */
+    ProjectEditPrefillResponse getProjectEditPrefill(Long projectId, String requesterEmail);
+
+    /**
+     * 프로젝트를 수정합니다.
+     */
+    ProjectEditResponse updateProject(Long projectId, ProjectEditCommand command, MultipartFile file, String requesterEmail);
 }
 

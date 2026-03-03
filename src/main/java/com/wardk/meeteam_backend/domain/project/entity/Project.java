@@ -244,20 +244,56 @@ public class Project extends BaseEntity {
 
     /**
      * 모집 상태를 토글합니다.
-     * 모집중 → 모집중단: 모든 포지션 마감
+     * 모집중/모집마감 → 모집중단: 리더 수동 중단
      * 모집중단 → 모집중: 인원이 안 찬 포지션만 재오픈
      */
     public void toggleRecruitmentStatus() {
-        if (this.recruitmentStatus == Recruitment.RECRUITING) {
-            // 모집중 → 모집중단
-            this.recruitmentStatus = Recruitment.CLOSED;
-            this.recruitments.forEach(RecruitmentState::close);
+        if (this.recruitmentStatus == Recruitment.SUSPENDED) {
+            // 모집중단 → 모집중으로 재개
+            resume();
         } else {
-            // 모집중단 → 모집중
+            // 모집중/모집마감 → 모집중단
+            suspend();
+        }
+    }
+
+    /**
+     * 모집을 중단합니다 (리더 수동).
+     */
+    public void suspend() {
+        this.recruitmentStatus = Recruitment.SUSPENDED;
+        this.recruitments.forEach(RecruitmentState::close);
+    }
+
+    /**
+     * 모집을 재개합니다 (리더 수동).
+     * 인원이 안 찬 포지션만 재오픈됩니다.
+     */
+    public void resume() {
+        this.recruitmentStatus = Recruitment.RECRUITING;
+        this.recruitments.stream()
+                .filter(rs -> rs.getCurrentCount() < rs.getRecruitmentCount())
+                .forEach(RecruitmentState::reopen);
+        // 모든 포지션이 마감된 경우 CLOSED로 변경
+        updateRecruitmentStatusBasedOnPositions();
+    }
+
+    /**
+     * 포지션 상태에 따라 프로젝트 모집 상태를 자동 업데이트합니다.
+     * 모든 포지션이 마감되면 CLOSED, 하나라도 열려있으면 RECRUITING.
+     */
+    public void updateRecruitmentStatusBasedOnPositions() {
+        if (this.recruitmentStatus == Recruitment.SUSPENDED) {
+            return; // 수동 중단 상태에서는 자동 변경하지 않음
+        }
+
+        boolean allClosed = this.recruitments.stream()
+                .allMatch(r -> r.getCurrentCount() >= r.getRecruitmentCount());
+
+        if (allClosed) {
+            this.recruitmentStatus = Recruitment.CLOSED;
+        } else {
             this.recruitmentStatus = Recruitment.RECRUITING;
-            this.recruitments.stream()
-                    .filter(rs -> rs.getCurrentCount() < rs.getRecruitmentCount())
-                    .forEach(RecruitmentState::reopen);
         }
     }
 
@@ -286,8 +322,53 @@ public class Project extends BaseEntity {
         return recruitmentStatus.equals(Recruitment.RECRUITING);
     }
 
+    public boolean isClosed() {
+        return recruitmentStatus.equals(Recruitment.CLOSED);
+    }
+
+    public boolean isSuspended() {
+        return recruitmentStatus.equals(Recruitment.SUSPENDED);
+    }
+
+    /**
+     * @deprecated Use {@link #isClosed()} instead.
+     */
+    @Deprecated
     public boolean isCompleted() {
         return recruitmentStatus.equals(Recruitment.CLOSED);
+    }
+
+    /**
+     * 프로젝트가 수정 가능한 상태인지 확인합니다.
+     * 모집중단(SUSPENDED) 상태에서는 수정 불가.
+     */
+    public boolean isEditable() {
+        return !isSuspended();
+    }
+
+    /**
+     * 기본 정보를 업데이트합니다.
+     */
+    public void updateBasicInfo(
+            String name,
+            String description,
+            ProjectCategory projectCategory,
+            PlatformCategory platformCategory,
+            String githubRepositoryUrl,
+            String communicationChannelUrl,
+            LocalDate endDate,
+            String imageUrl
+    ) {
+        this.name = name;
+        this.description = description;
+        this.projectCategory = projectCategory;
+        this.platformCategory = platformCategory;
+        this.githubRepositoryUrl = githubRepositoryUrl;
+        this.communicationChannelUrl = communicationChannelUrl;
+        this.endDate = endDate;
+        if (imageUrl != null) {
+            this.imageUrl = imageUrl;
+        }
     }
 
     /**

@@ -83,4 +83,18 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
        WHERE p.id = :projectId AND p.isDeleted = false
        """)
     Optional<Project> findProjectDetailById(@Param("projectId") Long projectId);
+
+    /**
+     * 프로젝트 수정용 조회 (creator, recruitments, jobPosition, jobField fetch join)
+     * recruitmentTechStacks는 @BatchSize로 lazy loading 처리
+     */
+    @Query("""
+       SELECT DISTINCT p FROM Project p
+       JOIN FETCH p.creator c
+       LEFT JOIN FETCH p.recruitments r
+       LEFT JOIN FETCH r.jobPosition jp
+       LEFT JOIN FETCH jp.jobField jf
+       WHERE p.id = :projectId AND p.isDeleted = false
+       """)
+    Optional<Project> findProjectForEdit(@Param("projectId") Long projectId);
 }

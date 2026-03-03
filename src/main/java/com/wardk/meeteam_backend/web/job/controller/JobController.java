@@ -17,7 +17,7 @@ public class JobController {
     private final JobInfoService jobInfoService;
 
     @Operation(summary = "직군 정보 전체 조회", description = "필드, 포지션, 기술스택과 필드별 기술 스택 정보 조회")
-    @GetMapping("/api/jobs/options")
+    @GetMapping("/api/v1/jobs/options")
     public SuccessResponse<JobOptionResponse> getJobOptions() {
         return SuccessResponse.onSuccess(jobInfoService.getJobOptions());
     }

@@ -24,14 +24,13 @@ import java.util.List;
 @Tag(name = "Project", description = "프로젝트 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/projects")
 public class ProjectController {
 
     private final ProjectService projectService;
 
     @Operation(summary = "프로젝트 생성",
-            description = "새 프로젝트를 생성합니다. 직군/직무/기술스택 정보는 GET /api/jobs/options를 먼저 호출하여 조회하고, 선택한 직군(JobField)에 해당하는 기술스택만 전송해야 합니다. 마감 방식: END_DATE(마감 날짜 기반, endDate 필수), RECRUITMENT_COMPLETED(모집 완료 시, endDate 미전송)")
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+            description = "새 프로젝트를 생성합니다. 직군/직무/기술스택 정보는 GET /api/v1/jobs/options를 먼저 호출하여 조회하고, 선택한 직군(JobField)에 해당하는 기술스택만 전송해야 합니다. 마감 방식: END_DATE(마감 날짜 기반, endDate 필수), RECRUITMENT_COMPLETED(모집 완료 시, endDate 미전송)")
+    @PostMapping(value = "/api/v1/projects", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public SuccessResponse<ProjectPostResponse> createProject(
             @Parameter(description = "프로젝트 생성 정보", required = true)
             @RequestPart @Validated ProjectPostRequest request,
@@ -44,7 +43,7 @@ public class ProjectController {
     }
 
     @Operation(summary = "프로젝트 상세 조회", description = "프로젝트 상세 정보를 조회합니다. 프로젝트 리더의 관심분야와 기술스택 정보, 좋아요 수, 현재 사용자의 좋아요/리더 여부를 포함합니다.")
-    @GetMapping("/{projectId}")
+    @GetMapping("/api/v1/projects/{projectId}")
     public SuccessResponse<ProjectDetailResponse> findProject(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
@@ -61,7 +60,7 @@ public class ProjectController {
 
 
     @Operation(summary = "프로젝트 삭제", description = "프로젝트를 삭제합니다.")
-    @DeleteMapping("/{projectId}")
+     @DeleteMapping("/api/projects/{projectId}")
     public SuccessResponse<ProjectDeleteResponse> deleteProject(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
@@ -71,7 +70,7 @@ public class ProjectController {
     }
 
     @Operation(summary = "내 프로젝트 조회", description = "로그인한 사용자가 참여 중인/완료한 프로젝트를 조회합니다.")
-    @GetMapping("/my")
+    @GetMapping("/api/projects/my")
     public SuccessResponse<List<MyProjectResponse>> findMyProjects(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
@@ -80,7 +79,7 @@ public class ProjectController {
     }
 
     @Operation(summary = "프로젝트 목록 조회", description = "전체 프로젝트 목록을 조회합니다.")
-    @GetMapping
+    @GetMapping("/api/projects")
     public SuccessResponse<List<ProjectListResponse>> findAllProjects() {
         List<ProjectListResponse> projects = projectService.findAllProjects();
         return SuccessResponse.onSuccess(projects);

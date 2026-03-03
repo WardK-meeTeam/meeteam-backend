@@ -23,10 +23,14 @@ import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.pr.repository.ProjectRepoRepository;
 import com.wardk.meeteam_backend.domain.project.entity.*;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.domain.project.service.dto.ProjectEditCommand;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
+import com.wardk.meeteam_backend.domain.project.service.dto.RecruitmentEditCommand;
 import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
 import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.application.entity.ApplicationStatus;
+import com.wardk.meeteam_backend.domain.application.entity.ProjectApplication;
+import com.wardk.meeteam_backend.domain.application.repository.ProjectApplicationRepository;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMemberRole;
 import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
@@ -91,6 +95,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ApplicationEventPublisher eventPublisher;
     private final RecruitmentDomainService recruitmentDomainService;
     private final NotificationSaveService notificationSaveService;
+    private final ProjectApplicationRepository projectApplicationRepository;
 
     @CacheEvict(value = "mainPageProjects", allEntries = true)
     @Counted("project.create")
@@ -411,5 +416,182 @@ public class ProjectServiceImpl implements ProjectService {
                 .pendingApplicationCount((int) pendingApplicationCount)
                 .members(members)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProjectEditPrefillResponse getProjectEditPrefill(Long projectId, String requesterEmail) {
+        Project project = projectRepository.findProjectForEdit(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        // 권한 확인: 리더만 수정 가능
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_EDIT_FORBIDDEN);
+        }
+
+        // 리더 정보 조회
+        ProjectMember leader = projectMemberRepository.findLeaderByProjectId(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
+
+        // 포지션별 대기 지원자 수 조회
+        Map<Long, Long> pendingCountByPositionId = projectApplicationRepository
+                .countPendingByProjectIdGroupByJobPositionId(projectId).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+
+        // 모집 포지션 정보 생성
+        List<RecruitmentEditInfo> recruitmentInfos = project.getRecruitments().stream()
+                .map(recruitment -> {
+                    Long positionId = recruitment.getJobPosition().getId();
+                    int pendingCount = pendingCountByPositionId.getOrDefault(positionId, 0L).intValue();
+                    return RecruitmentEditInfo.from(recruitment, pendingCount);
+                })
+                .toList();
+
+        return ProjectEditPrefillResponse.from(project, leader, recruitmentInfos);
+    }
+
+    @CacheEvict(value = "mainPageProjects", allEntries = true)
+    @Override
+    public ProjectEditResponse updateProject(Long projectId, ProjectEditCommand command, MultipartFile file, String requesterEmail) {
+        Project project = projectRepository.findProjectForEdit(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        // 권한 확인: 리더만 수정 가능
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_EDIT_FORBIDDEN);
+        }
+
+        // 모집 중단 상태에서는 수정 불가
+        if (project.isSuspended()) {
+            throw new CustomException(ErrorCode.PROJECT_EDIT_NOT_ALLOWED_SUSPENDED);
+        }
+
+        // 이미지 업로드
+        Member creator = findMemberByEmail(requesterEmail);
+        String imageUrl = uploadProjectImage(file, creator.getId());
+
+        // 기본 정보 업데이트
+        project.updateBasicInfo(
+                command.name(),
+                command.description(),
+                command.projectCategory(),
+                command.platformCategory(),
+                command.githubRepositoryUrl(),
+                command.communicationChannelUrl(),
+                command.endDate(),
+                imageUrl
+        );
+
+        // 모집 포지션 업데이트 및 자동 거절 처리
+        int autoRejectedCount = updateRecruitments(project, command);
+
+        // 프로젝트 모집 상태 자동 업데이트
+        project.updateRecruitmentStatusBasedOnPositions();
+
+        projectRepository.save(project);
+
+        return ProjectEditResponse.from(project, autoRejectedCount);
+    }
+
+    /**
+     * 모집 포지션을 업데이트합니다.
+     *
+     * @return 자동 거절된 지원자 수
+     */
+    private int updateRecruitments(Project project, ProjectEditCommand command) {
+        int autoRejectedCount = 0;
+
+        // 현재 모집 포지션 맵 생성 (recruitmentStateId -> RecruitmentState)
+        Map<Long, RecruitmentState> currentRecruitmentMap = project.getRecruitments().stream()
+                .collect(Collectors.toMap(RecruitmentState::getId, r -> r));
+
+        // 요청에 포함된 모집 포지션 ID 목록
+        Set<Long> requestedRecruitmentIds = command.recruitments().stream()
+                .filter(r -> r.recruitmentStateId() != null)
+                .map(RecruitmentEditCommand::recruitmentStateId)
+                .collect(Collectors.toSet());
+
+        // 삭제할 포지션 처리
+        List<RecruitmentState> toRemove = new ArrayList<>();
+        for (RecruitmentState recruitment : project.getRecruitments()) {
+            if (!requestedRecruitmentIds.contains(recruitment.getId())) {
+                // 승인 인원이 있으면 삭제 불가
+                if (recruitment.getCurrentCount() > 0) {
+                    throw new CustomException(ErrorCode.RECRUITMENT_HAS_APPROVED_MEMBERS);
+                }
+
+                // 대기 지원자 확인
+                List<ProjectApplication> pendingApplications = projectApplicationRepository
+                        .findPendingByProjectIdAndJobPositionId(project.getId(), recruitment.getJobPosition().getId());
+
+                if (!pendingApplications.isEmpty()) {
+                    // 대기 지원자가 있고 확인 플래그가 없으면 에러
+                    if (!command.confirmDeletePositionsWithPendingApplicants()) {
+                        throw new CustomException(ErrorCode.RECRUITMENT_HAS_PENDING_APPLICANTS);
+                    }
+                    // 대기 지원자 자동 거절 처리
+                    for (ProjectApplication application : pendingApplications) {
+                        application.updateStatus(ApplicationStatus.REJECTED);
+                        autoRejectedCount++;
+                    }
+                }
+
+                toRemove.add(recruitment);
+            }
+        }
+
+        // 삭제 처리
+        project.getRecruitments().removeAll(toRemove);
+
+        // 기존 포지션 수정 및 신규 포지션 추가
+        for (RecruitmentEditCommand recruitmentCmd : command.recruitments()) {
+            if (recruitmentCmd.recruitmentStateId() != null) {
+                // 기존 포지션 수정
+                RecruitmentState recruitment = currentRecruitmentMap.get(recruitmentCmd.recruitmentStateId());
+                if (recruitment != null) {
+                    // 모집 인원 축소 검증
+                    if (recruitmentCmd.recruitmentCount() < recruitment.getCurrentCount()) {
+                        throw new CustomException(ErrorCode.RECRUITMENT_COUNT_BELOW_CURRENT);
+                    }
+
+                    // 모집 인원 업데이트
+                    recruitment.updateRecruitmentCount(recruitmentCmd.recruitmentCount());
+
+                    // 기술 스택 업데이트
+                    List<TechStack> techStacks = techStackRepository.findByIdIn(recruitmentCmd.techStackIds());
+                    List<RecruitmentTechStack> newTechStacks = techStacks.stream()
+                            .map(RecruitmentTechStack::create)
+                            .toList();
+                    recruitment.replaceTechStacks(newTechStacks);
+
+                    // 포지션 상태 업데이트 (인원 변경으로 인한 마감/재오픈)
+                    if (recruitment.getCurrentCount() >= recruitment.getRecruitmentCount()) {
+                        recruitment.close();
+                    } else {
+                        recruitment.reopen();
+                    }
+                }
+            } else {
+                // 신규 포지션 추가
+                JobPosition jobPosition = jobPositionRepository.findByCode(recruitmentCmd.jobPositionCode())
+                        .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
+
+                RecruitmentState newRecruitment = RecruitmentState.createRecruitmentState(
+                        jobPosition, recruitmentCmd.recruitmentCount());
+
+                // 기술 스택 추가
+                List<TechStack> techStacks = techStackRepository.findByIdIn(recruitmentCmd.techStackIds());
+                for (TechStack techStack : techStacks) {
+                    newRecruitment.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
+                }
+
+                project.addRecruitment(newRecruitment);
+            }
+        }
+
+        return autoRejectedCount;
     }
 }

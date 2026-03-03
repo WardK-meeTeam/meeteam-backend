@@ -17,13 +17,12 @@ import java.util.List;
 @Tag(name = "프로젝트 지원", description = "프로젝트 지원 관련 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/projects")
 public class ApplicationController {
 
     private final ProjectApplicationService applicationService;
 
     @Operation(summary = "프로젝트 지원", description = "프로젝트에 지원합니다. 프로젝트 리더는 자신의 프로젝트에 지원할 수 없습니다.")
-    @PostMapping("/{projectId}/application")
+    @PostMapping("/api/v1/projects/{projectId}/application")
     public SuccessResponse<ApplicationResponse> apply(
             @PathVariable Long projectId,
             @RequestBody @Validated ApplicationRequest request,
@@ -35,7 +34,7 @@ public class ApplicationController {
     }
 
     @Operation(summary = "프로젝트 지원자 목록 조회", description = "프로젝트 리더가 지원자 목록을 조회합니다.")
-    @GetMapping("/{projectId}/applications")
+    @GetMapping("/api/v1/projects/{projectId}/applications")
     public SuccessResponse<List<ProjectApplicationListResponse>> getApplicationList(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
@@ -45,7 +44,7 @@ public class ApplicationController {
     }
 
     @Operation(summary = "프로젝트 지원 상세 조회", description = "프로젝트 리더가 특정 지원서의 상세 정보를 조회합니다.")
-    @GetMapping("/{projectId}/applications/{applicationId}")
+    @GetMapping("/api/v1/projects/{projectId}/applications/{applicationId}")
     public SuccessResponse<ApplicationDetailResponse> getApplicationDetail(
             @PathVariable Long projectId,
             @PathVariable Long applicationId,
@@ -57,7 +56,7 @@ public class ApplicationController {
     }
 
     @Operation(summary = "프로젝트 지원자 승인/거절", description = "프로젝트 리더가 지원자를 승인하거나 거절합니다.")
-    @PostMapping("/{projectId}/applications/{applicationId}/decision")
+    @PostMapping("/api/v1/projects/{projectId}/applications/{applicationId}/decision")
     public SuccessResponse<ApplicationDecisionResponse> decide(
             @PathVariable Long projectId,
             @PathVariable Long applicationId,
@@ -75,7 +74,7 @@ public class ApplicationController {
     /// Legacy Code
 
     @Operation(summary = "내가 지원한 프로젝트 조회", description = "내가 지원한 프로젝트 목록을 조회합니다.")
-    @GetMapping("/my/applications")
+    @GetMapping("/api/projects/my/applications")
     public SuccessResponse<List<AppliedProjectResponse>> getMyAppliedProjects(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 

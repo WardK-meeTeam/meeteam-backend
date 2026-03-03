@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.domain.projectmember.repository;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +26,16 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
      */
     @Query("SELECT pm FROM ProjectMember pm JOIN FETCH pm.member m WHERE pm.project.id = :projectId")
     List<ProjectMember> findAllByProjectIdWithMember(Long projectId);
+
+    /**
+     * 프로젝트 리더를 조회합니다 (JobPosition, JobField 정보 포함)
+     */
+    @Query("""
+            SELECT pm FROM ProjectMember pm
+            JOIN FETCH pm.member m
+            JOIN FETCH pm.jobPosition jp
+            JOIN FETCH jp.jobField jf
+            WHERE pm.project.id = :projectId AND pm.role = 'LEADER'
+            """)
+    Optional<ProjectMember> findLeaderByProjectId(@Param("projectId") Long projectId);
 }

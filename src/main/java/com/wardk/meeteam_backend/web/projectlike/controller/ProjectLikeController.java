@@ -60,7 +60,7 @@ public class ProjectLikeController {
 
 
     @Operation(summary = "좋아요 토글", description = "프로젝트 좋아요를 등록하거나 취소합니다.")
-    @PostMapping("api/project/like/{projectId}")
+    @PostMapping("/api/v1/project/like/{projectId}")
     public SuccessResponse<ToggleLikeResponse> toggleLike(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
@@ -70,7 +70,7 @@ public class ProjectLikeController {
 
 
     @Operation(summary = "좋아요 상태 조회", description = "프로젝트에 대한 좋아요 여부를 조회합니다.")
-    @GetMapping("api/project/like/{projectId}")
+    @GetMapping("/api/v1/project/like/{projectId}")
     public SuccessResponse<LikeStatusResponse> likeStatus(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
