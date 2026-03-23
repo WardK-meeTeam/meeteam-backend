@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Table(name = "recruitment_state")
+@BatchSize(size = 100)
 public class RecruitmentState {
 
     @Id
@@ -35,7 +37,6 @@ public class RecruitmentState {
     @Column(name = "recruit_count")
     private Integer recruitmentCount;
 
-    @Version
     @Column(name = "current_count")
     private Integer currentCount;
 
@@ -43,6 +44,7 @@ public class RecruitmentState {
     private boolean isClosed = false;
 
     @OneToMany(mappedBy = "recruitmentState", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 100)
     private List<RecruitmentTechStack> recruitmentTechStacks = new ArrayList<>();
 
     /**
@@ -105,6 +107,16 @@ public class RecruitmentState {
     public void addRecruitmentTechStack(RecruitmentTechStack recruitmentTechStack) {
         this.recruitmentTechStacks.add(recruitmentTechStack);
         recruitmentTechStack.assignRecruitmentState(this);
+    }
+
+    /**
+     * 기존 기술 스택을 모두 제거하고 새 기술 스택으로 교체합니다.
+     */
+    public void replaceTechStacks(List<RecruitmentTechStack> newTechStacks) {
+        this.recruitmentTechStacks.clear();
+        for (RecruitmentTechStack techStack : newTechStacks) {
+            addRecruitmentTechStack(techStack);
+        }
     }
 
     @Builder

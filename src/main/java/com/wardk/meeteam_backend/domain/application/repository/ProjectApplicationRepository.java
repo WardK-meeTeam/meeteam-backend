@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,4 +41,33 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             AND a.project.isDeleted = false
             """)
     Optional<ProjectApplication> findByIdWithApplicantAndJobPosition(Long projectId, Long applicationId);
+
+    /**
+     * 특정 프로젝트의 특정 직무 포지션에 대한 대기중인 지원서를 조회합니다.
+     */
+    @Query("""
+            SELECT a FROM ProjectApplication a
+            JOIN FETCH a.applicant
+            WHERE a.project.id = :projectId
+            AND a.jobPosition.id = :jobPositionId
+            AND a.status = 'PENDING'
+            AND a.project.isDeleted = false
+            """)
+    List<ProjectApplication> findPendingByProjectIdAndJobPositionId(
+            @Param("projectId") Long projectId,
+            @Param("jobPositionId") Long jobPositionId
+    );
+
+    /**
+     * 특정 프로젝트의 직무 포지션별 대기중인 지원자 수를 조회합니다.
+     */
+    @Query("""
+            SELECT a.jobPosition.id, COUNT(a)
+            FROM ProjectApplication a
+            WHERE a.project.id = :projectId
+            AND a.status = 'PENDING'
+            AND a.project.isDeleted = false
+            GROUP BY a.jobPosition.id
+            """)
+    List<Object[]> countPendingByProjectIdGroupByJobPositionId(@Param("projectId") Long projectId);
 }

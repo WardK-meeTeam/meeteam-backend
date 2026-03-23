@@ -8,13 +8,12 @@ import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
-import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
-import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
+import com.wardk.meeteam_backend.domain.notification.service.NotificationSaveService;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
-import com.wardk.meeteam_backend.domain.projectMember.repository.ProjectMemberRepository;
-import com.wardk.meeteam_backend.domain.projectMember.service.ProjectMemberService;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.projectmember.service.ProjectMemberService;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
@@ -47,71 +46,87 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final ProjectMemberService projectMemberService;
     private final JobPositionRepository jobPositionRepository;
     private final RecruitmentStateRepository recruitmentStateRepository;
-    private final NotificationRepository notificationRepository;
+    private final NotificationSaveService notificationSaveService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Counted("project.apply")
     @Override
     public ApplicationResponse apply(Long projectId, Long memberId, ApplicationRequest request) {
-        // Todo : 프로젝트 종료 요구사항 사라짐, 모집완료만 가능, Project 에 isClosed 제거 바람
+        // 1단계: 엔티티 조회
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        JobPosition jobPosition = jobPositionRepository.findByCode(request.jobPositionCode())
+                .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
 
-        validateProjectNotCompleted(project);
+        // 2단계: 권한 검증
+        validateNotSelfApplication(project, memberId);
 
-        // 프로젝트 리더는 자신의 프로젝트에 지원 불가
-        // Todo : project 엔티티 내부에서 확인가능 (엔티티로 위임) + 메서드로 분리
+        // 3단계: 비즈니스 규칙 검증
+        validateApplyPrecondition(project, member, projectId, memberId);
+        validateRecruitmentPosition(projectId, jobPosition);
+
+        // 4단계: 지원서 생성 및 저장
+        ProjectApplication savedApplication = createAndSaveApplication(project, member, jobPosition, request.motivation());
+
+        // 5단계: 알림 발행 및 응답
+        publishApplyNotifications(project, member, savedApplication);
+
+        log.info("프로젝트 지원 완료 - projectId: {}, applicantId: {}, jobPositionCode: {}",
+                projectId, memberId, request.jobPositionCode());
+
+        return ApplicationResponse.from(savedApplication);
+    }
+
+    private void validateNotSelfApplication(Project project, Long memberId) {
         if (project.getCreator().getId().equals(memberId)) {
             throw new CustomException(ErrorCode.APPLICATION_SELF_PROJECT_FORBIDDEN);
         }
+    }
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    private void validateApplyPrecondition(Project project, Member member, Long projectId, Long memberId) {
+        if (project.isCompleted()) {
+            throw new CustomException(ErrorCode.PROJECT_RECRUITMENT_SUSPENDED);
+        }
 
-
-        // Todo : 메서드 분리
         if (applicationRepository.existsByProjectAndApplicant(project, member)) {
             throw new CustomException(ErrorCode.PROJECT_APPLICATION_ALREADY_EXISTS);
         }
 
-        // Todo : 메서드 분리
         if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
+    }
 
-        // Todo : 메서드 분리
-        JobPosition jobPosition = jobPositionRepository.findByCode(request.jobPositionCode())
-                .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
+    private void validateRecruitmentPosition(Long projectId, JobPosition jobPosition) {
+        RecruitmentState recruitmentState = recruitmentStateRepository.findByProjectIdAndJobPosition(projectId, jobPosition)
+                .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_POSITION_NOT_RECRUITING));
 
-        // Todo: 메서드 분리
-        recruitmentStateRepository.findAvailableByProjectIdAndJobPosition(projectId, jobPosition)
-                .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_POSITION_NOT_AVAILABLE));
+        if (recruitmentState.isClosed()) {
+            throw new CustomException(ErrorCode.RECRUITMENT_POSITION_CLOSED);
+        }
+    }
 
+    private ProjectApplication createAndSaveApplication(Project project, Member member, JobPosition jobPosition, String motivation) {
         ProjectApplication application = ProjectApplication.create(
                 project,
                 member,
                 jobPosition,
-                request.motivation()
+                motivation
         );
 
-        ProjectApplication savedApplication = applicationRepository.save(application);
+        return applicationRepository.save(application);
+    }
 
+    private void publishApplyNotifications(Project project, Member member, ProjectApplication savedApplication) {
         Long receiverId = project.getCreator().getId();
         Long actorId = member.getId();
 
-        // 1. 팀장에게 지원 알림 저장
-        Notification applyNotification = createNotification(
-                project.getCreator(), project, actorId, NotificationType.PROJECT_APPLY, savedApplication.getId()
+        notificationSaveService.saveForApply(
+                project.getCreator(), member, project, savedApplication.getId()
         );
-        notificationRepository.save(applyNotification);
 
-        // 2. 지원자에게 지원 완료 알림 저장
-        Notification myApplyNotification = createNotification(
-                member, project, actorId, NotificationType.PROJECT_MY_APPLY, savedApplication.getId()
-        );
-        notificationRepository.save(myApplyNotification);
-
-        // 프로젝트 리더 알림 발행 (SSE)
         eventPublisher.publishEvent(new NotificationEvent(
                 receiverId,
                 project.getId(),
@@ -120,35 +135,12 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 savedApplication.getId()
         ));
 
-        // 지원자 알림 발행 (SSE)
         eventPublisher.publishEvent(new NotificationEvent(
                 actorId,
                 project.getId(),
                 actorId,
                 NotificationType.PROJECT_MY_APPLY
         ));
-
-        log.info("프로젝트 지원 완료 - projectId: {}, applicantId: {}, jobPositionCode: {}",
-                projectId, memberId, request.jobPositionCode());
-
-        return ApplicationResponse.from(savedApplication);
-    }
-
-    private static void validateProjectNotCompleted(Project project) {
-        if (project.isCompleted()) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
-    }
-
-    private Notification createNotification(Member receiver, Project project, Long actorId, NotificationType type, Long applicationId) {
-        return Notification.builder()
-                .receiver(receiver)
-                .project(project)
-                .actorId(actorId)
-                .type(type)
-                .applicationId(applicationId)
-                .isRead(false)
-                .build();
     }
 
     @Override
@@ -191,70 +183,90 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     }
 
     @Override
-    public ApplicationDecisionResponse decide(ApplicationDecisionRequest request, String requesterEmail) {
-        ProjectApplication application = applicationRepository.findById(request.getApplicationId())
+    public ApplicationDecisionResponse decide(Long applicationId, ApplicationDecisionRequest request, String requesterEmail) {
+        // 1단계: 엔티티 조회
+        ProjectApplication application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
-        if (application.getProject().isCompleted()) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
+        // 2단계: 권한 검증
+        validateProjectCreator(application, requesterEmail);
 
+        // 3단계: 비즈니스 규칙 검증
+        validateDecisionPrecondition(application);
+
+        // 4단계: 결정 처리
+        return processDecision(application, request.decision());
+    }
+
+    private void validateProjectCreator(ProjectApplication application, String requesterEmail) {
         if (!application.getProject().getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+    }
+
+    private void validateDecisionPrecondition(ProjectApplication application) {
+        if (application.getProject().isCompleted()) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
 
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new CustomException(ErrorCode.APPLICATION_ALREADY_DECIDED);
         }
+    }
 
-        application.updateStatus(request.getDecision());
+    private ApplicationDecisionResponse processDecision(ProjectApplication application, ApplicationStatus decision) {
+        application.updateStatus(decision);
 
+        if (decision == ApplicationStatus.ACCEPTED) {
+            return processAcceptance(application);
+        }
+        return processRejection(application);
+    }
+
+    private ApplicationDecisionResponse processAcceptance(ProjectApplication application) {
         Long projectId = application.getProject().getId();
         Long applicantId = application.getApplicant().getId();
         Long projectCreatorId = application.getProject().getCreator().getId();
 
-        // decision이 ACCEPTED인 경우 프로젝트 멤버로 등록 후 리턴
-        if (application.getStatus() == ApplicationStatus.ACCEPTED) {
-            projectMemberService.addMember(
-                    projectId,
-                    applicantId,
-                    application.getJobPosition()
-            );
+        projectMemberService.addMember(
+                projectId,
+                applicantId,
+                application.getJobPosition()
+        );
 
-            // 승인 알림 저장
-            Notification approveNotification = createNotification(
-                    application.getApplicant(),
-                    application.getProject(),
-                    projectCreatorId,
-                    NotificationType.PROJECT_APPROVE,
-                    application.getId()
-            );
-            notificationRepository.save(approveNotification);
-
-            eventPublisher.publishEvent(new NotificationEvent(
-                    applicantId,
-                    projectId,
-                    projectCreatorId,
-                    NotificationType.PROJECT_APPROVE
-            ));
-
-            return ApplicationDecisionResponse.acceptResponseDto(
-                    application.getId(),
-                    application.getProject().getId(),
-                    application.getApplicant().getId(),
-                    application.getStatus()
-            );
-        }
-
-        // 거절 알림 저장
-        Notification rejectNotification = createNotification(
+        notificationSaveService.saveForApprove(
                 application.getApplicant(),
                 application.getProject(),
                 projectCreatorId,
-                NotificationType.PROJECT_REJECT,
                 application.getId()
         );
-        notificationRepository.save(rejectNotification);
+
+        eventPublisher.publishEvent(new NotificationEvent(
+                applicantId,
+                projectId,
+                projectCreatorId,
+                NotificationType.PROJECT_APPROVE
+        ));
+
+        return ApplicationDecisionResponse.acceptResponseDto(
+                application.getId(),
+                application.getProject().getId(),
+                application.getApplicant().getId(),
+                application.getStatus()
+        );
+    }
+
+    private ApplicationDecisionResponse processRejection(ProjectApplication application) {
+        Long projectId = application.getProject().getId();
+        Long applicantId = application.getApplicant().getId();
+        Long projectCreatorId = application.getProject().getCreator().getId();
+
+        notificationSaveService.saveForReject(
+                application.getApplicant(),
+                application.getProject(),
+                projectCreatorId,
+                application.getId()
+        );
 
         eventPublisher.publishEvent(new NotificationEvent(
                 applicantId,

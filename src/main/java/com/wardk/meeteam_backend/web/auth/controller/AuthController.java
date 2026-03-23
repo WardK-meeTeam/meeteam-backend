@@ -31,7 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @Tag(description = "인증 및 회원 관리 API", name = "AuthController")
 public class AuthController {
 

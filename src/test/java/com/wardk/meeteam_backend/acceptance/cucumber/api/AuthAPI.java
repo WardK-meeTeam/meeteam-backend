@@ -60,7 +60,7 @@ public class AuthAPI {
                 .contentType("multipart/form-data")
                 .multiPart("request", "request.json", jsonBody.getBytes(), "application/json")
                 .when()
-                .post("/api/auth/register")
+                .post("/api/v1/auth/register")
                 .then()
                 .log().all()
                 .extract();
@@ -101,7 +101,7 @@ public class AuthAPI {
                 .contentType("multipart/form-data")
                 .multiPart("request", "request.json", jsonBody.getBytes(), "application/json")
                 .when()
-                .post("/api/auth/register/oauth2")
+                .post("/api/v1/auth/register/oauth2")
                 .then().log().all()
                 .extract();
     }
@@ -118,7 +118,7 @@ public class AuthAPI {
                 .contentType(ContentType.JSON)
                 .body(params)
                 .when()
-                .post("/api/auth/login")
+                .post("/api/v1/auth/login")
                 .then().log().all()
                 .extract();
     }
@@ -131,7 +131,7 @@ public class AuthAPI {
                 .contentType(ContentType.JSON)
                 .queryParam("email", email)
                 .when()
-                .post("/api/auth/email")
+                .post("/api/v1/auth/email")
                 .then().log().all()
                 .extract();
     }
@@ -149,7 +149,7 @@ public class AuthAPI {
 
         return spec
                 .when()
-                .post("/api/auth/refresh")
+                .post("/api/v1/auth/refresh")
                 .then().log().all()
                 .extract();
     }
@@ -167,7 +167,7 @@ public class AuthAPI {
 
         return spec
                 .when()
-                .post("/api/auth/logout")
+                .post("/api/v1/auth/logout")
                 .then().log().all()
                 .extract();
     }
@@ -183,7 +183,7 @@ public class AuthAPI {
                 .contentType(ContentType.JSON)
                 .body(params)
                 .when()
-                .post("/api/auth/token/exchange")
+                .post("/api/v1/auth/token/exchange")
                 .then().log().all()
                 .extract();
     }

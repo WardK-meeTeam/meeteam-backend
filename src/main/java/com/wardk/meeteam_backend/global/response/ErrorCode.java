@@ -51,6 +51,11 @@ public enum ErrorCode {
     INVALID_RECRUITMENT_COUNT(HttpStatus.BAD_REQUEST, "PROJECT400", "잘못된 모집 인원 입력입니다."),
     PROJECT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "해당 프로젝트는 모집이 마감되었습니다."),
     PROJECT_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "PROJECT400", "아직 종료되지 않은 프로젝트입니다."),
+    PROJECT_EDIT_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT403", "프로젝트 수정 권한이 없습니다."),
+    PROJECT_EDIT_NOT_ALLOWED_SUSPENDED(HttpStatus.BAD_REQUEST, "PROJECT400", "모집이 중단된 상태에서는 수정할 수 없습니다. 모집을 재개한 후 수정해주세요."),
+    RECRUITMENT_HAS_APPROVED_MEMBERS(HttpStatus.BAD_REQUEST, "RECRUITMENT400", "승인된 팀원이 있는 포지션은 삭제할 수 없습니다."),
+    RECRUITMENT_HAS_PENDING_APPLICANTS(HttpStatus.CONFLICT, "RECRUITMENT409", "대기 중인 지원자가 있는 포지션입니다. 삭제 시 해당 지원자들의 지원이 자동 거절됩니다."),
+    RECRUITMENT_COUNT_BELOW_CURRENT(HttpStatus.BAD_REQUEST, "RECRUITMENT400", "현재 승인된 인원보다 적게 설정할 수 없습니다."),
 
     // JOB
     JOB_FIELD_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB404", "해당 직군을 찾을 수 없습니다."),
@@ -66,14 +71,16 @@ public enum ErrorCode {
     CREATOR_TRANSFER_SELF_DENIED(HttpStatus.BAD_REQUEST, "PROJECT_MEMBER400", "프로젝트 생성자와 변경 대상이 동일합니다."), // 프로젝트 생성자와 동일한 멤버로 변경하려는 경우
     CREATOR_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT_MEMBER403", "프로젝트 생성자는 탈퇴할 수 없습니다."), // 프로젝트 생성자가 탈퇴하려는 경우
     RECRUITMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "RECRUITMENT404", "프로젝트 모집 정보를 찾을 수 없습니다."),
-    RECRUITMENT_FULL(HttpStatus.BAD_REQUEST, "RECRUITMENT400", "해당 모집은 마감되었습니다."),
+    RECRUITMENT_FULL(HttpStatus.BAD_REQUEST, "RECRUITMENT400", "해당 포지션의 모집 인원이 모두 찼습니다."),
 
     // PROJECT APPLICATION
     APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT_APPLICATION404", "프로젝트 지원이 존재하지 않습니다."),
     APPLICATION_ALREADY_DECIDED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 처리된 지원입니다."),
     PROJECT_APPLICATION_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "이미 신청한 프로젝트입니다."),
     APPLICATION_SELF_PROJECT_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT_APPLICATION403", "자신의 프로젝트에는 지원할 수 없습니다."),
-    RECRUITMENT_POSITION_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 포지션은 모집 중이 아니거나 마감되었습니다."),
+    PROJECT_RECRUITMENT_SUSPENDED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 프로젝트는 모집이 마감되었습니다."),
+    RECRUITMENT_POSITION_NOT_RECRUITING(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 포지션은 현재 모집하고 있지 않습니다."),
+    RECRUITMENT_POSITION_CLOSED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 포지션은 모집이 마감되었습니다."),
 
     // MEMBER SKILL
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND, "SKILL404", "해당 기술스택이 존재하지 않습니다."),

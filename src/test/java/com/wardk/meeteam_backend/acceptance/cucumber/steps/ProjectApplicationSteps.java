@@ -284,7 +284,9 @@ public class ProjectApplicationSteps {
     @그리고("{string} 포지션의 현재 인원은 {int}명이다")
     public void position_포지션의_현재_인원은_count명이다(String positionString, int expectedCount) {
         Long projectId = context.project().getId();
-        String positionCode = api.projectCreate().포지션_문자열_파싱(positionString).name();
+        // "프론트 - 웹 프론트엔드" 형식에서 포지션명만 추출
+        String[] parts = positionString.split(" - ");
+        String positionName = parts.length > 1 ? parts[1].trim() : parts[0].trim();
 
         var response = api.projectCreate().상세조회(projectId);
         assertThat(response.statusCode()).isEqualTo(HTTP_OK);
@@ -292,7 +294,7 @@ public class ProjectApplicationSteps {
         List<Map<String, Object>> recruitments = response.jsonPath().getList("result.recruitments");
 
         int currentCount = recruitments.stream()
-                .filter(r -> positionCode.equals(r.get("jobPositionCode")))
+                .filter(r -> positionName.equals(r.get("jobPositionName")))
                 .map(r -> (Integer) r.get("currentCount"))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("모집 포지션을 찾을 수 없습니다: " + positionString));

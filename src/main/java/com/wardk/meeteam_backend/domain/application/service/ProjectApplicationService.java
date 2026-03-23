@@ -29,7 +29,7 @@ public interface ProjectApplicationService {
     /**
      * 지원자 승인/거절 (리더 전용).
      */
-    ApplicationDecisionResponse decide(ApplicationDecisionRequest request, String requesterEmail);
+    ApplicationDecisionResponse decide(Long applicationId, ApplicationDecisionRequest request, String requesterEmail);
 
     /**
      * 내가 지원한 프로젝트 목록 조회.

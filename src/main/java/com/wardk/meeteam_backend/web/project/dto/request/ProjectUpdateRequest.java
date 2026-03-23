@@ -2,7 +2,6 @@ package com.wardk.meeteam_backend.web.project.dto.request;
 
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
-import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -39,10 +38,6 @@ public class ProjectUpdateRequest {
     @Schema(description = "오프라인 필수 여부", example = "true")
     @NotNull(message = "오프라인 필수 여부를 선택해주세요.")
     private Boolean offlineRequired;
-
-    @Schema(description = "프로젝트 상태", example = "PLANNING")
-    @NotNull(message = "프로젝트 상태를 선택해주세요.")
-    private ProjectStatus status;
 
     @Schema(description = "프로젝트 시작 날짜", example = "2025-08-19")
     @NotNull(message = "프로젝트 시작 날짜를 입력해주세요.")

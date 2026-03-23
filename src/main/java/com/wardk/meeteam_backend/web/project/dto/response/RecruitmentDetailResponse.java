@@ -50,7 +50,7 @@ public record RecruitmentDetailResponse(
                 position.getName(),
                 recruitment.getRecruitmentCount(),
                 recruitment.getCurrentCount(),
-                recruitment.getCurrentCount() >= recruitment.getRecruitmentCount(),
+                recruitment.isClosed(),
                 techStacks
         );
     }

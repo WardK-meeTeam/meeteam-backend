@@ -80,3 +80,7 @@ Uses JUnit 5 with H2 in-memory database. Tests located in `src/test/java/`.
 ## Code Documentation
 
 Javadoc required for public classes/methods. Use `@Operation` annotation on controller methods for Swagger documentation. API docs available at `/swagger-ui.html`.
+
+## Code Convention
+
+새로운 기능 개발 or 리펙토링 시 [CODE_CONVENTION.md](./CODE_CONVENTION.md)를 참고하세요. Controller, Service, Entity, DTO 작성 규칙과 전체 예시 코드가 포함되어 있습니다.

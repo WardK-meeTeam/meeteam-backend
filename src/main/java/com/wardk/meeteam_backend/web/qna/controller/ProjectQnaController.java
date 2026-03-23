@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Project Q&A", description = "프로젝트 Q&A 관리 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/projects/{projectId}/qna")
+@RequestMapping("/api/v1/projects/{projectId}/qna")
 public class ProjectQnaController {
 
     private final ProjectQnaService projectQnaService;

@@ -1,9 +1,8 @@
 package com.wardk.meeteam_backend.web.project.dto.response;
 
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
-import com.wardk.meeteam_backend.domain.project.entity.ProjectStatus;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
-import com.wardk.meeteam_backend.domain.projectMember.entity.ProjectMember;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import lombok.Builder;
 import lombok.Getter;
 

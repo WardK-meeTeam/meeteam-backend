@@ -68,7 +68,7 @@ public class SwaggerConfig {
 
                         )
                 )
-                .path("/api/auth/login", createLoginPathItem());
+                .path("/api/v1/auth/login", createLoginPathItem());
     }
 
     /**

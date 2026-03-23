@@ -1,7 +1,6 @@
 package com.wardk.meeteam_backend.web.mainpage.controller;
 
-import com.wardk.meeteam_backend.domain.project.service.ProjectService;
-
+import com.wardk.meeteam_backend.domain.project.service.ProjectQueryService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
@@ -18,13 +17,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RequestMapping("/api/main")
+@RequestMapping("/api/v1/main")
 @RequiredArgsConstructor
 @RestController
 public class MainPageController {
 
-    private final ProjectService projectService;
-
+    private final ProjectQueryService projectQueryService;
 
 
     @Operation(summary = "프로젝트 메인 페이지", description = "메인 페이지에서 프로젝트 카드를 조회")
@@ -39,10 +37,9 @@ public class MainPageController {
             ) Pageable pageable,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
 
-        return SuccessResponse.onSuccess(projectService.searchMainPageProjects(condition, pageable, userDetails));
+        return SuccessResponse.onSuccess(projectQueryService.searchForMainPage(condition, pageable, userDetails));
 
     }
 
-    // ...existing code...
 
 }

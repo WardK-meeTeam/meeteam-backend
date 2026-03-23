@@ -30,7 +30,7 @@ public class ProjectApplicationApi {
                         "motivation", motivation
                 ))
                 .when()
-                .post("/api/projects/{projectId}/application", projectId)
+                .post("/api/v1/projects/{projectId}/application", projectId)
                 .then().log().all()
                 .extract();
     }
@@ -39,7 +39,7 @@ public class ProjectApplicationApi {
         return RestAssured.given().log().all()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .when()
-                .get("/api/projects/{projectId}/applications/{applicationId}", projectId, applicationId)
+                .get("/api/v1/projects/{projectId}/applications/{applicationId}", projectId, applicationId)
                 .then().log().all()
                 .extract();
     }
@@ -48,7 +48,7 @@ public class ProjectApplicationApi {
         return RestAssured.given().log().all()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .when()
-                .get("/api/projects/{projectId}/applications", projectId)
+                .get("/api/v1/projects/{projectId}/applications", projectId)
                 .then().log().all()
                 .extract();
     }
@@ -70,7 +70,7 @@ public class ProjectApplicationApi {
                         "decision", decision.name()
                 ))
                 .when()
-                .post("/api/projects/{projectId}/applications/{applicationId}/decision", projectId, applicationId)
+                .post("/api/v1/projects/{projectId}/applications/{applicationId}/decision", projectId, applicationId)
                 .then().log().all()
                 .extract();
     }

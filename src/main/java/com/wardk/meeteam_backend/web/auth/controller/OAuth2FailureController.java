@@ -9,7 +9,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth/oauth2")
+@RequestMapping("/api/v1/auth/oauth2")
 public class OAuth2FailureController {
 
     @GetMapping("/failure")
