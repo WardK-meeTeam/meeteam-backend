@@ -21,7 +21,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # 현재 활성 환경 확인
 get_active_env() {
     if [ -f "$ACTIVE_ENV_FILE" ]; then
-        cat "$ACTIVE_ENV_FILE"
+        cat "$ACTIVE_ENV_FILE" #active_env 는 "green" 이 존재함.
     else
         echo "blue"
     fi
