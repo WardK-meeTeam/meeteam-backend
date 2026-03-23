@@ -40,16 +40,6 @@ public class ProjectManagementApi {
                 .extract();
     }
 
-    public ExtractableResponse<Response> 종료(String token, Long projectId) {
-        return RestAssured.given().log().all()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                .accept(MediaType.APPLICATION_JSON_VALUE)
-                .when()
-                .post("/api/projects/{projectId}/complete", projectId)
-                .then().log().all()
-                .extract();
-    }
-
     public ExtractableResponse<Response> 삭제(String token, Long projectId) {
         return RestAssured.given().log().all()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -74,7 +64,7 @@ public class ProjectManagementApi {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .accept(MediaType.APPLICATION_JSON_VALUE)
                 .when()
-                .post("/api/projects/{projectId}/recruitment/toggle", projectId)
+                .post("/api/v1/projects/{projectId}/recruitment/toggle", projectId)
                 .then().log().all()
                 .extract();
     }

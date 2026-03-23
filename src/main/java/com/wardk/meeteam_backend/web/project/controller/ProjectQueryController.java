@@ -1,6 +1,6 @@
 package com.wardk.meeteam_backend.web.project.controller;
 
-import com.wardk.meeteam_backend.domain.project.service.ProjectService;
+import com.wardk.meeteam_backend.domain.project.service.ProjectQueryService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ProjectQueryController {
 
-    private final ProjectService projectService;
+    private final ProjectQueryService projectQueryService;
 
 
 
@@ -31,7 +31,7 @@ public class ProjectQueryController {
             @ParameterObject ProjectSearchCondition condition,
             @ParameterObject Pageable pageable) {
 
-        return projectService.searchProjects(condition, pageable, userDetails);
+        return projectQueryService.search(condition, pageable, userDetails);
     }
 
 

@@ -68,12 +68,21 @@ public class ApplicationController {
         return SuccessResponse.onSuccess(response);
     }
 
-
-
-
-    /// Legacy Code
-
     @Operation(summary = "내가 지원한 프로젝트 조회", description = "내가 지원한 프로젝트 목록을 조회합니다.")
+    @GetMapping("/api/v1/members/me/applications")
+    public SuccessResponse<List<AppliedProjectResponse>> getMyApplications(
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        List<AppliedProjectResponse> appliedProjects = applicationService.getAppliedProjects(userDetails);
+
+        return SuccessResponse.onSuccess(appliedProjects);
+    }
+
+    /**
+     * @deprecated Use {@link #getMyApplications} instead.
+     */
+    @Deprecated(since = "1.0", forRemoval = true)
+    @Operation(summary = "[Deprecated] 내가 지원한 프로젝트 조회", description = "내가 지원한 프로젝트 목록을 조회합니다. GET /api/v1/members/me/applications 사용을 권장합니다.")
     @GetMapping("/api/projects/my/applications")
     public SuccessResponse<List<AppliedProjectResponse>> getMyAppliedProjects(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {

@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.domain.project.entity;
 
+import com.wardk.meeteam_backend.domain.application.entity.ApplicationStatus;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
@@ -384,6 +385,86 @@ public class Project extends BaseEntity {
 
         if (allClosed) {
             this.recruitmentStatus = Recruitment.CLOSED;
+        }
+    }
+
+    // ==================== 도메인 상태 조회 메서드 ====================
+
+    /**
+     * 총 모집 인원 수를 반환합니다.
+     */
+    public int getTotalRecruitmentCount() {
+        return this.recruitments.stream()
+                .mapToInt(RecruitmentState::getRecruitmentCount)
+                .sum();
+    }
+
+    /**
+     * 현재 멤버 수를 반환합니다.
+     */
+    public int getMemberCount() {
+        return this.members.size();
+    }
+
+    /**
+     * 대기 중인 지원서 수를 반환합니다.
+     */
+    public int getPendingApplicationCount() {
+        return (int) this.applications.stream()
+                .filter(a -> a.getStatus() == ApplicationStatus.PENDING)
+                .count();
+    }
+
+    // ==================== Tell, Don't Ask 검증 메서드 ====================
+
+    /**
+     * 해당 이메일이 프로젝트 리더인지 확인합니다.
+     */
+    public boolean isLeader(String email) {
+        return this.creator.getEmail().equals(email);
+    }
+
+    /**
+     * 해당 멤버 ID가 프로젝트 리더인지 확인합니다.
+     */
+    public boolean isLeader(Long memberId) {
+        return this.creator.getId().equals(memberId);
+    }
+
+    /**
+     * 리더 권한을 검증합니다.
+     * 리더가 아닌 경우 예외를 발생시킵니다.
+     *
+     * @param requesterEmail 요청자 이메일
+     * @throws CustomException 리더가 아닌 경우
+     */
+    public void validateLeaderPermission(String requesterEmail) {
+        if (!isLeader(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+    }
+
+    /**
+     * 프로젝트가 활성 상태(모집 마감이 아닌 상태)인지 검증합니다.
+     * 모집이 마감된 경우 예외를 발생시킵니다.
+     *
+     * @throws CustomException 프로젝트가 마감된 경우
+     */
+    public void validateNotCompleted() {
+        if (isCompleted()) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
+        }
+    }
+
+    /**
+     * 프로젝트가 수정 가능한 상태인지 검증합니다.
+     * 모집중단(SUSPENDED) 상태에서는 예외를 발생시킵니다.
+     *
+     * @throws CustomException 수정 불가 상태인 경우
+     */
+    public void validateEditable() {
+        if (!isEditable()) {
+            throw new CustomException(ErrorCode.PROJECT_EDIT_NOT_ALLOWED_SUSPENDED);
         }
     }
 }

@@ -32,13 +32,4 @@ public class ProjectSearchApi {
                 .response();
     }
 
-    public Response getProjectDetail(Long projectId) {
-        return RestAssured.given()
-                .accept("application/json")
-                .when()
-                .get("/api/projects/V2/{projectId}", projectId)
-                .then()
-                .extract()
-                .response();
-    }
 }

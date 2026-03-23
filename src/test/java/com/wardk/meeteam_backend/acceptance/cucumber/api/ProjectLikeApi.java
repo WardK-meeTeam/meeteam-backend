@@ -17,7 +17,7 @@ public class ProjectLikeApi {
         }
 
         return spec.when()
-                .post("/api/project/like/{projectId}", projectId)
+                .post("/api/v1/project/like/{projectId}", projectId)
                 .then()
                 .extract()
                 .response();
@@ -32,19 +32,10 @@ public class ProjectLikeApi {
         }
 
         return spec.when()
-                .get("/api/project/like/{projectId}", projectId)
+                .get("/api/v1/project/like/{projectId}", projectId)
                 .then()
                 .extract()
                 .response();
     }
 
-    public Response getProjectDetail(Long projectId) {
-        return RestAssured.given()
-                .accept("application/json")
-                .when()
-                .get("/api/projects/V2/{projectId}", projectId)
-                .then()
-                .extract()
-                .response();
-    }
 }

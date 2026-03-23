@@ -66,7 +66,7 @@ public class ProjectCreateApi {
         return RestAssured.given().log().all()
                 .accept("application/json")
                 .when()
-                .get("/api/projects/{projectId}", projectId)
+                .get("/api/v1/projects/{projectId}", projectId)
                 .then().log().all()
                 .extract();
     }
@@ -260,7 +260,7 @@ public class ProjectCreateApi {
 
         return spec
                 .when()
-                .post("/api/projects")
+                .post("/api/v1/projects")
                 .then().log().all()
                 .extract();
     }

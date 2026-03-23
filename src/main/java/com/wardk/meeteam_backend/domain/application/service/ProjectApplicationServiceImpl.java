@@ -52,18 +52,43 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     @Counted("project.apply")
     @Override
     public ApplicationResponse apply(Long projectId, Long memberId, ApplicationRequest request) {
-        // Todo : 프로젝트 종료 요구사항 사라짐, 모집완료만 가능, Project 에 isClosed 제거 바람
+        // 1단계: 엔티티 조회
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        JobPosition jobPosition = jobPositionRepository.findByCode(request.jobPositionCode())
+                .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
 
-        validateProjectRecruiting(project);
+        // 2단계: 권한 검증
+        validateNotSelfApplication(project, memberId);
 
+        // 3단계: 비즈니스 규칙 검증
+        validateApplyPrecondition(project, member, projectId, memberId);
+        validateRecruitmentPosition(projectId, jobPosition);
+
+        // 4단계: 지원서 생성 및 저장
+        ProjectApplication savedApplication = createAndSaveApplication(project, member, jobPosition, request.motivation());
+
+        // 5단계: 알림 발행 및 응답
+        publishApplyNotifications(project, member, savedApplication);
+
+        log.info("프로젝트 지원 완료 - projectId: {}, applicantId: {}, jobPositionCode: {}",
+                projectId, memberId, request.jobPositionCode());
+
+        return ApplicationResponse.from(savedApplication);
+    }
+
+    private void validateNotSelfApplication(Project project, Long memberId) {
         if (project.getCreator().getId().equals(memberId)) {
             throw new CustomException(ErrorCode.APPLICATION_SELF_PROJECT_FORBIDDEN);
         }
+    }
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    private void validateApplyPrecondition(Project project, Member member, Long projectId, Long memberId) {
+        if (project.isCompleted()) {
+            throw new CustomException(ErrorCode.PROJECT_RECRUITMENT_SUSPENDED);
+        }
 
         if (applicationRepository.existsByProjectAndApplicant(project, member)) {
             throw new CustomException(ErrorCode.PROJECT_APPLICATION_ALREADY_EXISTS);
@@ -72,35 +97,36 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
         }
+    }
 
-        JobPosition jobPosition = jobPositionRepository.findByCode(request.jobPositionCode())
-                .orElseThrow(() -> new CustomException(ErrorCode.JOB_POSITION_NOT_FOUND));
-
+    private void validateRecruitmentPosition(Long projectId, JobPosition jobPosition) {
         RecruitmentState recruitmentState = recruitmentStateRepository.findByProjectIdAndJobPosition(projectId, jobPosition)
                 .orElseThrow(() -> new CustomException(ErrorCode.RECRUITMENT_POSITION_NOT_RECRUITING));
 
         if (recruitmentState.isClosed()) {
             throw new CustomException(ErrorCode.RECRUITMENT_POSITION_CLOSED);
         }
+    }
 
+    private ProjectApplication createAndSaveApplication(Project project, Member member, JobPosition jobPosition, String motivation) {
         ProjectApplication application = ProjectApplication.create(
                 project,
                 member,
                 jobPosition,
-                request.motivation()
+                motivation
         );
 
-        ProjectApplication savedApplication = applicationRepository.save(application);
+        return applicationRepository.save(application);
+    }
 
+    private void publishApplyNotifications(Project project, Member member, ProjectApplication savedApplication) {
         Long receiverId = project.getCreator().getId();
         Long actorId = member.getId();
 
-        // 알림 저장 (팀장 + 지원자)
         notificationSaveService.saveForApply(
                 project.getCreator(), member, project, savedApplication.getId()
         );
 
-        // 프로젝트 리더 SSE 전송 이벤트 발행
         eventPublisher.publishEvent(new NotificationEvent(
                 receiverId,
                 project.getId(),
@@ -109,24 +135,12 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 savedApplication.getId()
         ));
 
-        // 지원자 SSE 전송 이벤트 발행
         eventPublisher.publishEvent(new NotificationEvent(
                 actorId,
                 project.getId(),
                 actorId,
                 NotificationType.PROJECT_MY_APPLY
         ));
-
-        log.info("프로젝트 지원 완료 - projectId: {}, applicantId: {}, jobPositionCode: {}",
-                projectId, memberId, request.jobPositionCode());
-
-        return ApplicationResponse.from(savedApplication);
-    }
-
-    private static void validateProjectRecruiting(Project project) {
-        if (project.isCompleted()) {
-            throw new CustomException(ErrorCode.PROJECT_RECRUITMENT_SUSPENDED);
-        }
     }
 
     @Override
@@ -170,60 +184,83 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
     @Override
     public ApplicationDecisionResponse decide(Long applicationId, ApplicationDecisionRequest request, String requesterEmail) {
+        // 1단계: 엔티티 조회
         ProjectApplication application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
-        if (application.getProject().isCompleted()) {
-            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
-        }
+        // 2단계: 권한 검증
+        validateProjectCreator(application, requesterEmail);
 
+        // 3단계: 비즈니스 규칙 검증
+        validateDecisionPrecondition(application);
+
+        // 4단계: 결정 처리
+        return processDecision(application, request.decision());
+    }
+
+    private void validateProjectCreator(ProjectApplication application, String requesterEmail) {
         if (!application.getProject().getCreator().getEmail().equals(requesterEmail)) {
             throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+    }
+
+    private void validateDecisionPrecondition(ProjectApplication application) {
+        if (application.getProject().isCompleted()) {
+            throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
 
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new CustomException(ErrorCode.APPLICATION_ALREADY_DECIDED);
         }
+    }
 
-        application.updateStatus(request.getDecision());
+    private ApplicationDecisionResponse processDecision(ProjectApplication application, ApplicationStatus decision) {
+        application.updateStatus(decision);
 
+        if (decision == ApplicationStatus.ACCEPTED) {
+            return processAcceptance(application);
+        }
+        return processRejection(application);
+    }
+
+    private ApplicationDecisionResponse processAcceptance(ProjectApplication application) {
         Long projectId = application.getProject().getId();
         Long applicantId = application.getApplicant().getId();
         Long projectCreatorId = application.getProject().getCreator().getId();
 
-        // decision이 ACCEPTED인 경우 프로젝트 멤버로 등록 후 리턴
-        if (application.getStatus() == ApplicationStatus.ACCEPTED) {
-            projectMemberService.addMember(
-                    projectId,
-                    applicantId,
-                    application.getJobPosition()
-            );
+        projectMemberService.addMember(
+                projectId,
+                applicantId,
+                application.getJobPosition()
+        );
 
-            // 승인 알림 저장
-            notificationSaveService.saveForApprove(
-                    application.getApplicant(),
-                    application.getProject(),
-                    projectCreatorId,
-                    application.getId()
-            );
+        notificationSaveService.saveForApprove(
+                application.getApplicant(),
+                application.getProject(),
+                projectCreatorId,
+                application.getId()
+        );
 
-            // SSE 전송 이벤트 발행
-            eventPublisher.publishEvent(new NotificationEvent(
-                    applicantId,
-                    projectId,
-                    projectCreatorId,
-                    NotificationType.PROJECT_APPROVE
-            ));
+        eventPublisher.publishEvent(new NotificationEvent(
+                applicantId,
+                projectId,
+                projectCreatorId,
+                NotificationType.PROJECT_APPROVE
+        ));
 
-            return ApplicationDecisionResponse.acceptResponseDto(
-                    application.getId(),
-                    application.getProject().getId(),
-                    application.getApplicant().getId(),
-                    application.getStatus()
-            );
-        }
+        return ApplicationDecisionResponse.acceptResponseDto(
+                application.getId(),
+                application.getProject().getId(),
+                application.getApplicant().getId(),
+                application.getStatus()
+        );
+    }
 
-        // 거절 알림 저장
+    private ApplicationDecisionResponse processRejection(ProjectApplication application) {
+        Long projectId = application.getProject().getId();
+        Long applicantId = application.getApplicant().getId();
+        Long projectCreatorId = application.getProject().getCreator().getId();
+
         notificationSaveService.saveForReject(
                 application.getApplicant(),
                 application.getProject(),
@@ -231,7 +268,6 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 application.getId()
         );
 
-        // SSE 전송 이벤트 발행
         eventPublisher.publishEvent(new NotificationEvent(
                 applicantId,
                 projectId,

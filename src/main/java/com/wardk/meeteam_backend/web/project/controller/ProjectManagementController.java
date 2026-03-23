@@ -1,17 +1,19 @@
 package com.wardk.meeteam_backend.web.project.controller;
 
-import com.wardk.meeteam_backend.domain.project.service.ProjectService;
+import com.wardk.meeteam_backend.domain.project.service.ProjectEditService;
+import com.wardk.meeteam_backend.domain.project.service.ProjectManagementService;
+import com.wardk.meeteam_backend.domain.project.service.ProjectRepoService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.request.ProjectEditRequest;
 import com.wardk.meeteam_backend.web.project.dto.request.ProjectRepoRequest;
+import com.wardk.meeteam_backend.web.project.dto.response.MemberExpelResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectEditPrefillResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectEditResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectRepoResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.RecruitmentStatusResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.TeamManagementResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjectManagementController {
 
-    private final ProjectService projectService;
+    private final ProjectManagementService projectManagementService;
+    private final ProjectEditService projectEditService;
+    private final ProjectRepoService projectRepoService;
 
     @Operation(summary = "모집 상태 토글", description = "프로젝트 모집 상태를 토글합니다. (모집중 ↔ 모집중단)")
     @PostMapping("/api/v1/projects/{projectId}/recruitment/toggle")
@@ -40,7 +44,7 @@ public class ProjectManagementController {
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        RecruitmentStatusResponse response = projectService.toggleRecruitmentStatus(projectId, userDetails.getUsername());
+        RecruitmentStatusResponse response = projectManagementService.toggleRecruitmentStatus(projectId, userDetails.getUsername());
         return SuccessResponse.onSuccess(response);
     }
 
@@ -50,7 +54,7 @@ public class ProjectManagementController {
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        TeamManagementResponse response = projectService.getTeamManagement(projectId, userDetails.getUsername());
+        TeamManagementResponse response = projectManagementService.getTeamManagement(projectId, userDetails.getUsername());
         return SuccessResponse.onSuccess(response);
     }
 
@@ -60,7 +64,7 @@ public class ProjectManagementController {
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        ProjectEditPrefillResponse response = projectService.getProjectEditPrefill(projectId, userDetails.getUsername());
+        ProjectEditPrefillResponse response = projectEditService.getEditPrefill(projectId, userDetails.getUsername());
         return SuccessResponse.onSuccess(response);
     }
 
@@ -72,10 +76,25 @@ public class ProjectManagementController {
             @RequestPart(value = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        ProjectEditResponse response = projectService.updateProject(
+        ProjectEditResponse response = projectEditService.update(
                 projectId,
                 request.toCommand(),
                 file,
+                userDetails.getUsername()
+        );
+        return SuccessResponse.onSuccess(response);
+    }
+
+    @Operation(summary = "팀원 방출", description = "프로젝트 팀원을 방출합니다. 리더만 방출 가능하며, 리더 본인은 방출할 수 없습니다.")
+    @DeleteMapping("/api/v1/projects/{projectId}/members/{memberId}")
+    public SuccessResponse<MemberExpelResponse> expelMember(
+            @PathVariable Long projectId,
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        MemberExpelResponse response = projectManagementService.expelMember(
+                projectId,
+                memberId,
                 userDetails.getUsername()
         );
         return SuccessResponse.onSuccess(response);
@@ -91,14 +110,14 @@ public class ProjectManagementController {
             @RequestBody @Validated ProjectRepoRequest request,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        List<ProjectRepoResponse> responses = projectService.addRepo(projectId, request, userDetails.getUsername());
+        List<ProjectRepoResponse> responses = projectRepoService.addRepo(projectId, request, userDetails.getUsername());
         return SuccessResponse.onSuccess(responses);
     }
 
     @Operation(summary = "프로젝트 레포지토리 조회", description = "프로젝트에 연결된 레포지토리 목록을 조회합니다.")
     @GetMapping("/api/projects/{projectId}/repos")
     public SuccessResponse<List<ProjectRepoResponse>> findProjectRepos(@PathVariable Long projectId) {
-        List<ProjectRepoResponse> responses = projectService.findProjectRepos(projectId);
+        List<ProjectRepoResponse> responses = projectRepoService.findRepos(projectId);
         return SuccessResponse.onSuccess(responses);
     }
 }

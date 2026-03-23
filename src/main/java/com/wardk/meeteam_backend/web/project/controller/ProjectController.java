@@ -1,6 +1,7 @@
 package com.wardk.meeteam_backend.web.project.controller;
 
-import com.wardk.meeteam_backend.domain.project.service.ProjectService;
+import com.wardk.meeteam_backend.domain.project.service.ProjectCommandService;
+import com.wardk.meeteam_backend.domain.project.service.ProjectQueryService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.request.ProjectPostRequest;
@@ -26,7 +27,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProjectController {
 
-    private final ProjectService projectService;
+    private final ProjectCommandService projectCommandService;
+    private final ProjectQueryService projectQueryService;
 
     @Operation(summary = "프로젝트 생성",
             description = "새 프로젝트를 생성합니다. 직군/직무/기술스택 정보는 GET /api/v1/jobs/options를 먼저 호출하여 조회하고, 선택한 직군(JobField)에 해당하는 기술스택만 전송해야 합니다. 마감 방식: END_DATE(마감 날짜 기반, endDate 필수), RECRUITMENT_COMPLETED(모집 완료 시, endDate 미전송)")
@@ -38,7 +40,7 @@ public class ProjectController {
             @RequestPart(name = "file", required = false) MultipartFile file,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        ProjectPostResponse response = projectService.createProject(request.toCommand(), file, userDetails.getUsername());
+        ProjectPostResponse response = projectCommandService.create(request.toCommand(), file, userDetails.getUsername());
         return SuccessResponse.onSuccess(response);
     }
 
@@ -49,7 +51,7 @@ public class ProjectController {
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
         Long memberId = userDetails != null ? userDetails.getMemberId() : null;
-        ProjectDetailResponse project = projectService.findProjectById(projectId, memberId);
+        ProjectDetailResponse project = projectQueryService.findById(projectId, memberId);
         return SuccessResponse.onSuccess(project);
     }
 
@@ -65,7 +67,7 @@ public class ProjectController {
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        ProjectDeleteResponse response = projectService.deleteProject(projectId, userDetails.getUsername());
+        ProjectDeleteResponse response = projectCommandService.delete(projectId, userDetails.getUsername());
         return SuccessResponse.onSuccess(response);
     }
 
@@ -74,14 +76,14 @@ public class ProjectController {
     public SuccessResponse<List<MyProjectResponse>> findMyProjects(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        List<MyProjectResponse> myProjects = projectService.findMyProjects(userDetails);
+        List<MyProjectResponse> myProjects = projectQueryService.findMyProjects(userDetails);
         return SuccessResponse.onSuccess(myProjects);
     }
 
     @Operation(summary = "프로젝트 목록 조회", description = "전체 프로젝트 목록을 조회합니다.")
     @GetMapping("/api/projects")
     public SuccessResponse<List<ProjectListResponse>> findAllProjects() {
-        List<ProjectListResponse> projects = projectService.findAllProjects();
+        List<ProjectListResponse> projects = projectQueryService.findAll();
         return SuccessResponse.onSuccess(projects);
     }
 }
