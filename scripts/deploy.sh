@@ -5,7 +5,7 @@ set -e
 DEPLOY_DIR="/home/ubuntu/meeteam"
 ACTIVE_ENV_FILE="$DEPLOY_DIR/active_env"
 UPSTREAM_CONF="/etc/nginx/conf.d/meeteam-upstream.conf"
-MAX_RETRY=30
+MAX_RETRY=60
 RETRY_INTERVAL=5
 
 # 색상 출력
