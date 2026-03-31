@@ -134,6 +134,16 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// 통합 테스트 전용 태스크 (Cucumber 제외)
+tasks.register('integrationTest', Test) {
+	useJUnitPlatform {
+		excludeEngines 'cucumber'
+	}
+	include '**/integration/**'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+}
+
 
 def querydslDir = "$buildDir/generated/querydsl"
 

@@ -13,6 +13,7 @@ import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.project.dto.request.ProjectSearchCondition;
+import com.wardk.meeteam_backend.web.project.dto.request.ProjectSearchRequest;
 import com.wardk.meeteam_backend.web.project.dto.response.MyProjectResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectDetailResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectListResponse;
@@ -20,7 +21,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -138,4 +141,22 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
     }
 
 
+
+    @Override
+    public Page<ProjectCardResponse> searchV1(ProjectSearchRequest request, Pageable pageable,
+            CustomSecurityUserDetails userDetails) {
+        // 정렬 적용
+        Sort sort = request.sort().toSort();
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sort
+        );
+
+        // 기존 조건 객체로 변환 후 검색
+        ProjectSearchCondition condition = request.toCondition();
+        Page<Project> projects = projectRepository.findAllSlicedForSearchAtCondition(condition, sortedPageable);
+
+        return toProjectCardPage(projects, userDetails);
+    }
 }
