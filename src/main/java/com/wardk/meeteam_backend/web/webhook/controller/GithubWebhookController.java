@@ -35,7 +35,9 @@ public class GithubWebhookController {
     /**
      * GitHub Webhook 요청을 처리하는 엔드포인트
      * 서명 검증은 X-Hub-Signature-256 헤더가 있는 경우에만 수행합니다.
+     * @deprecated 이 API는 더 이상 사용되지 않습니다.
      */
+    @Deprecated
     @PostMapping
     public ResponseEntity<?> handleWebhook(
             HttpServletRequest request,

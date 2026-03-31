@@ -34,8 +34,9 @@ public class CodeReviewController {
     /**
      * PR 리뷰 시작 - 통합 API
      */
+    @Deprecated
     @PostMapping("/start")
-    @Operation(summary = "PR 리뷰 시작", description = "PR에 대한 코드 리뷰를 시작합니다")
+    @Operation(summary = "PR 리뷰 시작", description = "PR에 대한 코드 리뷰를 시작합니다", deprecated = true)
     public ResponseEntity<PrReviewJobResponse> startPrReview(
             @Parameter(description = "저장소 ID") @RequestParam Long repoId,
             @Parameter(description = "PR 번호") @RequestParam Integer prNumber,

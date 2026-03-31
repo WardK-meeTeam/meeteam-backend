@@ -24,7 +24,8 @@ public class ProjectQueryController {
 
     // ===============Legacy===================
 
-    @Operation(summary = "프로젝트 조건 검색", description = "조건과 페이징을 기반으로 프로젝트 목록을 조회합니다.")
+    @Deprecated
+    @Operation(summary = "프로젝트 조건 검색", description = "조건과 페이징을 기반으로 프로젝트 목록을 조회합니다.", deprecated = true)
     @GetMapping("api/projects/condition")
     public Page<ProjectCardResponse> searchCondition(
             @AuthenticationPrincipal(errorOnInvalidType = false) CustomSecurityUserDetails userDetails,

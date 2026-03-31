@@ -25,7 +25,8 @@ public class PullRequestController {
      * @param prNumber
      * @return
      */
-    @Operation(summary = "특정 레포 PR 조회")
+    @Deprecated
+    @Operation(summary = "특정 레포 PR 조회", deprecated = true)
     @GetMapping("/{owner}/{repo}/{prNumber}")
     public SuccessResponse<PullRequestResponse> get(
             @PathVariable String owner,
@@ -43,7 +44,8 @@ public class PullRequestController {
      * @param projectId
      * @return
      */
-    @Operation(summary = "특정 프로젝트 내 모든 PR 조회")
+    @Deprecated
+    @Operation(summary = "특정 프로젝트 내 모든 PR 조회", deprecated = true)
     @GetMapping("/{projectId}")
     public SuccessResponse<List<PullRequestResponse>> getAllPullRequests(
             @PathVariable Long projectId,
@@ -57,7 +59,8 @@ public class PullRequestController {
     /**
      *  특정 레포 내의 모든 PR 조회
      */
-    @Operation(summary = "특정 레포 내의 모든 PR 조회")
+    @Deprecated
+    @Operation(summary = "특정 레포 내의 모든 PR 조회", deprecated = true)
     @GetMapping("/{owner}/{repo}")
     public SuccessResponse<List<PullRequestResponse>> getAllPullRequestsInRepo(
             @PathVariable String owner,

@@ -103,7 +103,8 @@ public class ProjectManagementController {
 
     // =============Legacy ==============================
 
-    @Operation(summary = "GitHub 레포지토리 연결", description = "프로젝트에 GitHub 레포지토리를 연결합니다.")
+    @Deprecated
+    @Operation(summary = "GitHub 레포지토리 연결", description = "프로젝트에 GitHub 레포지토리를 연결합니다.", deprecated = true)
     @PostMapping("/api/projects/{projectId}/repos")
     public SuccessResponse<List<ProjectRepoResponse>> addRepository(
             @PathVariable Long projectId,
@@ -114,7 +115,8 @@ public class ProjectManagementController {
         return SuccessResponse.onSuccess(responses);
     }
 
-    @Operation(summary = "프로젝트 레포지토리 조회", description = "프로젝트에 연결된 레포지토리 목록을 조회합니다.")
+    @Deprecated
+    @Operation(summary = "프로젝트 레포지토리 조회", description = "프로젝트에 연결된 레포지토리 목록을 조회합니다.", deprecated = true)
     @GetMapping("/api/projects/{projectId}/repos")
     public SuccessResponse<List<ProjectRepoResponse>> findProjectRepos(@PathVariable Long projectId) {
         List<ProjectRepoResponse> responses = projectRepoService.findRepos(projectId);

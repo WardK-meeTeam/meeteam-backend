@@ -20,7 +20,8 @@ public class ProjectMemberController {
 
     private final ProjectMemberService projectMemberService;
 
-    @Operation(summary = "프로젝트 멤버 전체 조회")
+    @Deprecated
+    @Operation(summary = "프로젝트 멤버 전체 조회", deprecated = true)
     @GetMapping("/{projectId}")
     public SuccessResponse<List<ProjectMemberListResponse>> getProjectMembers(@PathVariable Long projectId) {
 
@@ -29,7 +30,8 @@ public class ProjectMemberController {
         return SuccessResponse.onSuccess(projectMembers);
     }
 
-    @Operation(summary = "프로젝트 멤버 삭제(추방)")
+    @Deprecated
+    @Operation(summary = "프로젝트 멤버 삭제(추방)", deprecated = true)
     @PostMapping
     public SuccessResponse<DeleteResponse> deleteMembers(@RequestBody @Validated DeleteRequest request,
                                                          @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
@@ -39,7 +41,8 @@ public class ProjectMemberController {
         return SuccessResponse.onSuccess(response);
     }
 
-    @Operation(summary = "프로젝트 멤버 자진 탈퇴")
+    @Deprecated
+    @Operation(summary = "프로젝트 멤버 자진 탈퇴", deprecated = true)
     @PostMapping("/withdraw")
     public SuccessResponse<WithdrawResponse> withdraw(@RequestBody @Validated WithdrawRequest request,
                                                       @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {

@@ -35,7 +35,8 @@ public class MemberController {
      * 나의 프로필보기에서 나의 memberId;
      */
 
-    @Operation(summary = "나의 프로필 보기", description = "로그인한 사용자의 프로필 정보를 조회합니다.")
+    @Deprecated
+    @Operation(summary = "나의 프로필 보기", description = "로그인한 사용자의 프로필 정보를 조회합니다.", deprecated = true)
     @GetMapping("api/members")
     public SuccessResponse<MemberProfileResponse> getMember(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
@@ -46,8 +47,9 @@ public class MemberController {
         return SuccessResponse.onSuccess(profile);
     }
 
+    @Deprecated
     @PutMapping(value = "/api/members", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "나의 프로필 수정", description = "현재 로그인한 회원의 프로필 정보를 수정합니다.")
+    @Operation(summary = "나의 프로필 수정", description = "현재 로그인한 회원의 프로필 정보를 수정합니다.", deprecated = true)
     public SuccessResponse<MemberProfileUpdateResponse> updateMember(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomSecurityUserDetails userDetails,
             @RequestPart("memberInfo") @Valid MemberProfileUpdateRequest request,
@@ -63,7 +65,8 @@ public class MemberController {
 
 
 
-    @Operation(summary = "특정 사용자 프로필 보기" , description = "특정 사용자의 프로필 정보를 조회합니다.")
+    @Deprecated
+    @Operation(summary = "특정 사용자 프로필 보기" , description = "특정 사용자의 프로필 정보를 조회합니다.", deprecated = true)
     @GetMapping("api/members/{memberId}")
     public SuccessResponse<MemberProfileResponse> getMember(
             @PathVariable Long memberId
@@ -74,7 +77,8 @@ public class MemberController {
         return SuccessResponse.onSuccess(profile);
     }
 
-    @Operation(summary = "메인 페이지 사용자 카드 조회 " , description = "메인 페이지에서 팀을 구해요 에서 전체 사용자의 프로필 정보를 조회합니다.")
+    @Deprecated
+    @Operation(summary = "메인 페이지 사용자 카드 조회 " , description = "메인 페이지에서 팀을 구해요 에서 전체 사용자의 프로필 정보를 조회합니다.", deprecated = true)
     @GetMapping("api/members/all")
     public SuccessResponse<List<MemberCardResponse>> getAllMembers() {
         List<MemberCardResponse> cards = memberProfileService.getAllMemberCards();
@@ -83,7 +87,8 @@ public class MemberController {
     }
 
 
-    @Operation(summary = "사용자 조건 검색", description = "사용자 이름, 플랫폼, 분야, 기술 스택 등 다양한 조건으로 사용자를 검색합니다.")
+    @Deprecated
+    @Operation(summary = "사용자 조건 검색", description = "사용자 이름, 플랫폼, 분야, 기술 스택 등 다양한 조건으로 사용자를 검색합니다.", deprecated = true)
     @GetMapping("api/members/search")
     public SuccessResponse<Page<MemberCardResponse>> searchMembers (
             @RequestParam(value = "jobFieldIds", required = false) List<Long> jobFieldIds,

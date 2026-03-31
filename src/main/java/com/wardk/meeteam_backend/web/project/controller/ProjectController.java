@@ -61,8 +61,9 @@ public class ProjectController {
     // ================== Legacy ======================
 
 
-    @Operation(summary = "프로젝트 삭제", description = "프로젝트를 삭제합니다.")
-     @DeleteMapping("/api/projects/{projectId}")
+    @Deprecated
+    @Operation(summary = "프로젝트 삭제", description = "프로젝트를 삭제합니다.", deprecated = true)
+    @DeleteMapping("/api/projects/{projectId}")
     public SuccessResponse<ProjectDeleteResponse> deleteProject(
             @PathVariable Long projectId,
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
@@ -71,7 +72,8 @@ public class ProjectController {
         return SuccessResponse.onSuccess(response);
     }
 
-    @Operation(summary = "내 프로젝트 조회", description = "로그인한 사용자가 참여 중인/완료한 프로젝트를 조회합니다.")
+    @Deprecated
+    @Operation(summary = "내 프로젝트 조회", description = "로그인한 사용자가 참여 중인/완료한 프로젝트를 조회합니다.", deprecated = true)
     @GetMapping("/api/projects/my")
     public SuccessResponse<List<MyProjectResponse>> findMyProjects(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
@@ -80,7 +82,8 @@ public class ProjectController {
         return SuccessResponse.onSuccess(myProjects);
     }
 
-    @Operation(summary = "프로젝트 목록 조회", description = "전체 프로젝트 목록을 조회합니다.")
+    @Deprecated
+    @Operation(summary = "프로젝트 목록 조회", description = "전체 프로젝트 목록을 조회합니다.", deprecated = true)
     @GetMapping("/api/projects")
     public SuccessResponse<List<ProjectListResponse>> findAllProjects() {
         List<ProjectListResponse> projects = projectQueryService.findAll();
