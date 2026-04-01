@@ -27,6 +27,10 @@ src/test/java/com/wardk/meeteam_backend/
 ├── acceptance/cucumber/           # 인수 테스트 (기존 구조)
 │
 └── fixture/                       # 공통 테스트 픽스처
+
+src/test/resources/
+└── sql/                           # 시드 데이터 SQL 파일
+    └── {도메인}-{기능}-data.sql
 ```
 
 ---
@@ -91,21 +95,6 @@ class ProjectTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PROJECT_MEMBER_FORBIDDEN);
         }
     }
-
-    @Nested
-    @DisplayName("create 팩토리 메서드는")
-    class Create {
-
-        @Test
-        @DisplayName("모집 상태가 RECRUITING으로 초기화된다")
-        void initializes_recruitment_status_as_recruiting() {
-            // when
-            Project project = Project.create(name, creator, category, platform);
-
-            // then
-            assertThat(project.getRecruitment()).isEqualTo(Recruitment.RECRUITING);
-        }
-    }
 }
 ```
 
@@ -126,14 +115,35 @@ class ProjectTest {
 
 Service 메서드를 실제 DB와 연동하여 테스트하고, **반환되는 DTO를 검증**합니다.
 
-### 4.1 기본 구조
+### 4.1 기본 구조 (시드 데이터 방식)
 
 ```java
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
+@Sql("/sql/project-search-data.sql")
 @DisplayName("ProjectQueryService 통합 테스트")
 class ProjectQueryServiceIntegrationTest {
+
+    // ==================== 상수 (시드 데이터 기반) ====================
+
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int TOTAL_SEED_PROJECTS = 20;
+
+    // 시드 데이터의 카테고리별 개수
+    private static final int AI_TECH_COUNT = 8;
+    private static final int HEALTHCARE_COUNT = 2;
+
+    // 시드 데이터의 모집상태별 개수
+    private static final int RECRUITING_COUNT = 16;
+    private static final int CLOSED_COUNT = 2;
+
+    // 키워드 검색 상수
+    private static final String KEYWORD_AI = "AI";
+    private static final String KEYWORD_NOT_EXIST = "존재하지않는키워드XYZ";
+
+    // ==================== 의존성 ====================
 
     @Autowired
     private ProjectQueryService projectQueryService;
@@ -144,135 +154,215 @@ class ProjectQueryServiceIntegrationTest {
     @Autowired
     private MemberRepository memberRepository;
 
-    private Member leader;
-
-    @BeforeEach
-    void setUp() {
-        leader = memberRepository.save(MemberFixture.defaultMember());
-    }
+    // ==================== 테스트 ====================
 
     @Nested
     @DisplayName("searchV1 메서드는")
     class SearchV1 {
 
-        @Test
-        @DisplayName("키워드가 프로젝트명에 포함된 프로젝트의 DTO를 반환한다")
-        void returns_dto_containing_keyword_in_name() {
-            // given
-            Project saved = projectRepository.save(
-                ProjectFixture.withName("AI 개발 프로젝트", leader)
-            );
-            projectRepository.save(ProjectFixture.withName("헬스케어 앱", leader));
+        @Nested
+        @DisplayName("키워드 검색 시")
+        class WithKeyword {
 
-            ProjectSearchRequest request = new ProjectSearchRequest(
-                "개발", null, null, null, null, null, null
-            );
+            @Test
+            @DisplayName("프로젝트명에 키워드가 포함된 프로젝트를 반환한다")
+            void returns_projects_when_keyword_matches_project_name() {
+                // given - 시드 데이터 사용
 
-            // when
-            Page<ProjectCardResponse> result = projectQueryService.searchV1(
-                request, PageRequest.of(0, 20), null
-            );
+                // when
+                Page<ProjectCardResponse> result = search(requestWithKeyword(KEYWORD_AI));
 
-            // then - DTO 필드 검증
-            assertThat(result.getContent()).hasSize(1);
-
-            ProjectCardResponse dto = result.getContent().get(0);
-            assertThat(dto.projectId()).isEqualTo(saved.getId());
-            assertThat(dto.projectName()).isEqualTo("AI 개발 프로젝트");
-            assertThat(dto.creatorName()).isEqualTo(leader.getRealName());
-            assertThat(dto.isLiked()).isFalse();  // 비로그인
-        }
-
-        @Test
-        @DisplayName("DEADLINE 정렬 시 마감일 오름차순으로 DTO 목록을 반환한다")
-        void returns_dtos_sorted_by_deadline_ascending() {
-            // given
-            Project farProject = projectRepository.save(
-                ProjectFixture.withEndDate(LocalDate.now().plusMonths(2), leader, "먼 프로젝트")
-            );
-            Project nearProject = projectRepository.save(
-                ProjectFixture.withEndDate(LocalDate.now().plusDays(3), leader, "임박 프로젝트")
-            );
-
-            ProjectSearchRequest request = new ProjectSearchRequest(
-                null, null, null, null, null, null, ProjectSortType.DEADLINE
-            );
-
-            // when
-            Page<ProjectCardResponse> result = projectQueryService.searchV1(
-                request, PageRequest.of(0, 20), null
-            );
-
-            // then - 정렬 순서 검증
-            assertThat(result.getContent())
-                .extracting(ProjectCardResponse::projectName)
-                .containsExactly("임박 프로젝트", "먼 프로젝트");
-        }
-
-        @Test
-        @DisplayName("검색 결과가 없으면 빈 Page를 반환한다")
-        void returns_empty_page_when_no_results() {
-            // given
-            ProjectSearchRequest request = new ProjectSearchRequest(
-                "존재하지않는키워드", null, null, null, null, null, null
-            );
-
-            // when
-            Page<ProjectCardResponse> result = projectQueryService.searchV1(
-                request, PageRequest.of(0, 20), null
-            );
-
-            // then
-            assertThat(result.getContent()).isEmpty();
-            assertThat(result.getTotalElements()).isZero();
-        }
-
-        @Test
-        @DisplayName("페이징이 정상 동작한다")
-        void pagination_works_correctly() {
-            // given - 25개 프로젝트 생성
-            for (int i = 1; i <= 25; i++) {
-                projectRepository.save(ProjectFixture.withName("프로젝트 " + i, leader));
+                // then
+                assertThat(result.getContent()).isNotEmpty();
+                assertThat(result.getContent())
+                        .allMatch(dto -> dto.getProjectName().contains(KEYWORD_AI));
             }
-
-            ProjectSearchRequest request = new ProjectSearchRequest(
-                null, null, null, null, null, null, null
-            );
-
-            // when
-            Page<ProjectCardResponse> result = projectQueryService.searchV1(
-                request, PageRequest.of(0, 20), null
-            );
-
-            // then
-            assertThat(result.getContent()).hasSize(20);
-            assertThat(result.getTotalElements()).isEqualTo(25);
-            assertThat(result.getTotalPages()).isEqualTo(2);
-            assertThat(result.isLast()).isFalse();
         }
+
+        @Nested
+        @DisplayName("카테고리 필터 시")
+        class WithCategoryFilter {
+
+            @Test
+            @DisplayName("AI_TECH 카테고리의 프로젝트만 반환한다")
+            void returns_only_ai_tech_projects() {
+                // when
+                Page<ProjectCardResponse> result = search(requestWithCategory(ProjectCategory.AI_TECH));
+
+                // then
+                assertThat(result.getContent()).hasSize(AI_TECH_COUNT);
+                assertThat(result.getContent())
+                        .allMatch(dto -> dto.getCategoryCode().equals(ProjectCategory.AI_TECH.name()));
+            }
+        }
+    }
+
+    // ==================== 헬퍼 메서드 ====================
+
+    private Pageable defaultPageable() {
+        return PageRequest.of(DEFAULT_PAGE, DEFAULT_PAGE_SIZE);
+    }
+
+    private ProjectSearchRequest requestWithKeyword(String keyword) {
+        return new ProjectSearchRequest(keyword, null, null, null, null, null, null);
+    }
+
+    private ProjectSearchRequest requestWithCategory(ProjectCategory category) {
+        return new ProjectSearchRequest(null, category, null, null, null, null, null);
+    }
+
+    private ProjectSearchRequest emptyRequest() {
+        return new ProjectSearchRequest(null, null, null, null, null, null, null);
+    }
+
+    private Page<ProjectCardResponse> search(ProjectSearchRequest request) {
+        return projectQueryService.searchV1(request, defaultPageable(), null);
+    }
+
+    private Page<ProjectCardResponse> search(ProjectSearchRequest request, Pageable pageable) {
+        return projectQueryService.searchV1(request, pageable, null);
     }
 }
 ```
 
-### 4.2 DTO 검증 포인트
+### 4.2 시드 데이터 SQL 파일
+
+```sql
+-- src/test/resources/sql/project-search-data.sql
+
+-- @Nested + @Sql 조합에서 트랜잭션 경계 이슈로 DELETE 필요
+DELETE FROM project;
+DELETE FROM member;
+
+-- 회원 데이터
+INSERT INTO member (member_id, email, real_name, role, version, created_at) VALUES
+(1, 'hong@example.com', '홍길동', 'USER', 0, '2024-01-01 09:00:00'),
+(2, 'kim@example.com', '김철수', 'USER', 0, '2024-01-01 09:00:00');
+
+-- 프로젝트 데이터 (다양한 조건)
+INSERT INTO project (project_id, creator_id, project_name, ..., created_at) VALUES
+-- AI_TECH 카테고리
+(1, 1, 'AI 챗봇 개발', ..., '2024-01-01 10:00:00'),
+(2, 2, 'AI 이미지 분석', ..., '2024-01-02 10:00:00'),
+-- HEALTHCARE 카테고리
+(3, 1, '헬스케어 앱', ..., '2024-01-03 10:00:00');
+```
+
+### 4.3 테스트 파일 구조
+
+```java
+class IntegrationTest {
+    // 1. 상수 (시드 데이터 기반)
+    private static final int AI_TECH_COUNT = 8;
+
+    // 2. 의존성
+    @Autowired
+    private SomeService service;
+
+    // 3. 테스트 (@Nested 구조)
+    @Nested
+    class SomeMethod {
+        @Test
+        void test_case() { }
+    }
+
+    // 4. 헬퍼 메서드 (맨 아래)
+    private Request createRequest() { }
+    private Response search() { }
+}
+```
+
+### 4.4 @Sql 사용 시 주의사항
+
+| 항목 | 설명 |
+|------|------|
+| **DELETE 필수** | `@Nested` + `@Sql` 조합에서 트랜잭션 롤백 이슈로 DELETE 필요 |
+| **created_at 포함** | 정렬 테스트 시 `created_at` 값 명시 필요 |
+| **FK 순서** | DELETE: 자식 → 부모, INSERT: 부모 → 자식 |
+| **ID 명시** | PK 값을 명시하여 테스트 예측 가능성 확보 |
+
+### 4.5 헬퍼 메서드 패턴
+
+```java
+// Request 생성 헬퍼
+private ProjectSearchRequest requestWithKeyword(String keyword) {
+    return new ProjectSearchRequest(keyword, null, null, null, null, null, null);
+}
+
+private ProjectSearchRequest requestWithCategory(ProjectCategory category) {
+    return new ProjectSearchRequest(null, category, null, null, null, null, null);
+}
+
+private ProjectSearchRequest emptyRequest() {
+    return new ProjectSearchRequest(null, null, null, null, null, null, null);
+}
+
+// 검색 실행 헬퍼
+private Page<ProjectCardResponse> search(ProjectSearchRequest request) {
+    return projectQueryService.searchV1(request, defaultPageable(), null);
+}
+
+// Pageable 헬퍼
+private Pageable defaultPageable() {
+    return PageRequest.of(DEFAULT_PAGE, DEFAULT_PAGE_SIZE);
+}
+
+private Pageable pageableOf(int page, int size) {
+    return PageRequest.of(page, size);
+}
+
+// 결과 추출 헬퍼
+private ProjectCardResponse getFirstResult(Page<ProjectCardResponse> result) {
+    return result.getContent().get(0);
+}
+```
+
+### 4.6 상수 추출 패턴
+
+```java
+// 페이징 상수
+private static final int DEFAULT_PAGE = 0;
+private static final int DEFAULT_PAGE_SIZE = 20;
+private static final int TOTAL_SEED_PROJECTS = 20;
+
+// 시드 데이터 개수 (카테고리별, 상태별 등)
+private static final int AI_TECH_COUNT = 8;
+private static final int RECRUITING_COUNT = 16;
+
+// 검색 키워드
+private static final String KEYWORD_AI = "AI";
+private static final String KEYWORD_NOT_EXIST = "존재하지않는키워드XYZ";
+```
+
+### 4.7 DTO 검증 포인트
 
 ```java
 // 필드 값 검증
-assertThat(dto.projectId()).isEqualTo(expected.getId());
-assertThat(dto.projectName()).isEqualTo("AI 개발");
+assertThat(dto.getProjectId()).isEqualTo(expected.getId());
+assertThat(dto.getProjectName()).isEqualTo("AI 개발");
 
 // 연관 데이터 변환 검증
-assertThat(dto.creatorName()).isEqualTo(leader.getRealName());
-assertThat(dto.categoryName()).isEqualTo(category.getDisplayName());
+assertThat(dto.getCreatorName()).isEqualTo(leader.getRealName());
+assertThat(dto.getCategoryName()).isEqualTo(category.getDisplayName());
 
 // 계산된 필드 검증
 assertThat(dto.isLiked()).isFalse();
-assertThat(dto.recruitments()).hasSize(2);
 
 // 목록 순서 검증
 assertThat(result.getContent())
-    .extracting(ProjectCardResponse::projectName)
+    .extracting(ProjectCardResponse::getProjectName)
     .containsExactly("첫번째", "두번째", "세번째");
+
+// 전체 매칭 검증
+assertThat(result.getContent())
+    .allMatch(dto -> dto.getCategoryCode().equals(ProjectCategory.AI_TECH.name()));
+
+// 전체 필드 검증 (allSatisfy)
+assertThat(result.getContent()).allSatisfy(dto -> {
+    assertThat(dto.getProjectId()).isNotNull();
+    assertThat(dto.getProjectName()).isNotNull();
+    assertThat(dto.getCreatorName()).isNotNull();
+});
 ```
 
 ---
@@ -331,55 +421,52 @@ public class ProjectFixture {
 
     public static Project defaultProject(Member creator) {
         return Project.builder()
-                .projectName("테스트 프로젝트")
                 .creator(creator)
+                .name("테스트 프로젝트")
+                .description("테스트 프로젝트 설명")
                 .projectCategory(ProjectCategory.AI_TECH)
                 .platformCategory(PlatformCategory.WEB)
-                .recruitment(Recruitment.RECRUITING)
+                .recruitmentStatus(Recruitment.RECRUITING)
+                .recruitmentDeadlineType(RecruitmentDeadlineType.END_DATE)
+                .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusMonths(1))
+                .isDeleted(false)
                 .build();
     }
 
     public static Project withName(String name, Member creator) {
         return Project.builder()
-                .projectName(name)
                 .creator(creator)
+                .name(name)
+                .description(name + " 설명")
                 .projectCategory(ProjectCategory.AI_TECH)
                 .platformCategory(PlatformCategory.WEB)
-                .recruitment(Recruitment.RECRUITING)
+                .recruitmentStatus(Recruitment.RECRUITING)
+                .recruitmentDeadlineType(RecruitmentDeadlineType.END_DATE)
+                .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusMonths(1))
+                .isDeleted(false)
                 .build();
     }
 
-    public static Project withCreator(Member creator) {
-        return defaultProject(creator);
-    }
-
-    public static Project withEndDate(LocalDate endDate, Member creator, String name) {
-        return Project.builder()
-                .projectName(name)
-                .creator(creator)
-                .projectCategory(ProjectCategory.AI_TECH)
-                .platformCategory(PlatformCategory.WEB)
-                .recruitment(Recruitment.RECRUITING)
-                .endDate(endDate)
-                .build();
-    }
+    public static Project withCategory(ProjectCategory category, Member creator, String name) { ... }
+    public static Project withPlatform(PlatformCategory platform, Member creator, String name) { ... }
+    public static Project withRecruitment(Recruitment recruitment, Member creator, String name) { ... }
+    public static Project withEndDate(LocalDate endDate, Member creator, String name) { ... }
 }
 
 public class MemberFixture {
 
     public static Member defaultMember() {
-        return Member.builder()
-                .email("test@example.com")
-                .realName("테스트유저")
-                .build();
+        return Member.createForTest("test@example.com", "테스트유저");
     }
 
-    public static Member withId(Long id) {
-        Member member = defaultMember();
-        ReflectionTestUtils.setField(member, "id", id);
-        return member;
+    public static Member withName(String name) {
+        return Member.createForTest(name.toLowerCase() + "@example.com", name);
+    }
+
+    public static Member withEmail(String email, String name) {
+        return Member.createForTest(email, name);
     }
 }
 ```
@@ -401,14 +488,14 @@ public class MemberFixture {
 // snake_case + 행위 설명
 void returns_true_when_creator_id_matches()
 void throws_exception_when_not_leader()
-void returns_dto_containing_keyword_in_name()
+void returns_projects_when_keyword_matches_project_name()
 ```
 
 ### DisplayName
 
 ```java
 @DisplayName("생성자의 ID와 일치하면 true를 반환한다")
-@DisplayName("키워드가 프로젝트명에 포함된 프로젝트의 DTO를 반환한다")
+@DisplayName("프로젝트명에 키워드가 포함된 프로젝트를 반환한다")
 ```
 
 ---
@@ -425,7 +512,9 @@ void returns_dto_containing_keyword_in_name()
 **통합 테스트 (Service)**
 - [ ] `@SpringBootTest` + `@ActiveProfiles("test")`
 - [ ] `@Transactional`로 테스트 격리
-- [ ] Fixture 클래스로 테스트 데이터 생성
+- [ ] `@Sql`로 시드 데이터 로드 (DELETE 포함)
+- [ ] 상수로 시드 데이터 개수/키워드 관리
+- [ ] 헬퍼 메서드로 중복 제거 (파일 맨 아래 배치)
 - [ ] **반환 DTO 필드 검증**
 - [ ] 목록 정렬 순서 검증
 - [ ] 페이징 검증

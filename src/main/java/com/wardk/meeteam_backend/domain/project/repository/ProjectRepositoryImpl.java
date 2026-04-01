@@ -11,6 +11,7 @@ import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import static com.wardk.meeteam_backend.domain.recruitment.entity.QRecruitmentState.*;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProject.*;
@@ -25,6 +26,10 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         this.queryFactory = queryFactory;
     }
 
+    /**
+     * @deprecated Slice를 반환하는 {@link #searchWithSlice} 사용 권장.
+     */
+    @Deprecated
     public Page<Project> findAllSlicedForSearchAtCondition(ProjectSearchCondition condition, Pageable pageable) {
 
         Page<Project> projects = applyPagination(pageable, qf ->
@@ -43,6 +48,24 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
         );
 
         return projects;
+    }
+
+    @Override
+    public Slice<Project> searchWithSlice(ProjectSearchCondition condition, Pageable pageable) {
+        return applySlicing(pageable, qf ->
+            qf.select(project)
+                .from(project)
+                .join(project.creator, member).fetchJoin()
+                .where(
+                    notDeleted(),
+                    platformCategoryEq(condition.getPlatformCategory()),
+                    recruitmentEq(condition.getRecruitment()),
+                    projectTechStackNameExists(condition.getTechStack()),
+                    jobFieldExists(condition.getJobField()),
+                    projectCategoryEq(condition.getProjectCategory()),
+                    keywordContains(condition.getKeyword())
+                )
+        );
     }
 
     @Override

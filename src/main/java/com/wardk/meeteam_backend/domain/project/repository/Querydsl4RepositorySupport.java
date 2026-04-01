@@ -85,6 +85,13 @@ public abstract class Querydsl4RepositorySupport {
     }
 
 
+    /**
+     * Page 반환 (count 쿼리 포함).
+     * 무한스크롤에는 {@link #applySlicing(Pageable, Function)} 사용 권장.
+     *
+     * @deprecated fetchCount()가 deprecated됨. countQuery를 분리한 오버로드 메서드 사용 권장.
+     */
+    @Deprecated
     protected <T> Page<T> applyPagination(Pageable pageable,
                                           Function<JPAQueryFactory, JPAQuery> contentQuery) {
 

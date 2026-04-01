@@ -23,6 +23,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -143,7 +145,7 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
 
 
     @Override
-    public Page<ProjectCardResponse> searchV1(ProjectSearchRequest request, Pageable pageable,
+    public Slice<ProjectCardResponse> searchV1(ProjectSearchRequest request, Pageable pageable,
             CustomSecurityUserDetails userDetails) {
         // 정렬 적용
         Sort sort = request.sort().toSort();
@@ -153,10 +155,37 @@ public class ProjectQueryServiceImpl implements ProjectQueryService {
                 sort
         );
 
-        // 기존 조건 객체로 변환 후 검색
+        // 기존 조건 객체로 변환 후 검색 (Slice 사용 - count 쿼리 없음)
         ProjectSearchCondition condition = request.toCondition();
-        Page<Project> projects = projectRepository.findAllSlicedForSearchAtCondition(condition, sortedPageable);
+        Slice<Project> projects = projectRepository.searchWithSlice(condition, sortedPageable);
 
-        return toProjectCardPage(projects, userDetails);
+        return toProjectCardSlice(projects, userDetails);
+    }
+
+    private Slice<ProjectCardResponse> toProjectCardSlice(Slice<Project> projects, CustomSecurityUserDetails userDetails) {
+        List<Long> projectIds = projects.getContent().stream()
+                .map(Project::getId)
+                .toList();
+
+        if (projectIds.isEmpty()) {
+            return new SliceImpl<>(Collections.emptyList(), projects.getPageable(), projects.hasNext());
+        }
+
+        // 배치 쿼리 1: 모집 현황 + 기술스택 한 번에 조회
+        List<RecruitmentState> allRecruitments = recruitmentStateRepository.findAllByProjectIdsWithDetails(projectIds);
+        Map<Long, List<RecruitmentState>> recruitmentMap = allRecruitments.stream()
+                .collect(Collectors.groupingBy(rs -> rs.getProject().getId()));
+
+        // 배치 쿼리 2: 좋아요 여부 한 번에 조회
+        Set<Long> likedIds = findLikedProjectIds(userDetails, projectIds);
+
+        List<ProjectCardResponse> content = projects.getContent().stream()
+                .map(project -> {
+                    List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(), Collections.emptyList());
+                    return ProjectCardResponse.from(project, recs, likedIds.contains(project.getId()));
+                })
+                .toList();
+
+        return new SliceImpl<>(content, projects.getPageable(), projects.hasNext());
     }
 }
