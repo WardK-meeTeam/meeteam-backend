@@ -1,7 +1,6 @@
 package com.wardk.meeteam_backend.web.project.dto.request;
 
-import com.wardk.meeteam_backend.domain.job.entity.JobField;
-import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
@@ -16,9 +15,7 @@ public class ProjectSearchCondition {
 
     private PlatformCategory platformCategory;
 
-    private JobField jobField;
+    private JobFieldCode jobFieldCode;
 
-    private TechStack techStack;
-
-    private String keyword; // 프로젝트 이름 또는 리더 이름 검색
+    private String keyword;
 }

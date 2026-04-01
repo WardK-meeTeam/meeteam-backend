@@ -3,10 +3,8 @@ package com.wardk.meeteam_backend.domain.project.repository;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.wardk.meeteam_backend.domain.job.entity.JobField;
-import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
 import com.wardk.meeteam_backend.domain.project.entity.*;
-import com.wardk.meeteam_backend.domain.skill.entity.QSkill;
 import com.wardk.meeteam_backend.web.mainpage.dto.request.CategoryCondition;
 import com.wardk.meeteam_backend.web.project.dto.request.*;
 import org.springframework.data.domain.Page;
@@ -15,7 +13,6 @@ import org.springframework.data.domain.Slice;
 import static com.wardk.meeteam_backend.domain.recruitment.entity.QRecruitmentState.*;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.*;
 import static com.wardk.meeteam_backend.domain.project.entity.QProject.*;
-import static com.wardk.meeteam_backend.domain.project.entity.QProjectSkill.*;
 
 public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements ProjectRepositoryCustom {
 
@@ -40,8 +37,7 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
                     notDeleted(),
                     platformCategoryEq(condition.getPlatformCategory()),
                     recruitmentEq(condition.getRecruitment()),
-                    projectTechStackNameExists(condition.getTechStack()),
-                    jobFieldExists(condition.getJobField()),
+                    jobFieldCodeEq(condition.getJobFieldCode()),
                     projectCategoryEq(condition.getProjectCategory()),
                     keywordContains(condition.getKeyword())
                 )
@@ -60,8 +56,7 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
                     notDeleted(),
                     platformCategoryEq(condition.getPlatformCategory()),
                     recruitmentEq(condition.getRecruitment()),
-                    projectTechStackNameExists(condition.getTechStack()),
-                    jobFieldExists(condition.getJobField()),
+                    jobFieldCodeEq(condition.getJobFieldCode()),
                     projectCategoryEq(condition.getProjectCategory()),
                     keywordContains(condition.getKeyword())
                 )
@@ -81,30 +76,15 @@ public class ProjectRepositoryImpl extends Querydsl4RepositorySupport implements
     }
 
 
-    private BooleanExpression projectTechStackNameExists(TechStack techStack) {
-        if (techStack == null) return null;
-        QSkill qSkill = QSkill.skill;
-        return JPAExpressions
-                .selectOne()
-                .from(projectSkill)
-                .leftJoin(projectSkill.skill, qSkill)
-                .where(
-                        projectSkill.project.eq(project),
-                        qSkill.skillName.eq(techStack.getName())
-                )
-                .exists();
-    }
-
-
-    private BooleanExpression jobFieldExists(JobField jobField) {
-        if (jobField == null) return null;
+    private BooleanExpression jobFieldCodeEq(JobFieldCode jobFieldCode) {
+        if (jobFieldCode == null) return null;
 
         return JPAExpressions
                 .selectOne()
                 .from(recruitmentState)
                 .where(
                         recruitmentState.project.eq(project),
-                        recruitmentState.jobPosition.jobField.eq(jobField)
+                        recruitmentState.jobPosition.jobField.code.eq(jobFieldCode)
                 )
                 .exists();
     }

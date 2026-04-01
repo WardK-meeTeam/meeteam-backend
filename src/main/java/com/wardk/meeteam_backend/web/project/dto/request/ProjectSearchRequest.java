@@ -1,7 +1,6 @@
 package com.wardk.meeteam_backend.web.project.dto.request;
 
-import com.wardk.meeteam_backend.domain.job.entity.JobField;
-import com.wardk.meeteam_backend.domain.job.entity.TechStack;
+import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
@@ -26,11 +25,8 @@ public record ProjectSearchRequest(
         @Schema(description = "플랫폼 카테고리", example = "WEB")
         PlatformCategory platformCategory,
 
-        @Schema(description = "직군")
-        JobField jobField,
-
-        @Schema(description = "기술스택")
-        TechStack techStack,
+        @Schema(description = "직군 (PLANNING, DESIGN, FRONTEND, BACKEND, AI, INFRA_OPERATION)", example = "BACKEND")
+        JobFieldCode jobField,
 
         @Schema(description = "정렬 타입 (LATEST: 최신순, DEADLINE: 마감임박순)", example = "LATEST")
         ProjectSortType sort
@@ -55,8 +51,7 @@ public record ProjectSearchRequest(
         condition.setProjectCategory(projectCategory);
         condition.setRecruitment(recruitment);
         condition.setPlatformCategory(platformCategory);
-        condition.setJobField(jobField);
-        condition.setTechStack(techStack);
+        condition.setJobFieldCode(jobField);
         return condition;
     }
 }
