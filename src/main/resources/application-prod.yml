@@ -56,7 +56,8 @@ spring:
         open-in-view: false
     sql:
         init:
-            mode: never
+            mode: always
+            data-locations: classpath:db/seed/job-seed.sql
     data:
         redis:
             host: redis
