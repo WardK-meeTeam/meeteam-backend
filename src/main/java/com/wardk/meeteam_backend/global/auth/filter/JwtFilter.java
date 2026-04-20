@@ -9,6 +9,7 @@ import com.wardk.meeteam_backend.global.config.SecurityUrls;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -48,20 +49,17 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        // request에서 Authorization 헤더를 찾음
-        String authorization = request.getHeader("Authorization");
+        // request에서 Access Token 추출 (Authorization 헤더 우선, 쿠키 fallback)
+        String token = extractAccessToken(request);
 
-        // Authorization 헤더 검증
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
+        // 토큰 검증
+        if (token == null) {
             log.error("토큰이 존재하지 않습니다.");
             filterChain.doFilter(request, response);
             return;
         }
 
         log.info("토큰이 존재합니다");
-
-        // Bearer 부분 제거 후 순수 토큰만 획득
-        String token = authorization.split(" ")[1];
 
         // 토큰 처리 및 사용자 정보 설정
         if (processTokenAndSetUserDetails(token)) {
@@ -76,10 +74,8 @@ public class JwtFilter extends OncePerRequestFilter {
      */
     private void setUserDetailsIfTokenExists(HttpServletRequest request) {
         try {
-            String authorization = request.getHeader("Authorization");
-            if (authorization != null && authorization.startsWith("Bearer ")) {
-                String token = authorization.split(" ")[1];
-
+            String token = extractAccessToken(request);
+            if (token != null) {
                 // 토큰이 유효하면 사용자 정보 설정
                 if (!jwtUtil.isExpired(token)) {
                     processTokenAndSetUserDetails(token);
@@ -90,6 +86,30 @@ public class JwtFilter extends OncePerRequestFilter {
             // 화이트리스트 경로에서는 토큰 파싱 실패해도 계속 진행
             log.debug("화이트리스트 경로에서 토큰 파싱 실패, 익명 사용자로 진행: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Request에서 Access Token 추출
+     * 우선순위: Authorization 헤더 > 쿠키
+     */
+    private String extractAccessToken(HttpServletRequest request) {
+        // 1. Authorization 헤더에서 먼저 확인
+        String authorization = request.getHeader("Authorization");
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            return authorization.substring(7);
+        }
+
+        // 2. 쿠키에서 확인
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (JwtUtil.ACCESS_COOKIE_NAME.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

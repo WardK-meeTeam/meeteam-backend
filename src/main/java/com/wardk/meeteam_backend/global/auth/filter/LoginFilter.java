@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.global.auth.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.wardk.meeteam_backend.global.auth.cookie.AccessTokenCookieProvider;
 import com.wardk.meeteam_backend.global.auth.cookie.RefreshTokenCookieProvider;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.response.SuccessCode;
@@ -33,7 +34,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
-    private final RefreshTokenCookieProvider cookieProvider;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
+    private final AccessTokenCookieProvider accessTokenCookieProvider;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -80,14 +82,11 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         // RefreshToken 발급
         String refreshToken = jwtUtil.createRefreshToken(customSecurityUserDetails.getMember());
 
-        // 헤더에 AccessToken 추가
-        response.addHeader("Authorization", "Bearer " + accessToken);
+        // 쿠키에 AccessToken 추가
+        accessTokenCookieProvider.addCookie(response, accessToken);
 
-        // 2) JS에서 읽을 수 있도록 expose-header 추가
-        response.addHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.AUTHORIZATION);
-
-        // 쿠키에 refreshToken 추가
-        cookieProvider.addCookie(response, refreshToken);
+        // 쿠키에 RefreshToken 추가
+        refreshTokenCookieProvider.addCookie(response, refreshToken);
 
         // 로그인에 성공하면 유저 정보 반환
         response.setContentType("application/json");
