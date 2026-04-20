@@ -1,6 +1,8 @@
 package com.wardk.meeteam_backend.web.auth.controller;
 
+import com.wardk.meeteam_backend.global.auth.cookie.AccessTokenCookieProvider;
 import com.wardk.meeteam_backend.global.auth.cookie.RefreshTokenCookieProvider;
+import com.wardk.meeteam_backend.global.util.JwtUtil;
 import com.wardk.meeteam_backend.global.auth.service.AuthService;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterResult;
@@ -19,6 +21,7 @@ import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -36,7 +39,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     private final AuthService authService;
-    private final RefreshTokenCookieProvider cookieProvider;
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
+    private final AccessTokenCookieProvider accessTokenCookieProvider;
 
 
 
@@ -65,7 +69,8 @@ public class AuthController {
     ) {
         log.info("OAuth2 회원가입 요청 - name: {}", request.getName());
         OAuth2RegisterResult result = authService.oauth2Register(OAuth2RegisterCommand.from(request), file);
-        cookieProvider.addCookie(response, result.refreshToken());
+        accessTokenCookieProvider.addCookie(response, result.accessToken());
+        refreshTokenCookieProvider.addCookie(response, result.refreshToken());
         return SuccessResponse.onSuccess(OAuth2RegisterResponse.from(result));
     }
 
@@ -81,8 +86,9 @@ public class AuthController {
 
         TokenExchangeResult result = authService.exchangeToken(request.getCode());
 
-        cookieProvider.addCookie(response, result.getRefreshToken());
-        log.info("토큰 교환 완료 - Refresh Token 쿠키 설정");
+        accessTokenCookieProvider.addCookie(response, result.getAccessToken());
+        refreshTokenCookieProvider.addCookie(response, result.getRefreshToken());
+        log.info("토큰 교환 완료 - Access Token 및 Refresh Token 쿠키 설정");
 
         return SuccessResponse.of(SuccessCode._TOKEN_EXCHANGE_SUCCESS, new TokenExchangeResponse(result.getAccessToken()));
     }
@@ -117,27 +123,42 @@ public class AuthController {
     @Operation(summary = "로그아웃", description = "로그아웃을 수행합니다. AccessToken을 블랙리스트에 등록하고, OAuth 사용자의 경우 OAuth 제공자(Google/GitHub)의 토큰도 철회합니다. Refresh Token 쿠키를 삭제합니다. 클라이언트는 Access Token을 직접 삭제해야 합니다.")
     @PostMapping("/logout")
     public SuccessResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
-        // Authorization 헤더에서 AccessToken 추출
+        // Authorization 헤더 또는 쿠키에서 AccessToken 추출
         String accessToken = extractAccessToken(request);
 
         // 로그아웃 처리 (토큰 블랙리스트 추가)
         authService.logout(accessToken);
 
+        // Access Token 쿠키 삭제
+        accessTokenCookieProvider.deleteCookie(response);
         // Refresh Token 쿠키 삭제
-        cookieProvider.deleteCookie(response);
+        refreshTokenCookieProvider.deleteCookie(response);
 
-        log.info("로그아웃 완료 - AccessToken 블랙리스트 등록 및 Refresh Token 쿠키 삭제");
+        log.info("로그아웃 완료 - AccessToken 블랙리스트 등록 및 토큰 쿠키 삭제");
         return SuccessResponse.onSuccess("로그아웃이 완료되었습니다.");
     }
 
     /**
-     * Authorization 헤더에서 AccessToken 추출
+     * Request에서 AccessToken 추출
+     * 우선순위: Authorization 헤더 > 쿠키
      */
     private String extractAccessToken(HttpServletRequest request) {
+        // 1. Authorization 헤더에서 먼저 확인
         String authorization = request.getHeader("Authorization");
         if (authorization != null && authorization.startsWith("Bearer ")) {
             return authorization.substring(7);
         }
+
+        // 2. 쿠키에서 확인
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (JwtUtil.ACCESS_COOKIE_NAME.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
         return null;
     }
 

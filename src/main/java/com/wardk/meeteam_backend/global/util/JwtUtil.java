@@ -38,6 +38,7 @@ public class JwtUtil {
   public static final String ACCESS_CATEGORY = "access";
   public static final String REFRESH_CATEGORY = "refresh";
   public static final String REFRESH_COOKIE_NAME = "refreshToken";
+  public static final String ACCESS_COOKIE_NAME = "accessToken";
 
   // 토큰에서 username 파싱
   public String getUsername(String token) {
@@ -231,6 +232,15 @@ public class JwtUtil {
    */
   public long getRefreshExpirationTime() {
     return refreshTokenExpTime;
+  }
+
+  /**
+   * 액세스 토큰 만료 시간 반환
+   *
+   * @return 액세스 토큰 만료 시간 (밀리초 단위)
+   */
+  public long getAccessExpirationTime() {
+    return accessTokenExpTime;
   }
 
   /**
