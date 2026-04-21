@@ -21,6 +21,17 @@ public class ApplicationController {
 
     private final ProjectApplicationService applicationService;
 
+    @Operation(summary = "프로젝트 지원 페이지 조회", description = "프로젝트 지원 페이지 정보를 조회합니다. 지원자 정보와 모집 포지션 목록을 반환합니다. 프로젝트 리더는 접근할 수 없습니다.")
+    @GetMapping("/api/v1/projects/{projectId}/application")
+    public SuccessResponse<ApplicationPageResponse> getApplicationPage(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        ApplicationPageResponse response = applicationService.getApplicationPage(projectId, userDetails.getMemberId());
+
+        return SuccessResponse.onSuccess(response);
+    }
+
     @Operation(summary = "프로젝트 지원", description = "프로젝트에 지원합니다. 프로젝트 리더는 자신의 프로젝트에 지원할 수 없습니다.")
     @PostMapping("/api/v1/projects/{projectId}/application")
     public SuccessResponse<ApplicationResponse> apply(

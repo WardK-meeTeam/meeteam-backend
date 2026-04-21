@@ -35,4 +35,10 @@ public interface ProjectApplicationService {
      * 내가 지원한 프로젝트 목록 조회.
      */
     List<AppliedProjectResponse> getAppliedProjects(CustomSecurityUserDetails userDetails);
+
+    /**
+     * 프로젝트 지원 페이지 정보 조회.
+     * 프로젝트 리더는 접근 불가.
+     */
+    ApplicationPageResponse getApplicationPage(Long projectId, Long memberId);
 }

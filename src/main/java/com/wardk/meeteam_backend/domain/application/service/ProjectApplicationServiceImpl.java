@@ -291,4 +291,24 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 .map(AppliedProjectResponse::from)
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApplicationPageResponse getApplicationPage(Long projectId, Long memberId) {
+        // 1단계: 엔티티 조회
+        Project project = projectRepository.findActiveById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 2단계: 프로젝트 리더 접근 차단
+        if (project.getCreator().getId().equals(memberId)) {
+            throw new CustomException(ErrorCode.APPLICATION_SELF_PROJECT_FORBIDDEN);
+        }
+
+        // 3단계: 모집 포지션 목록 조회
+        List<RecruitmentState> recruitments = recruitmentStateRepository.findByProjectIdWithJobPosition(projectId);
+
+        return ApplicationPageResponse.of(member, recruitments);
+    }
 }
