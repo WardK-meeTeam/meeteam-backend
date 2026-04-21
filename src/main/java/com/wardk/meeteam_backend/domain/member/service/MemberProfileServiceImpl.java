@@ -239,6 +239,21 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     }
 
     /**
+     * 팀원 찾기 v1 검색.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<MemberCardResponse> searchMembersV1(String name, Long jobFieldId,
+                                                     List<String> techStackNames, Pageable pageable) {
+        Page<Member> memberPage = memberRepository.searchMembersV1(name, jobFieldId, techStackNames, pageable);
+
+        log.info("팀원 검색 v1 - name: {}, jobFieldId: {}, techStacks: {}, 총 {}명",
+                name, jobFieldId, techStackNames, memberPage.getTotalElements());
+
+        return memberPage.map(MemberCardResponse::from);
+    }
+
+    /**
      * 회원 관심 분야 업데이트
      */
     private void updateMemberJobPositions(Member member, List<Long> jobPositionIds) {

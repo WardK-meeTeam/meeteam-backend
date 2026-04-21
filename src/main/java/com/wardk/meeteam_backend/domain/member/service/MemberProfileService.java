@@ -33,4 +33,14 @@ public interface MemberProfileService {
      * 메인페이지 유저 카드 목록 조회.
      */
     Page<MemberCardResponse> getMainPageMembers(Pageable pageable);
+
+    /**
+     * 팀원 찾기 v1 검색.
+     *
+     * @param name           이름 검색 (부분 일치)
+     * @param jobFieldId     직군 ID (null이면 전체)
+     * @param techStackNames 기술스택 이름 목록
+     * @param pageable       페이징 및 정렬
+     */
+    Page<MemberCardResponse> searchMembersV1(String name, Long jobFieldId, List<String> techStackNames, Pageable pageable);
 }

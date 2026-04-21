@@ -155,4 +155,118 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
 
         return result;
     }
+
+    @Override
+    public Page<Member> searchMembersV1(String name, Long jobFieldId, List<String> techStackNames, Pageable pageable) {
+        // projectExperienceCount 정렬이 있는지 확인
+        boolean hasProjectExpSort = pageable.getSort().stream()
+                .anyMatch(order -> "projectExperienceCount".equals(order.getProperty()));
+
+        if (hasProjectExpSort) {
+            return searchV1WithProjectExpSort(name, jobFieldId, techStackNames, pageable);
+        }
+
+        return applyPagination(pageable, qf ->
+                qf.select(member)
+                        .from(member)
+                        .where(
+                                nameContains(name),
+                                jobFieldIdEquals(jobFieldId),
+                                techStackNamesExist(techStackNames)
+                        )
+        );
+    }
+
+    /**
+     * projectExperienceCount 정렬 처리.
+     */
+    private Page<Member> searchV1WithProjectExpSort(String name, Long jobFieldId,
+                                                     List<String> techStackNames, Pageable pageable) {
+        JPAQuery<Member> query = queryFactory
+                .select(member)
+                .from(member)
+                .where(
+                        nameContains(name),
+                        jobFieldIdEquals(jobFieldId),
+                        techStackNamesExist(techStackNames)
+                );
+
+        // 정렬 적용
+        for (Sort.Order sortOrder : pageable.getSort()) {
+            Order direction = sortOrder.isAscending() ? Order.ASC : Order.DESC;
+
+            if ("projectExperienceCount".equals(sortOrder.getProperty())) {
+                query.orderBy(new OrderSpecifier<>(direction, member.projectExperienceCount));
+            } else if ("realName".equals(sortOrder.getProperty()) || "name".equals(sortOrder.getProperty())) {
+                query.orderBy(new OrderSpecifier<>(direction, member.realName));
+            } else {
+                getQuerydsl().applySorting(Sort.by(sortOrder), query);
+            }
+        }
+
+        List<Member> content = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(member.count())
+                .from(member)
+                .where(
+                        nameContains(name),
+                        jobFieldIdEquals(jobFieldId),
+                        techStackNamesExist(techStackNames)
+                );
+
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+    }
+
+    /**
+     * 이름 검색 (부분 일치).
+     */
+    private BooleanExpression nameContains(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        return member.realName.containsIgnoreCase(name);
+    }
+
+    /**
+     * 직군 ID 조건.
+     */
+    private BooleanExpression jobFieldIdEquals(Long jobFieldId) {
+        if (jobFieldId == null) {
+            return null;
+        }
+
+        return JPAExpressions
+                .selectOne()
+                .from(memberJobPosition)
+                .join(memberJobPosition.jobPosition)
+                .where(
+                        memberJobPosition.member.eq(member),
+                        memberJobPosition.jobPosition.jobField.id.eq(jobFieldId)
+                )
+                .exists();
+    }
+
+    /**
+     * 기술스택 이름 조건 (OR 조건).
+     * 요청한 기술스택 중 하나라도 가지고 있으면 매칭.
+     */
+    private BooleanExpression techStackNamesExist(List<String> techStackNames) {
+        if (techStackNames == null || techStackNames.isEmpty()) {
+            return null;
+        }
+
+        return JPAExpressions
+                .selectOne()
+                .from(memberTechStack)
+                .join(memberTechStack.techStack, techStack)
+                .where(
+                        memberTechStack.member.eq(member),
+                        techStack.name.in(techStackNames)
+                )
+                .exists();
+    }
 }

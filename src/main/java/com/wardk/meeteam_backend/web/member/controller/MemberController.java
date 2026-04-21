@@ -119,4 +119,27 @@ public class MemberController {
         MemberDetailResponse response = memberProfileService.getMemberDetail(memberId);
         return SuccessResponse.onSuccess(response);
     }
+
+    @Operation(
+            summary = "팀원 찾기",
+            description = "이름, 직군, 기술스택으로 팀원을 검색합니다. 이름은 한 글자만 입력해도 검색됩니다. " +
+                    "정렬: projectExperienceCount,desc (프로젝트 경험 많은 순), realName,asc (이름순)"
+    )
+    @GetMapping("/api/v1/members/search")
+    public SuccessResponse<Page<com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse>> searchMembersV1(
+            @Parameter(description = "이름 검색 (부분 일치, 한 글자도 가능)")
+            @RequestParam(value = "name", required = false) String name,
+
+            @Parameter(description = "직군 ID (null이면 전체)")
+            @RequestParam(value = "jobFieldId", required = false) Long jobFieldId,
+
+            @Parameter(description = "기술스택 이름 목록 (예: React,Spring)")
+            @RequestParam(value = "techStackNames", required = false) List<String> techStackNames,
+
+            @ParameterObject Pageable pageable
+    ) {
+        Page<com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse> results =
+                memberProfileService.searchMembersV1(name, jobFieldId, techStackNames, pageable);
+        return SuccessResponse.onSuccess(results);
+    }
 }
