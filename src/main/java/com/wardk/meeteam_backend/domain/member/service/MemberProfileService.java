@@ -1,15 +1,10 @@
 package com.wardk.meeteam_backend.domain.member.service;
 
-import com.wardk.meeteam_backend.web.member.dto.request.*;
-import com.wardk.meeteam_backend.web.member.dto.response.*;
-import com.wardk.meeteam_backend.web.member.dto.request.*;
-import com.wardk.meeteam_backend.web.member.dto.response.*;
-import com.wardk.meeteam_backend.web.member.dto.request.*;
-import com.wardk.meeteam_backend.web.member.dto.response.*;
-import com.wardk.meeteam_backend.web.member.dto.request.*;
-import com.wardk.meeteam_backend.web.member.dto.response.*;
-import com.wardk.meeteam_backend.web.member.dto.request.*;
-import com.wardk.meeteam_backend.web.member.dto.response.*;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse;
+import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
+import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileResponse;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileUpdateResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,7 +17,14 @@ public interface MemberProfileService {
 
     MemberProfileUpdateResponse updateProfile(Long memberId, MemberProfileUpdateRequest request, MultipartFile profileImage);
 
-    List<MemberCardResponse> getAllMemberCards();
+    @Deprecated
+    List<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> getAllMemberCards();
 
-    Page<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable);
+    @Deprecated
+    Page<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable);
+
+    /**
+     * 메인페이지 유저 카드 목록 조회.
+     */
+    Page<MemberCardResponse> getMainPageMembers(Pageable pageable);
 }

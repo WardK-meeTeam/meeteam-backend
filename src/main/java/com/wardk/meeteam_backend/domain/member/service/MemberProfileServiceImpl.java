@@ -13,6 +13,7 @@ import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.recruitment.repository.RecruitmentStateRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.member.dto.request.*;
 import com.wardk.meeteam_backend.web.member.dto.response.*;
@@ -152,7 +153,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MemberCardResponse> getAllMemberCards() {
+    public List<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> getAllMemberCards() {
 
         List<Member> members = memberRepository.findAll();
 
@@ -162,7 +163,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         }
 
         return members.stream()
-                .map(MemberCardResponse::responseToDto)
+                .map(com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse::responseToDto)
                 .toList();
     }
 
@@ -171,7 +172,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
+    public Page<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
         // QueryDSL로 조회
         Page<Member> memberPage = memberRepository.searchMembers(
                 searchRequest.getJobFieldIds(),
@@ -183,8 +184,20 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         log.info("페이지 정보 - 총 {}페이지 중 {}페이지, 총 {}개 회원",
                 memberPage.getTotalPages(), memberPage.getNumber() + 1, memberPage.getTotalElements());
 
-        return memberPage.map(MemberCardResponse::responseToDto);
+        return memberPage.map(com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse::responseToDto);
     }
+
+    /**
+     * 메인페이지 유저 카드 목록 조회.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<MemberCardResponse> getMainPageMembers(Pageable pageable) {
+        Page<Member> memberPage = memberRepository.findAll(pageable);
+
+        return memberPage.map(MemberCardResponse::from);
+    }
+
     /**
      * 회원 관심 분야 업데이트
      */

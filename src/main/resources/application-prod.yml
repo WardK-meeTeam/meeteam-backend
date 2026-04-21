@@ -247,6 +247,8 @@ security:
         - method: GET
           uri: /api/v1/main/projects # 메인 페이지 프로젝트 카드 조회
         - method: GET
+          uri: /api/v1/main/members # 메인 페이지 유저 카드 조회
+        - method: GET
           uri: /api/projects/* # 특정 사용자 프로필 보기
         - method: GET
           uri: /api/projects/V2/* # 프로젝트 상세 조회
