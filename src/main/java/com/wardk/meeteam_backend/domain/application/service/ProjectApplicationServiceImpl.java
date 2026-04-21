@@ -306,8 +306,11 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.APPLICATION_SELF_PROJECT_FORBIDDEN);
         }
 
-        // 3단계: 모집 포지션 목록 조회
-        List<RecruitmentState> recruitments = recruitmentStateRepository.findByProjectIdWithJobPosition(projectId);
+        // 3단계: 모집 중인 포지션만 조회 (마감된 포지션 제외)
+        List<RecruitmentState> recruitments = recruitmentStateRepository.findByProjectIdWithJobPosition(projectId)
+                .stream()
+                .filter(r -> !r.isClosed())
+                .toList();
 
         return ApplicationPageResponse.of(member, recruitments);
     }
