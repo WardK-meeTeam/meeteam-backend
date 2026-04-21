@@ -23,6 +23,7 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectEditPrefillResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectEditResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.RecruitmentEditInfo;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -52,6 +53,7 @@ public class ProjectEditServiceImpl implements ProjectEditService {
     private final ProjectApplicationRepository projectApplicationRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
@@ -186,12 +188,14 @@ public class ProjectEditServiceImpl implements ProjectEditService {
                     // 모집 인원 업데이트
                     recruitment.updateRecruitmentCount(recruitmentCmd.recruitmentCount());
 
-                    // 기술 스택 업데이트
+                    // 기술 스택 업데이트 (기존 삭제 후 flush, 새로운 스택 추가)
+                    recruitment.clearTechStacks();
+                    entityManager.flush();
+
                     List<TechStack> techStacks = techStackRepository.findByIdIn(recruitmentCmd.techStackIds());
-                    List<RecruitmentTechStack> newTechStacks = techStacks.stream()
-                            .map(RecruitmentTechStack::create)
-                            .toList();
-                    recruitment.replaceTechStacks(newTechStacks);
+                    for (TechStack techStack : techStacks) {
+                        recruitment.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
+                    }
 
                     // 포지션 상태 업데이트 (인원 변경으로 인한 마감/재오픈)
                     if (recruitment.getCurrentCount() >= recruitment.getRecruitmentCount()) {

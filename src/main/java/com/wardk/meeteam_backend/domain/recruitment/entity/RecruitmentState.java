@@ -110,8 +110,19 @@ public class RecruitmentState {
     }
 
     /**
-     * 기존 기술 스택을 모두 제거하고 새 기술 스택으로 교체합니다.
+     * 기존 기술 스택을 모두 제거합니다.
+     * 주의: orphanRemoval=true이므로 clear() 후 flush()를 호출해야 DELETE가 실행됩니다.
      */
+    public void clearTechStacks() {
+        this.recruitmentTechStacks.clear();
+    }
+
+    /**
+     * 기존 기술 스택을 모두 제거하고 새 기술 스택으로 교체합니다.
+     * 주의: JPA 실행 순서 문제로 unique constraint 위반이 발생할 수 있으므로,
+     * clearTechStacks() + flush() + addRecruitmentTechStack() 방식을 사용하세요.
+     */
+    @Deprecated
     public void replaceTechStacks(List<RecruitmentTechStack> newTechStacks) {
         this.recruitmentTechStacks.clear();
         for (RecruitmentTechStack techStack : newTechStacks) {
