@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.domain.member.service;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse;
 import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
 import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberDetailResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileUpdateResponse;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,11 @@ import java.util.List;
 public interface MemberProfileService {
 
     MemberProfileResponse profile(Long memberId);
+
+    /**
+     * 특정 사용자 상세 조회 (v1).
+     */
+    MemberDetailResponse getMemberDetail(Long memberId);
 
     MemberProfileUpdateResponse updateProfile(Long memberId, MemberProfileUpdateRequest request, MultipartFile profileImage);
 

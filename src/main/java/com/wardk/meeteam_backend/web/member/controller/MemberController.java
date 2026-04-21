@@ -1,7 +1,11 @@
 package com.wardk.meeteam_backend.web.member.controller;
 
-import com.wardk.meeteam_backend.web.member.dto.request.*;
-import com.wardk.meeteam_backend.web.member.dto.response.*;
+import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
+import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberDetailResponse;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileResponse;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 
 
@@ -102,5 +106,17 @@ public class MemberController {
 
         Page<MemberCardResponse> searchResults = memberProfileService.searchMembers(searchRequest, pageable);
         return SuccessResponse.onSuccess(searchResults);
+    }
+
+    @Operation(
+            summary = "특정 사용자 상세 조회",
+            description = "특정 사용자의 상세 프로필 정보를 조회합니다. 기본 정보, 자기소개, 참여 프로젝트, 보유 기술 등을 포함합니다."
+    )
+    @GetMapping("/api/v1/members/{memberId}")
+    public SuccessResponse<MemberDetailResponse> getMemberDetail(
+            @PathVariable Long memberId
+    ) {
+        MemberDetailResponse response = memberProfileService.getMemberDetail(memberId);
+        return SuccessResponse.onSuccess(response);
     }
 }

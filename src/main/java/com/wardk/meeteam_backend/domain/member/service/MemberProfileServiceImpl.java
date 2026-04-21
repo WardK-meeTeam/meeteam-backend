@@ -15,8 +15,11 @@ import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
-import com.wardk.meeteam_backend.web.member.dto.request.*;
-import com.wardk.meeteam_backend.web.member.dto.response.*;
+import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
+import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberDetailResponse;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileResponse;
+import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -93,6 +96,43 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         }
 
         return memberProfileResponse;
+    }
+
+    /**
+     * 특정 사용자 상세 조회 (v1).
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public MemberDetailResponse getMemberDetail(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 참여 프로젝트 -> ProjectCardResponse 변환 (배치 쿼리)
+        List<Project> projects = member.getProjectMembers().stream()
+                .map(pm -> pm.getProject())
+                .filter(p -> !p.isDeleted())
+                .toList();
+
+        List<ProjectCardResponse> projectCards;
+        if (!projects.isEmpty()) {
+            List<Long> projectIds = projects.stream().map(Project::getId).toList();
+
+            Map<Long, List<RecruitmentState>> recruitmentMap = recruitmentStateRepository
+                    .findAllByProjectIdsWithDetails(projectIds).stream()
+                    .collect(Collectors.groupingBy(rs -> rs.getProject().getId()));
+
+            // 비로그인 사용자는 좋아요 여부 항상 false
+            projectCards = projects.stream()
+                    .map(project -> {
+                        List<RecruitmentState> recs = recruitmentMap.getOrDefault(project.getId(),
+                                Collections.emptyList());
+                        return ProjectCardResponse.from(project, recs, false);
+                    }).toList();
+        } else {
+            projectCards = List.of();
+        }
+
+        return MemberDetailResponse.from(member, projectCards);
     }
 
     /**
