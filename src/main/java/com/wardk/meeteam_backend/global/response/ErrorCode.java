@@ -153,7 +153,10 @@ public enum ErrorCode {
 
     // Q&A
     QNA_NOT_FOUND(HttpStatus.NOT_FOUND, "QNA404", "해당 Q&A를 찾을 수 없습니다."),
+    QNA_ANSWER_NOT_FOUND(HttpStatus.NOT_FOUND, "QNA404_2", "해당 답변을 찾을 수 없습니다."),
     QNA_ANSWER_FORBIDDEN(HttpStatus.FORBIDDEN, "QNA403", "질문자 또는 프로젝트 리더만 답변할 수 있습니다."),
+    QNA_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "QNA403_2", "삭제 권한이 없습니다."),
+    QNA_DELETE_HAS_LEADER_ANSWER(HttpStatus.FORBIDDEN, "QNA403_3", "팀장의 답변이 있어 삭제할 수 없습니다."),
 
     //DB
     DB_LIKES_DUPLICATE(HttpStatus.MULTI_STATUS, "DB_CONSTRAINT", "DB 무결성 위반"), DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST,"EMAIL_400","이미 존재하는 이메일 입니다." ),

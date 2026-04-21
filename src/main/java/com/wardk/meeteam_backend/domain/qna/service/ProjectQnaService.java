@@ -95,4 +95,78 @@ public class ProjectQnaService {
 
         return ProjectQnaResponse.from(qna, leaderId);
     }
+
+    /**
+     * 질문 삭제.
+     * - 팀장: 모든 질문 삭제 가능
+     * - 일반 사용자: 본인 질문만 삭제 가능 (단, 팀장 답변이 있으면 삭제 불가)
+     */
+    public void deleteQuestion(Long projectId, Long qnaId, Long memberId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        ProjectQna qna = projectQnaRepository.findById(qnaId)
+                .orElseThrow(() -> new CustomException(ErrorCode.QNA_NOT_FOUND));
+
+        Long leaderId = project.getCreator().getId();
+        Long questionerId = qna.getQuestioner().getId();
+        boolean isLeader = memberId.equals(leaderId);
+
+        // 팀장은 모든 질문 삭제 가능
+        if (isLeader) {
+            projectQnaRepository.delete(qna);
+            log.info("Q&A 질문 삭제 (팀장) - projectId: {}, qnaId: {}", projectId, qnaId);
+            return;
+        }
+
+        // 본인 질문이 아니면 삭제 불가
+        if (!memberId.equals(questionerId)) {
+            throw new CustomException(ErrorCode.QNA_DELETE_FORBIDDEN);
+        }
+
+        // 팀장 답변이 있으면 삭제 불가
+        boolean hasLeaderAnswer = qna.getAnswers().stream()
+                .anyMatch(answer -> answer.getWriter().getId().equals(leaderId));
+
+        if (hasLeaderAnswer) {
+            throw new CustomException(ErrorCode.QNA_DELETE_HAS_LEADER_ANSWER);
+        }
+
+        projectQnaRepository.delete(qna);
+        log.info("Q&A 질문 삭제 - projectId: {}, qnaId: {}, deleterId: {}", projectId, qnaId, memberId);
+    }
+
+    /**
+     * 답변 삭제.
+     * - 팀장: 모든 답변 삭제 가능
+     * - 일반 사용자: 본인 답변만 삭제 가능
+     */
+    public void deleteAnswer(Long projectId, Long qnaId, Long answerId, Long memberId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        ProjectQna qna = projectQnaRepository.findById(qnaId)
+                .orElseThrow(() -> new CustomException(ErrorCode.QNA_NOT_FOUND));
+
+        QnaAnswer answer = qnaAnswerRepository.findById(answerId)
+                .orElseThrow(() -> new CustomException(ErrorCode.QNA_ANSWER_NOT_FOUND));
+
+        Long leaderId = project.getCreator().getId();
+        boolean isLeader = memberId.equals(leaderId);
+
+        // 팀장은 모든 답변 삭제 가능
+        if (isLeader) {
+            qnaAnswerRepository.delete(answer);
+            log.info("Q&A 답변 삭제 (팀장) - projectId: {}, qnaId: {}, answerId: {}", projectId, qnaId, answerId);
+            return;
+        }
+
+        // 본인 답변이 아니면 삭제 불가
+        if (!memberId.equals(answer.getWriter().getId())) {
+            throw new CustomException(ErrorCode.QNA_DELETE_FORBIDDEN);
+        }
+
+        qnaAnswerRepository.delete(answer);
+        log.info("Q&A 답변 삭제 - projectId: {}, qnaId: {}, answerId: {}, deleterId: {}", projectId, qnaId, answerId, memberId);
+    }
 }

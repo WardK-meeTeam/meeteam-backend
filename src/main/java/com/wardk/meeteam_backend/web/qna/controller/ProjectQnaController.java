@@ -91,4 +91,33 @@ public class ProjectQnaController {
         );
         return SuccessResponse.onSuccess(response);
     }
+
+    @Operation(
+            summary = "질문 삭제",
+            description = "Q&A 질문을 삭제합니다. 팀장은 모든 질문 삭제 가능, 일반 사용자는 본인 질문만 삭제 가능합니다. 단, 팀장의 답변이 달린 질문은 삭제할 수 없습니다."
+    )
+    @DeleteMapping("/{qnaId}")
+    public SuccessResponse<Void> deleteQuestion(
+            @PathVariable Long projectId,
+            @PathVariable Long qnaId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        projectQnaService.deleteQuestion(projectId, qnaId, userDetails.getMemberId());
+        return SuccessResponse.onSuccess(null);
+    }
+
+    @Operation(
+            summary = "답변 삭제",
+            description = "Q&A 답변을 삭제합니다. 팀장은 모든 답변 삭제 가능, 일반 사용자는 본인 답변만 삭제 가능합니다."
+    )
+    @DeleteMapping("/{qnaId}/answers/{answerId}")
+    public SuccessResponse<Void> deleteAnswer(
+            @PathVariable Long projectId,
+            @PathVariable Long qnaId,
+            @PathVariable Long answerId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        projectQnaService.deleteAnswer(projectId, qnaId, answerId, userDetails.getMemberId());
+        return SuccessResponse.onSuccess(null);
+    }
 }
