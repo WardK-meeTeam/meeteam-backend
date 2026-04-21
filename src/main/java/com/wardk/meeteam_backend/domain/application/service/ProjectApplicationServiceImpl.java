@@ -306,7 +306,12 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
             throw new CustomException(ErrorCode.APPLICATION_SELF_PROJECT_FORBIDDEN);
         }
 
-        // 3단계: 모집 중인 포지션만 조회 (마감된 포지션 제외)
+        // 3단계: 이미 프로젝트 멤버인 경우 접근 차단
+        if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_ALREADY_EXISTS);
+        }
+
+        // 4단계: 모집 중인 포지션만 조회 (마감된 포지션 제외)
         List<RecruitmentState> recruitments = recruitmentStateRepository.findByProjectIdWithJobPosition(projectId)
                 .stream()
                 .filter(r -> !r.isClosed())
