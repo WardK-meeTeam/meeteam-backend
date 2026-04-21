@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
 import com.wardk.meeteam_backend.domain.project.entity.Recruitment;
 import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
+import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
@@ -62,6 +63,10 @@ public record ProjectDetailResponse(
         @Schema(description = "모집 분야 목록")
         List<RecruitmentDetailResponse> recruitments,
 
+        // 참여 멤버
+        @Schema(description = "현재 참여중인 멤버 목록")
+        List<ProjectMemberInfo> members,
+
         // 좋아요 및 권한 정보
         @Schema(description = "좋아요 수")
         Integer likeCount,
@@ -72,6 +77,29 @@ public record ProjectDetailResponse(
         @Schema(description = "현재 사용자가 프로젝트 리더인지 여부 (비로그인 시 false)")
         Boolean isLeader
 ) {
+    /**
+     * 참여 멤버 정보.
+     */
+    @Schema(description = "참여 멤버 정보")
+    public record ProjectMemberInfo(
+            @Schema(description = "회원 ID")
+            Long memberId,
+
+            @Schema(description = "회원 이름")
+            String name,
+
+            @Schema(description = "프로필 이미지 URL")
+            String profileImageUrl
+    ) {
+        public static ProjectMemberInfo from(ProjectMember projectMember) {
+            return new ProjectMemberInfo(
+                    projectMember.getMember().getId(),
+                    projectMember.getMember().getRealName(),
+                    projectMember.getMember().getStoreFileName()
+            );
+        }
+    }
+
     /**
      * 프로젝트 상세 응답 생성 (좋아요/리더 정보 포함)
      *
@@ -84,6 +112,10 @@ public record ProjectDetailResponse(
 
         List<RecruitmentDetailResponse> recruitments = project.getRecruitments().stream()
                 .map(RecruitmentDetailResponse::from)
+                .toList();
+
+        List<ProjectMemberInfo> members = project.getMembers().stream()
+                .map(ProjectMemberInfo::from)
                 .toList();
 
         return new ProjectDetailResponse(
@@ -101,6 +133,7 @@ public record ProjectDetailResponse(
                 project.getCommunicationChannelUrl(),
                 leader,
                 recruitments,
+                members,
                 project.getLikeCount(),
                 isLiked,
                 isLeader
