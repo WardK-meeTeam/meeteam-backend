@@ -131,7 +131,9 @@ dependencyManagement {
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+	useJUnitPlatform {
+		excludeEngines 'cucumber'
+	}
 }
 
 // 통합 테스트 전용 태스크 (Cucumber 제외)

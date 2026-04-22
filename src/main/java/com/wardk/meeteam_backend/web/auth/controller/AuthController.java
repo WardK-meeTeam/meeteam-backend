@@ -7,7 +7,10 @@ import com.wardk.meeteam_backend.global.auth.service.AuthService;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.SejongLoginCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.TokenExchangeResult;
+import com.wardk.meeteam_backend.web.auth.dto.sejong.SejongLoginRequest;
+import com.wardk.meeteam_backend.web.auth.dto.sejong.SejongLoginResponse;
 import com.wardk.meeteam_backend.global.response.SuccessCode;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.EmailDuplicateResponse;
@@ -57,6 +60,32 @@ public class AuthController {
     }
 
 
+
+    @Operation(summary = "세종대 포털 로그인", description = "세종대 포털 학번/비밀번호로 로그인합니다. 기존 회원이면 토큰 발급, 신규 회원이면 isNewMember=true 반환.")
+    @PostMapping("/login/sejong")
+    public SuccessResponse<SejongLoginResponse> sejongLogin(
+            HttpServletResponse response,
+            @RequestBody @Valid SejongLoginRequest request
+    ) {
+        log.info("세종대 포털 로그인 요청 - studentId: {}", request.getStudentId());
+
+        TokenExchangeResult result = authService.sejongLogin(
+                new SejongLoginCommand(request.getStudentId(), request.getPassword())
+        );
+
+        if (result == null) {
+            // 신규 회원
+            log.info("세종대 포털 인증 성공 - 신규 회원, 회원가입 필요");
+            return SuccessResponse.onSuccess(SejongLoginResponse.newMember());
+        }
+
+        // 기존 회원 - 토큰 발급
+        accessTokenCookieProvider.addCookie(response, result.getAccessToken());
+        refreshTokenCookieProvider.addCookie(response, result.getRefreshToken());
+        log.info("세종대 포털 로그인 완료 - 기존 회원");
+
+        return SuccessResponse.onSuccess(SejongLoginResponse.existingMember(result.getAccessToken()));
+    }
 
     @Operation(summary = "OAuth2 회원가입", description = "OAuth2 회원가입 전용 페이지에서 일회용 코드와 회원 정보를 입력받아 계정을 생성 후, 로그인 처리를 합니다. 직군/직무/기술스택 정보는 GET /api/jobs/options를 먼저 호출하여 조회하고, 선택한 직군(JobField)에 해당하는 기술스택만 전송해야 합니다.")
     @PostMapping(value = "/register/oauth2", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

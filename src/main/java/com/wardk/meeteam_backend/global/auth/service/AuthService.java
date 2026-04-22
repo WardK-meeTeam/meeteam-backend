@@ -11,10 +11,13 @@ import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
+import com.wardk.meeteam_backend.global.auth.client.SejongPortalClient;
 import com.wardk.meeteam_backend.global.auth.service.dto.MemberJobPositionCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.SejongLoginCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.SejongRegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.TechStackOrderCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
@@ -55,6 +58,7 @@ public class AuthService {
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final OAuthTokenRevokeService oAuthTokenRevokeService;
     private final OAuthCodeRepository oAuthCodeRepository;
+    private final SejongPortalClient sejongPortalClient;
 
 
     @Transactional
@@ -108,6 +112,61 @@ public class AuthService {
     }
 
     /**
+     * 세종대 포털 인증을 통한 로그인
+     * 기존 회원이면 토큰 발급, 신규 회원이면 null 반환 (회원가입 필요)
+     *
+     * @param command 세종대 로그인 커맨드 (학번, 비밀번호)
+     * @return 토큰 교환 결과 (기존 회원) 또는 null (신규 회원)
+     */
+    @Transactional
+    public TokenExchangeResult sejongLogin(SejongLoginCommand command) {
+        // 세종대 포털 인증
+        sejongPortalClient.authenticate(command.studentId(), command.password());
+
+        // 기존 회원 조회
+        return memberRepository.findByStudentId(command.studentId())
+                .map(member -> {
+                    String accessToken = jwtUtil.createAccessToken(member);
+                    String refreshToken = jwtUtil.createRefreshToken(member);
+                    return new TokenExchangeResult(accessToken, refreshToken);
+                })
+                .orElse(null); // 신규 회원은 null 반환
+    }
+
+    /**
+     * 세종대 포털 인증을 통한 회원가입
+     *
+     * @param command 세종대 회원가입 커맨드
+     * @param file 프로필 이미지 파일
+     * @return OAuth2 회원가입 결과 (토큰 포함)
+     */
+    @Transactional
+    public OAuth2RegisterResult sejongRegister(SejongRegisterCommand command, MultipartFile file) {
+        // 세종대 포털 인증
+        sejongPortalClient.authenticate(command.studentId(), command.password());
+
+        // 학번 중복 체크
+        validateStudentIdNotDuplicated(command.studentId());
+
+        String imageUrl = uploadFile(file);
+
+        Member member = Member.createSejongMember(
+                command,
+                bCryptPasswordEncoder.encode(command.password()),
+                imageUrl
+        );
+
+        // 직군/직무/기술스택 처리 및 Member에 추가
+        processAndAddJobPositions(member, command.jobPositions());
+
+        memberRepository.save(member);
+
+        String accessToken = jwtUtil.createAccessToken(member);
+        String refreshToken = jwtUtil.createRefreshToken(member);
+        return OAuth2RegisterResult.of(member, accessToken, refreshToken);
+    }
+
+    /**
      * OAuth 일회용 코드를 사용하여 기존 회원의 토큰을 교환하는 메서드
      *
      * @param code 일회용 UUID 코드
@@ -142,6 +201,12 @@ public class AuthService {
     private void validateOAuthNotDuplicated(String provider, String providerId) {
         memberRepository.findByProviderAndProviderId(provider, providerId)
             .ifPresent(m -> { throw new CustomException(ErrorCode.DUPLICATE_MEMBER); });
+    }
+
+    private void validateStudentIdNotDuplicated(String studentId) {
+        if (memberRepository.existsByStudentId(studentId)) {
+            throw new CustomException(ErrorCode.SEJONG_STUDENT_ID_ALREADY_EXISTS);
+        }
     }
 
     private void validatePassword(String password) {

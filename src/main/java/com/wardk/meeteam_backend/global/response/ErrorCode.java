@@ -34,6 +34,12 @@ public enum ErrorCode {
     OAUTH2_NAME_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH403", "OAuth2 사용자 이름 추출에 실패했습니다."),
     INVALID_OAUTH_CODE(HttpStatus.BAD_REQUEST, "OAUTH404", "유효하지 않거나 만료된 OAuth 인증 코드입니다."),
 
+    // SEJONG PORTAL
+    SEJONG_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "SEJONG401", "학번 또는 비밀번호가 일치하지 않습니다."),
+    SEJONG_PASSWORD_RESET_REQUIRED(HttpStatus.BAD_REQUEST, "SEJONG402", "비밀번호 재설정이 필요합니다. 세종대 포털에서 비밀번호를 변경해주세요."),
+    SEJONG_PORTAL_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "SEJONG503", "세종대 포털 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    SEJONG_STUDENT_ID_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "SEJONG400", "이미 등록된 학번입니다."),
+
     //이미지 첨부
     FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "FILE401", "파일 저장에 실패했습니다."),
     FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE402", "파일 삭제에 실패했습니다."),

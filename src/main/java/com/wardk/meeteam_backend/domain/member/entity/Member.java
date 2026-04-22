@@ -6,6 +6,7 @@ import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.SejongRegisterCommand;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 
 import jakarta.persistence.*;
@@ -70,6 +71,9 @@ public class Member extends BaseEntity {
 
     private String providerId;
 
+    @Column(unique = true)
+    private String studentId;
+
     @Column(length = 2048)
     private String oauthAccessToken;
 
@@ -84,7 +88,7 @@ public class Member extends BaseEntity {
     private Member(String email, Integer age, String password, String realName,
                    String storeFileName, Gender gender, LocalDate birth,
                    Boolean isParticipating, UserRole role, String provider,
-                   String providerId, Integer projectExperienceCount,
+                   String providerId, String studentId, Integer projectExperienceCount,
                    String githubUrl, String blogUrl) {
         this.email = email;
         this.age = age;
@@ -97,6 +101,7 @@ public class Member extends BaseEntity {
         this.role = role;
         this.provider = provider;
         this.providerId = providerId;
+        this.studentId = studentId;
         this.projectExperienceCount = projectExperienceCount != null ? projectExperienceCount : 0;
         this.githubUrl = githubUrl;
         this.blogUrl = blogUrl;
@@ -137,6 +142,28 @@ public class Member extends BaseEntity {
                 .role(UserRole.USER)
                 .provider(registerInfo.getProvider())
                 .providerId(registerInfo.getProviderId())
+                .projectExperienceCount(command.projectExperienceCount())
+                .githubUrl(command.githubUrl())
+                .blogUrl(command.blogUrl())
+                .build();
+    }
+
+    /**
+     * 세종대 포털 인증 회원가입용 정적 팩토리 메서드
+     */
+    public static Member createSejongMember(SejongRegisterCommand command, String encodedPassword, String imageUrl) {
+        String email = command.studentId() + "@sju.ac.kr";
+        return Member.builder()
+                .email(email)
+                .password(encodedPassword)
+                .realName(command.name())
+                .birth(command.birthDate())
+                .gender(command.gender())
+                .storeFileName(imageUrl)
+                .isParticipating(true)
+                .role(UserRole.USER)
+                .provider("sejong")
+                .studentId(command.studentId())
                 .projectExperienceCount(command.projectExperienceCount())
                 .githubUrl(command.githubUrl())
                 .blogUrl(command.blogUrl())
