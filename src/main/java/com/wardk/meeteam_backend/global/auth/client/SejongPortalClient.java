@@ -2,8 +2,8 @@ package com.wardk.meeteam_backend.global.auth.client;
 
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -17,13 +17,16 @@ import org.springframework.web.reactive.function.client.WebClient;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class SejongPortalClient {
 
     private static final String PORTAL_BASE_URL = "https://portal.sejong.ac.kr";
     private static final String LOGIN_ACTION_PATH = "/jsp/login/login_action.jsp";
 
     private final WebClient webClient;
+
+    public SejongPortalClient(@Qualifier("sejongWebClient") WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     /**
      * 세종대 포털 로그인을 시도합니다.
