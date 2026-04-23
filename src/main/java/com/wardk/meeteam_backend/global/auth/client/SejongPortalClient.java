@@ -76,8 +76,13 @@ public class SejongPortalClient {
                 .build();
 
         try (Response response = httpClient.newCall(request).execute()) {
+            log.info("세종대 포털 응답 코드: {}", response.code());
             if (response.body() != null) {
-                return response.body().string();
+                String body = response.body().string();
+                log.info("세종대 포털 응답 길이: {}, 내용 미리보기: {}",
+                    body.length(),
+                    body.substring(0, Math.min(200, body.length())));
+                return body;
             }
             return null;
         }
