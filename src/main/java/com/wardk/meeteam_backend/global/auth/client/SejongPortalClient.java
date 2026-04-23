@@ -10,9 +10,13 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.springframework.stereotype.Component;
 
+import okhttp3.JavaNetCookieJar;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.security.cert.X509Certificate;
 
 /**
@@ -129,9 +133,13 @@ public class SejongPortalClient {
             SSLContext sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, new TrustManager[]{trustAllManager}, new java.security.SecureRandom());
 
+            CookieManager cookieManager = new CookieManager();
+            cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+
             return new OkHttpClient.Builder()
                     .sslSocketFactory(sslContext.getSocketFactory(), trustAllManager)
                     .hostnameVerifier((hostname, session) -> true)
+                    .cookieJar(new JavaNetCookieJar(cookieManager))
                     .build();
         } catch (Exception e) {
             log.error("OkHttpClient 생성 실패: {}", e.getMessage(), e);
