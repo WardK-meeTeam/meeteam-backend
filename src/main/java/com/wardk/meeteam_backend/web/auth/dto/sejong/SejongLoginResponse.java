@@ -7,14 +7,14 @@ import lombok.Getter;
 @AllArgsConstructor
 public class SejongLoginResponse {
 
-    private String accessToken;
     private boolean isNewMember;
+    private String code;
 
-    public static SejongLoginResponse existingMember(String accessToken) {
-        return new SejongLoginResponse(accessToken, false);
+    public static SejongLoginResponse existingMember() {
+        return new SejongLoginResponse(false, null);
     }
 
-    public static SejongLoginResponse newMember() {
-        return new SejongLoginResponse(null, true);
+    public static SejongLoginResponse newMember(String code) {
+        return new SejongLoginResponse(true, code);
     }
 }

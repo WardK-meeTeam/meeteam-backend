@@ -151,8 +151,9 @@ public class Member extends BaseEntity {
     /**
      * 세종대 포털 인증 회원가입용 정적 팩토리 메서드
      */
-    public static Member createSejongMember(SejongRegisterCommand command, String encodedPassword, String imageUrl) {
-        String email = command.studentId() + "@sju.ac.kr";
+    public static Member createSejongMember(String studentId, SejongRegisterCommand command,
+                                            String encodedPassword, String imageUrl) {
+        String email = studentId + "@sju.ac.kr";
         return Member.builder()
                 .email(email)
                 .password(encodedPassword)
@@ -163,7 +164,7 @@ public class Member extends BaseEntity {
                 .isParticipating(true)
                 .role(UserRole.USER)
                 .provider("sejong")
-                .studentId(command.studentId())
+                .studentId(studentId)
                 .projectExperienceCount(command.projectExperienceCount())
                 .githubUrl(command.githubUrl())
                 .blogUrl(command.blogUrl())

@@ -17,7 +17,9 @@ import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.SejongLoginCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.SejongLoginResult;
 import com.wardk.meeteam_backend.global.auth.service.dto.SejongRegisterCommand;
+import com.wardk.meeteam_backend.global.auth.service.dto.SejongRegisterInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.TechStackOrderCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
 import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
@@ -113,13 +115,13 @@ public class AuthService {
 
     /**
      * 세종대 포털 인증을 통한 로그인
-     * 기존 회원이면 토큰 발급, 신규 회원이면 null 반환 (회원가입 필요)
+     * 기존 회원이면 토큰 발급, 신규 회원이면 회원가입용 코드 발급
      *
      * @param command 세종대 로그인 커맨드 (학번, 비밀번호)
-     * @return 토큰 교환 결과 (기존 회원) 또는 null (신규 회원)
+     * @return 로그인 결과 (기존 회원: 토큰, 신규 회원: 코드)
      */
     @Transactional
-    public TokenExchangeResult sejongLogin(SejongLoginCommand command) {
+    public SejongLoginResult sejongLogin(SejongLoginCommand command) {
         // 세종대 포털 인증
         sejongPortalClient.authenticate(command.studentId(), command.password());
 
@@ -128,42 +130,52 @@ public class AuthService {
                 .map(member -> {
                     String accessToken = jwtUtil.createAccessToken(member);
                     String refreshToken = jwtUtil.createRefreshToken(member);
-                    return new TokenExchangeResult(accessToken, refreshToken);
+                    return SejongLoginResult.existingMember(accessToken, refreshToken);
                 })
-                .orElse(null); // 신규 회원은 null 반환
+                .orElseGet(() -> {
+                    // 신규 회원: 학번을 Redis에 저장하고 코드 반환
+                    String code = oAuthCodeRepository.saveSejongRegisterInfo(
+                            new SejongRegisterInfo(command.studentId())
+                    );
+                    return SejongLoginResult.newMember(code);
+                });
     }
 
     /**
-     * 세종대 포털 인증을 통한 회원가입
+     * 세종대 포털 인증 후 회원가입
      *
-     * @param command 세종대 회원가입 커맨드
-     * @param file 프로필 이미지 파일
-     * @return OAuth2 회원가입 결과 (토큰 포함)
+     * @param command 세종대 회원가입 커맨드 (코드 + 온보딩 정보)
+     * @param file    프로필 이미지
+     * @return 토큰 교환 결과
      */
     @Transactional
-    public OAuth2RegisterResult sejongRegister(SejongRegisterCommand command, MultipartFile file) {
-        // 세종대 포털 인증
-        sejongPortalClient.authenticate(command.studentId(), command.password());
+    public TokenExchangeResult sejongRegister(SejongRegisterCommand command, MultipartFile file) {
+        // 코드로 학번 조회
+        SejongRegisterInfo registerInfo = oAuthCodeRepository.consumeSejongRegisterInfo(command.code())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_OAUTH_CODE));
 
-        // 학번 중복 체크
-        validateStudentIdNotDuplicated(command.studentId());
+        // 학번 중복 검증
+        validateStudentIdNotDuplicated(registerInfo.getStudentId());
 
         String imageUrl = uploadFile(file);
 
+        // 회원 생성
         Member member = Member.createSejongMember(
+                registerInfo.getStudentId(),
                 command,
-                bCryptPasswordEncoder.encode(command.password()),
+                bCryptPasswordEncoder.encode(UUID.randomUUID().toString()),
                 imageUrl
         );
 
-        // 직군/직무/기술스택 처리 및 Member에 추가
+        // 직군/직무/기술스택 처리
         processAndAddJobPositions(member, command.jobPositions());
 
         memberRepository.save(member);
 
+        // 토큰 발급
         String accessToken = jwtUtil.createAccessToken(member);
         String refreshToken = jwtUtil.createRefreshToken(member);
-        return OAuth2RegisterResult.of(member, accessToken, refreshToken);
+        return new TokenExchangeResult(accessToken, refreshToken);
     }
 
     /**

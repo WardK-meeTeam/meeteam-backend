@@ -9,9 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 /**
  * 세종대학교 포털 로그인 클라이언트
@@ -24,7 +21,6 @@ import java.util.List;
 public class SejongPortalClient {
 
     private static final String PORTAL_BASE_URL = "https://portal.sejong.ac.kr";
-    private static final String LOGIN_PAGE_PATH = "/jsp/login/loginSSL.jsp";
     private static final String LOGIN_ACTION_PATH = "/jsp/login/login_action.jsp";
 
     private final WebClient webClient;
@@ -39,15 +35,8 @@ public class SejongPortalClient {
      */
     public boolean authenticate(String studentId, String password) {
         try {
-            // Step 1: 로그인 페이지 접근하여 세션 쿠키 획득
-            String sessionCookie = getSessionCookie();
-
-            // Step 2: 로그인 POST 요청
-            String response = performLogin(studentId, password, sessionCookie);
-
-            // Step 3: 로그인 결과 확인
+            String response = performLogin(studentId, password);
             return validateLoginResponse(response);
-
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -57,37 +46,17 @@ public class SejongPortalClient {
     }
 
     /**
-     * 로그인 페이지에 접근하여 세션 쿠키를 획득합니다.
-     */
-    private String getSessionCookie() {
-        return webClient.get()
-                .uri(PORTAL_BASE_URL + LOGIN_PAGE_PATH)
-                .header(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
-                .exchangeToMono(response -> {
-                    List<String> cookies = response.headers().header(HttpHeaders.SET_COOKIE);
-                    String cookieHeader = cookies.stream()
-                            .map(c -> c.split(";")[0])
-                            .reduce((a, b) -> a + "; " + b)
-                            .orElse("");
-                    return Mono.just(cookieHeader);
-                })
-                .block();
-    }
-
-    /**
      * 세종대 포털에 로그인 POST 요청을 보냅니다.
      */
-    private String performLogin(String studentId, String password, String sessionCookie) {
+    private String performLogin(String studentId, String password) {
         return webClient.post()
                 .uri(PORTAL_BASE_URL + LOGIN_ACTION_PATH)
-                .header(HttpHeaders.COOKIE, sessionCookie)
-                .header(HttpHeaders.REFERER, PORTAL_BASE_URL + LOGIN_PAGE_PATH)
-                .header(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+                .header(HttpHeaders.HOST, "portal.sejong.ac.kr")
+                .header(HttpHeaders.REFERER, PORTAL_BASE_URL)
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(BodyInserters.fromFormData("id", studentId)
                         .with("password", password)
-                        .with("mainLogin", "Y")
-                        .with("rtUrl", ""))
+                        .with("mainLogin", "N"))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
