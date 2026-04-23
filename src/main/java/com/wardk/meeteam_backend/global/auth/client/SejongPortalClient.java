@@ -72,6 +72,7 @@ public class SejongPortalClient {
                 .post(formBody)
                 .header("Host", "portal.sejong.ac.kr")
                 .header("Referer", PORTAL_BASE_URL)
+                .header("User-Agent", "Mozilla/5.0")
                 .build();
 
         try (Response response = httpClient.newCall(request).execute()) {
