@@ -62,9 +62,9 @@ public class SejongPortalClient {
      */
     private String performLogin(String studentId, String password) throws Exception {
         RequestBody formBody = new FormBody.Builder()
+                .add("mainLogin", "N")
                 .add("id", studentId)
                 .add("password", password)
-                .add("mainLogin", "N")
                 .build();
 
         Request request = new Request.Builder()
@@ -136,16 +136,31 @@ public class SejongPortalClient {
                 }
             };
 
-            SSLContext sslContext = SSLContext.getInstance("SSL");
+            // TLSv1.2 명시적 사용 (세종대 포털 호환성)
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             sslContext.init(null, new TrustManager[]{trustAllManager}, new java.security.SecureRandom());
 
             CookieManager cookieManager = new CookieManager();
             cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
 
+            // TLS 1.2 연결 스펙 설정
+            okhttp3.ConnectionSpec spec = new okhttp3.ConnectionSpec.Builder(okhttp3.ConnectionSpec.MODERN_TLS)
+                    .tlsVersions(okhttp3.TlsVersion.TLS_1_2)
+                    .cipherSuites(
+                            okhttp3.CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+                            okhttp3.CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+                    )
+                    .build();
+
             return new OkHttpClient.Builder()
                     .sslSocketFactory(sslContext.getSocketFactory(), trustAllManager)
                     .hostnameVerifier((hostname, session) -> true)
                     .cookieJar(new JavaNetCookieJar(cookieManager))
+                    .connectionSpecs(java.util.Arrays.asList(spec, okhttp3.ConnectionSpec.CLEARTEXT))
                     .build();
         } catch (Exception e) {
             log.error("OkHttpClient 생성 실패: {}", e.getMessage(), e);
