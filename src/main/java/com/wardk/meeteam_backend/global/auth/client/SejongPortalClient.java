@@ -3,35 +3,33 @@ package com.wardk.meeteam_backend.global.auth.client;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.FormBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import org.springframework.stereotype.Component;
-
-import okhttp3.JavaNetCookieJar;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 
 /**
  * 세종대학교 포털 로그인 클라이언트
  * <p>
  * 세종대 포털(portal.sejong.ac.kr)에 HTTP 요청을 보내 학생 인증을 수행합니다.
+ * Java 11+ HttpClient 사용 (Docker 환경 TLS 호환성 개선)
  */
 @Slf4j
 @Component
 public class SejongPortalClient {
 
-    private static final String PORTAL_BASE_URL = "https://portal.sejong.ac.kr";
-    private static final String LOGIN_ACTION_PATH = "/jsp/login/login_action.jsp";
+    private static final String LOGIN_URL = "https://portal.sejong.ac.kr/jsp/login/login_action.jsp";
 
-    private final OkHttpClient httpClient;
+    private final HttpClient httpClient;
 
     public SejongPortalClient() {
         this.httpClient = buildClient();
@@ -61,31 +59,29 @@ public class SejongPortalClient {
      * 세종대 포털에 로그인 POST 요청을 보냅니다.
      */
     private String performLogin(String studentId, String password) throws Exception {
-        RequestBody formBody = new FormBody.Builder()
-                .add("mainLogin", "N")
-                .add("id", studentId)
-                .add("password", password)
-                .build();
+        String formData = "mainLogin=" + URLEncoder.encode("N", StandardCharsets.UTF_8)
+                + "&id=" + URLEncoder.encode(studentId, StandardCharsets.UTF_8)
+                + "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8);
 
-        Request request = new Request.Builder()
-                .url(PORTAL_BASE_URL + LOGIN_ACTION_PATH)
-                .post(formBody)
-                .header("Host", "portal.sejong.ac.kr")
-                .header("Referer", PORTAL_BASE_URL)
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(LOGIN_URL))
+                .timeout(Duration.ofSeconds(30))
+                .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("User-Agent", "Mozilla/5.0")
+                .header("Referer", "https://portal.sejong.ac.kr")
+                .POST(HttpRequest.BodyPublishers.ofString(formData))
                 .build();
 
-        try (Response response = httpClient.newCall(request).execute()) {
-            log.info("세종대 포털 응답 코드: {}", response.code());
-            if (response.body() != null) {
-                String body = response.body().string();
-                log.info("세종대 포털 응답 길이: {}, 내용 미리보기: {}",
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        log.info("세종대 포털 응답 코드: {}", response.statusCode());
+        String body = response.body();
+        if (body != null) {
+            log.info("세종대 포털 응답 길이: {}, 내용 미리보기: {}",
                     body.length(),
                     body.substring(0, Math.min(200, body.length())));
-                return body;
-            }
-            return null;
         }
+        return body;
     }
 
     /**
@@ -116,14 +112,14 @@ public class SejongPortalClient {
             throw new CustomException(ErrorCode.SEJONG_PORTAL_ERROR);
         }
 
-        log.warn("세종대 포털 로그인 실패: 알 수 없는 응답");
+        log.warn("세종대 포털 로그인 실패: 알 수 없는 응답 - {}", response.substring(0, Math.min(500, response.length())));
         throw new CustomException(ErrorCode.SEJONG_LOGIN_FAILED);
     }
 
     /**
-     * SSL 검증을 우회하는 OkHttpClient를 생성합니다.
+     * SSL 검증을 우회하는 HttpClient를 생성합니다.
      */
-    private OkHttpClient buildClient() {
+    private HttpClient buildClient() {
         try {
             X509TrustManager trustAllManager = new X509TrustManager() {
                 @Override
@@ -136,35 +132,17 @@ public class SejongPortalClient {
                 }
             };
 
-            // TLSv1.2 명시적 사용 (세종대 포털 호환성)
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+            SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, new TrustManager[]{trustAllManager}, new java.security.SecureRandom());
 
-            CookieManager cookieManager = new CookieManager();
-            cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-
-            // TLS 1.2 연결 스펙 설정
-            okhttp3.ConnectionSpec spec = new okhttp3.ConnectionSpec.Builder(okhttp3.ConnectionSpec.MODERN_TLS)
-                    .tlsVersions(okhttp3.TlsVersion.TLS_1_2)
-                    .cipherSuites(
-                            okhttp3.CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-                            okhttp3.CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
-                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-                            okhttp3.CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-                    )
-                    .build();
-
-            return new OkHttpClient.Builder()
-                    .sslSocketFactory(sslContext.getSocketFactory(), trustAllManager)
-                    .hostnameVerifier((hostname, session) -> true)
-                    .cookieJar(new JavaNetCookieJar(cookieManager))
-                    .connectionSpecs(java.util.Arrays.asList(spec, okhttp3.ConnectionSpec.CLEARTEXT))
+            return HttpClient.newBuilder()
+                    .sslContext(sslContext)
+                    .connectTimeout(Duration.ofSeconds(30))
+                    .followRedirects(HttpClient.Redirect.NORMAL)
                     .build();
         } catch (Exception e) {
-            log.error("OkHttpClient 생성 실패: {}", e.getMessage(), e);
-            return new OkHttpClient();
+            log.error("HttpClient 생성 실패: {}", e.getMessage(), e);
+            return HttpClient.newHttpClient();
         }
     }
 }
