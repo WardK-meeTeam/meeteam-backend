@@ -2,6 +2,7 @@ package com.wardk.meeteam_backend.web.project.dto.request;
 
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
+import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -43,9 +44,12 @@ public class ProjectUpdateRequest {
     @NotNull(message = "프로젝트 시작 날짜를 입력해주세요.")
     private LocalDate startDate;
 
-    @Schema(description = "프로젝트 종료 날짜", example = "2025-09-19")
-    @NotNull(message = "프로젝트 종료 날짜를 입력해주세요.")
+    @Schema(description = "프로젝트 종료 날짜 (END_DATE 방식일 때 필수)", example = "2025-09-19")
     private LocalDate endDate;
+
+    @Schema(description = "모집 마감 방식 (END_DATE: 마감일 지정, RECRUITMENT_COMPLETED: 상시모집)", example = "RECRUITMENT_COMPLETED")
+    @NotNull(message = "모집 마감 방식을 선택해주세요.")
+    private RecruitmentDeadlineType recruitmentDeadlineType;
 
     @Schema(
             description = "모집분야 리스트",

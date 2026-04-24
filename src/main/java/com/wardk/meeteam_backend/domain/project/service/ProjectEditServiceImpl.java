@@ -113,6 +113,7 @@ public class ProjectEditServiceImpl implements ProjectEditService {
                 command.githubRepositoryUrl(),
                 command.communicationChannelUrl(),
                 command.endDate(),
+                command.recruitmentDeadlineType(),
                 imageUrl
         );
 

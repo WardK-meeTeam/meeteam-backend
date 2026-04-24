@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.web.project.dto.request;
 import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
+import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectEditCommand;
 import com.wardk.meeteam_backend.domain.project.service.dto.RecruitmentEditCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,9 +48,12 @@ public record ProjectEditRequest(
         @Pattern(regexp = COMMUNICATION_CHANNEL_URL_PATTERN)
         String communicationChannelUrl,
 
-        @NotNull(message = "프로젝트 마감일을 입력해주세요.")
-        @Schema(description = "프로젝트 마감일", example = "2025-12-31")
+        @Schema(description = "프로젝트 마감일 (END_DATE 방식일 때 필수)", example = "2025-12-31")
         LocalDate endDate,
+
+        @NotNull(message = "모집 마감 방식을 선택해주세요.")
+        @Schema(description = "모집 마감 방식 (END_DATE: 마감일 지정, RECRUITMENT_COMPLETED: 상시모집)", example = "RECRUITMENT_COMPLETED")
+        RecruitmentDeadlineType recruitmentDeadlineType,
 
         @NotNull(message = "리더 포지션 코드를 입력해주세요.")
         @Schema(description = "리더 직무 포지션 코드", example = "JAVA_SPRING")
@@ -79,6 +83,7 @@ public record ProjectEditRequest(
                 this.githubRepositoryUrl,
                 this.communicationChannelUrl,
                 this.endDate,
+                this.recruitmentDeadlineType,
                 this.leaderJobPositionCode,
                 recruitmentCommands,
                 this.confirmDeletePositionsWithPendingApplicants != null && this.confirmDeletePositionsWithPendingApplicants

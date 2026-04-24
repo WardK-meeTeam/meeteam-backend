@@ -3,6 +3,7 @@ package com.wardk.meeteam_backend.domain.project.service.dto;
 import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import com.wardk.meeteam_backend.domain.project.entity.PlatformCategory;
 import com.wardk.meeteam_backend.domain.project.entity.ProjectCategory;
+import com.wardk.meeteam_backend.domain.project.entity.RecruitmentDeadlineType;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +19,7 @@ public record ProjectEditCommand(
         String githubRepositoryUrl,
         String communicationChannelUrl,
         LocalDate endDate,
+        RecruitmentDeadlineType recruitmentDeadlineType,
         JobPositionCode leaderJobPositionCode,
         List<RecruitmentEditCommand> recruitments,
         boolean confirmDeletePositionsWithPendingApplicants

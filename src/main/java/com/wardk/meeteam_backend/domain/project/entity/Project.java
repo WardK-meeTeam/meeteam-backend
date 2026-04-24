@@ -358,6 +358,7 @@ public class Project extends BaseEntity {
             String githubRepositoryUrl,
             String communicationChannelUrl,
             LocalDate endDate,
+            RecruitmentDeadlineType recruitmentDeadlineType,
             String imageUrl
     ) {
         this.name = name;
@@ -367,6 +368,7 @@ public class Project extends BaseEntity {
         this.githubRepositoryUrl = githubRepositoryUrl;
         this.communicationChannelUrl = communicationChannelUrl;
         this.endDate = endDate;
+        this.recruitmentDeadlineType = recruitmentDeadlineType;
         if (imageUrl != null) {
             this.imageUrl = imageUrl;
         }
