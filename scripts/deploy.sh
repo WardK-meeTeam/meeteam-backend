@@ -132,6 +132,10 @@ deploy() {
     log_info "이전 컨테이너 종료: $old_container"
     docker compose stop $old_container
 
+    # 7. 미사용 Docker 리소스 정리
+    log_info "미사용 Docker 이미지 정리 중..."
+    docker image prune -f
+
     log_info "=========================================="
     log_info "배포 완료!"
     log_info "활성 환경: $target_env"
