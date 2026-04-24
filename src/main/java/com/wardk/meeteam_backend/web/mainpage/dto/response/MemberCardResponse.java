@@ -54,6 +54,7 @@ public record MemberCardResponse(
 
         List<TechStackInfo> techStacks = member.getMemberTechStacks().stream()
                 .sorted(Comparator.comparing(mts -> mts.getDisplayOrder()))
+                .limit(3)
                 .map(mts -> new TechStackInfo(
                         mts.getTechStack().getId(),
                         mts.getTechStack().getName(),
