@@ -70,4 +70,9 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
             GROUP BY a.jobPosition.id
             """)
     List<Object[]> countPendingByProjectIdGroupByJobPositionId(@Param("projectId") Long projectId);
+
+    /**
+     * 특정 회원이 지원한 모든 지원서 삭제
+     */
+    void deleteByApplicantId(Long applicantId);
 }

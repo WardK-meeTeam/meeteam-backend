@@ -25,4 +25,9 @@ public interface ProjectLikeRepository extends JpaRepository<ProjectLike, Long> 
      */
     @Query("SELECT pl.project.id FROM ProjectLike pl WHERE pl.member.id = :memberId AND pl.project.id IN :projectIds")
     Set<Long> findLikedProjectIds(@Param("memberId") Long memberId, @Param("projectIds") List<Long> projectIds);
+
+    /**
+     * 특정 회원의 모든 좋아요 삭제
+     */
+    void deleteByMemberId(Long memberId);
 }

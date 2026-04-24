@@ -38,4 +38,9 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
             WHERE pm.project.id = :projectId AND pm.role = 'LEADER'
             """)
     Optional<ProjectMember> findLeaderByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 특정 회원의 모든 프로젝트 멤버십 삭제
+     */
+    void deleteByMemberId(Long memberId);
 }

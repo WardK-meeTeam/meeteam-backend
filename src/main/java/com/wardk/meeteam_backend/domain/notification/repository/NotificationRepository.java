@@ -29,4 +29,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // 추후에 복합 인덱스 고려 요소 !!
     @Query("select count(*) from Notification n where n.receiver.id = :memberId and n.isRead = false")
     int findUnreadCount(@Param("memberId") Long memberId);
+
+    /**
+     * 특정 회원의 모든 알림 삭제
+     */
+    void deleteByReceiverId(Long receiverId);
+
+    /**
+     * 특정 프로젝트의 모든 알림 삭제
+     */
+    void deleteByProjectId(Long projectId);
 }

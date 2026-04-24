@@ -25,4 +25,14 @@ public interface ProjectQnaRepository extends JpaRepository<ProjectQna, Long> {
      * 프로젝트별 Q&A 개수 조회
      */
     long countByProjectId(Long projectId);
+
+    /**
+     * 특정 회원이 작성한 모든 Q&A 삭제
+     */
+    void deleteByQuestionerId(Long questionerId);
+
+    /**
+     * 특정 프로젝트의 모든 Q&A 삭제
+     */
+    void deleteByProjectId(Long projectId);
 }

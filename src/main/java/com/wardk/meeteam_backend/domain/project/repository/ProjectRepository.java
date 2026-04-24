@@ -97,4 +97,9 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
        WHERE p.id = :projectId AND p.isDeleted = false
        """)
     Optional<Project> findProjectForEdit(@Param("projectId") Long projectId);
+
+    /**
+     * 특정 회원이 생성한 모든 프로젝트 조회
+     */
+    List<Project> findByCreatorId(Long creatorId);
 }

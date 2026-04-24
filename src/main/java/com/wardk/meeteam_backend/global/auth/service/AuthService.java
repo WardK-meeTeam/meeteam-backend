@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.global.auth.service;
 
+import com.wardk.meeteam_backend.domain.application.repository.ProjectApplicationRepository;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.job.entity.JobField;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
@@ -9,6 +10,15 @@ import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackReposito
 import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
+import com.wardk.meeteam_backend.domain.member.repository.MemberJobPositionRepository;
+import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
+import com.wardk.meeteam_backend.domain.project.entity.Project;
+import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
+import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
+import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.qna.repository.ProjectQnaRepository;
+import com.wardk.meeteam_backend.domain.qna.repository.QnaAnswerRepository;
+import com.wardk.meeteam_backend.domain.skill.repository.MemberSkillRepository;
 import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
 import com.wardk.meeteam_backend.global.auth.client.SejongPortalClient;
@@ -61,6 +71,17 @@ public class AuthService {
     private final OAuthTokenRevokeService oAuthTokenRevokeService;
     private final OAuthCodeRepository oAuthCodeRepository;
     private final SejongPortalClient sejongPortalClient;
+
+    // CASCADE 삭제용 Repository
+    private final QnaAnswerRepository qnaAnswerRepository;
+    private final ProjectQnaRepository projectQnaRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
+    private final ProjectLikeRepository projectLikeRepository;
+    private final NotificationRepository notificationRepository;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final MemberSkillRepository memberSkillRepository;
+    private final MemberJobPositionRepository memberJobPositionRepository;
+    private final ProjectRepository projectRepository;
 
 
     @Transactional
@@ -419,6 +440,7 @@ public class AuthService {
 
     /**
      * 회원 삭제 (하드 삭제)
+     * 회원과 관련된 모든 데이터를 CASCADE 삭제합니다.
      *
      * @param memberId 삭제할 회원 ID
      */
@@ -426,6 +448,52 @@ public class AuthService {
     public void deleteMember(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 1. 회원이 작성한 Q&A 답변 삭제
+        qnaAnswerRepository.deleteByWriterId(memberId);
+        log.info("회원의 Q&A 답변 삭제 완료 - memberId: {}", memberId);
+
+        // 2. 회원이 작성한 Q&A 질문 삭제 (답변도 cascade로 삭제됨)
+        projectQnaRepository.deleteByQuestionerId(memberId);
+        log.info("회원의 Q&A 질문 삭제 완료 - memberId: {}", memberId);
+
+        // 3. 회원의 프로젝트 지원서 삭제
+        projectApplicationRepository.deleteByApplicantId(memberId);
+        log.info("회원의 지원서 삭제 완료 - memberId: {}", memberId);
+
+        // 4. 회원의 프로젝트 좋아요 삭제
+        projectLikeRepository.deleteByMemberId(memberId);
+        log.info("회원의 좋아요 삭제 완료 - memberId: {}", memberId);
+
+        // 5. 회원의 알림 삭제
+        notificationRepository.deleteByReceiverId(memberId);
+        log.info("회원의 알림 삭제 완료 - memberId: {}", memberId);
+
+        // 6. 회원의 프로젝트 멤버십 삭제
+        projectMemberRepository.deleteByMemberId(memberId);
+        log.info("회원의 프로젝트 멤버십 삭제 완료 - memberId: {}", memberId);
+
+        // 7. 회원이 생성한 프로젝트들 삭제 (Project의 cascade로 관련 데이터 자동 삭제)
+        List<Project> createdProjects = projectRepository.findByCreatorId(memberId);
+        for (Project project : createdProjects) {
+            // 프로젝트 관련 Q&A 삭제
+            projectQnaRepository.deleteByProjectId(project.getId());
+            // 프로젝트 관련 알림 삭제
+            notificationRepository.deleteByProjectId(project.getId());
+            // 프로젝트 삭제 (cascade로 멤버, 지원서, 좋아요, 스킬, 모집상태 등 자동 삭제)
+            projectRepository.delete(project);
+        }
+        log.info("회원이 생성한 프로젝트 삭제 완료 - memberId: {}, 프로젝트 수: {}", memberId, createdProjects.size());
+
+        // 8. 회원의 기술스택 삭제
+        memberSkillRepository.deleteByMemberId(memberId);
+        log.info("회원의 기술스택 삭제 완료 - memberId: {}", memberId);
+
+        // 9. 회원의 직무 포지션 삭제
+        memberJobPositionRepository.deleteByMemberId(memberId);
+        log.info("회원의 직무 포지션 삭제 완료 - memberId: {}", memberId);
+
+        // 10. 회원 삭제
         memberRepository.delete(member);
         log.info("회원 하드 삭제 완료 - memberId: {}", memberId);
     }
