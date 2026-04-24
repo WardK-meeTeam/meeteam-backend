@@ -38,7 +38,7 @@ public class NotificationController {
      * @return 클라이언트에게 알림 이벤트를 스트리밍하는 SseEmitter 객체를 반환합니다.
      */
     // produces = "text/event-stream"을 사용하여 SSE 응답 콘텐츠 타입을 지정합니다.
-    @GetMapping(value = "/api/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/api/v1/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public SseEmitter subscribe(@AuthenticationPrincipal UserDetails userDetails,
                                 // Last-Event-ID 헤더는 마지막으로 받은 이벤트부터 이벤트 스트리밍을 재개하는 데 사용됩니다.
@@ -50,7 +50,7 @@ public class NotificationController {
 
 
     @Operation(summary = "전체 알림 조회", description = "특정 회원의 전체 알림을 최신순으로 페이징 조회합니다.")
-    @GetMapping(value = "/api/notifications")
+    @GetMapping(value = "/api/v1/notifications")
     public SuccessResponse<Slice<NotificationResponse>> getNotification(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails,
             @ParameterObject Pageable pageable
@@ -59,7 +59,8 @@ public class NotificationController {
     }
 
 
-    @GetMapping(value = "/api/notifications/unread/count")
+    @Operation(summary = "읽지 않은 알림 개수 조회", description = "읽지 않은 알림 개수를 조회합니다.")
+    @GetMapping(value = "/api/v1/notifications/unread/count")
     public SuccessResponse<NotificationUnreadCountResponse> getNotificationCount (
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {

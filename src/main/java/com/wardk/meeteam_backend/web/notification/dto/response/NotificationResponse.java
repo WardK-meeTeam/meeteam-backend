@@ -12,7 +12,6 @@ import java.time.LocalDate;
 @JsonPropertyOrder({
         "id",
         "type",
-        "message",
         "isRead",
         "createdAt",
         "applicationId",
@@ -22,7 +21,6 @@ public class NotificationResponse {
 
     private Long id;
     private NotificationType type;
-    private String message;
     private boolean isRead;
     private LocalDate createdAt;
     private Long applicationId; // 지원서 자체 ID
