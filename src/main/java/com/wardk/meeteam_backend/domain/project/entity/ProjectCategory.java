@@ -8,7 +8,8 @@ import lombok.RequiredArgsConstructor;
 public enum ProjectCategory {
     CAPSTONE("캡스톤"),
     CREATIVE_SEMESTER("창의학기제"),
-    CLUB("동아리");
+    CLUB("동아리"),
+    ETC("기타");
 
     private final String displayName;
 }
