@@ -402,7 +402,7 @@ public class ProjectApplicationSteps {
     private void 프로젝트_생성(String leaderName, String projectName, List<Map<String, Object>> recruitments) {
         String token = context.members().getToken(leaderName);
 
-        var response = api.projectCreate().생성_여러_포지션(token, projectName, "AI_TECH", recruitments);
+        var response = api.projectCreate().생성_여러_포지션(token, projectName, "CAPSTONE", recruitments);
         assertThat(response.statusCode()).isEqualTo(HTTP_OK);
 
         Long projectId = response.jsonPath().getLong("result.id");

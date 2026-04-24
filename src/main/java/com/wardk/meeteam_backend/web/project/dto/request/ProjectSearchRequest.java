@@ -16,7 +16,7 @@ public record ProjectSearchRequest(
         @Schema(description = "검색 키워드 (프로젝트명 또는 리더명)", example = "개발")
         String keyword,
 
-        @Schema(description = "프로젝트 카테고리", example = "AI_TECH")
+        @Schema(description = "프로젝트 카테고리", example = "CAPSTONE")
         ProjectCategory projectCategory,
 
         @Schema(description = "모집 상태", example = "RECRUITING")

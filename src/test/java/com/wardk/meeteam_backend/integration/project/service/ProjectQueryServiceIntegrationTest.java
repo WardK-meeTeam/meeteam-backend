@@ -40,9 +40,9 @@ class ProjectQueryServiceIntegrationTest {
     private static final int TOTAL_SEED_PROJECTS = 20;
 
     // 시드 데이터의 카테고리별 개수
-    private static final int AI_TECH_COUNT = 8;      // ID: 1,2,3,14,15,16,17,18
-    private static final int HEALTHCARE_COUNT = 2;   // ID: 4,5
-    private static final int EDUCATION_COUNT = 4;    // ID: 6,7,19,20
+    private static final int CAPSTONE_COUNT = 10;           // ID: 1,2,3,8,9,14,15,16,17,18
+    private static final int CREATIVE_SEMESTER_COUNT = 4;   // ID: 4,5,10,12
+    private static final int CLUB_COUNT = 6;                // ID: 6,7,11,13,19,20
 
     // 시드 데이터의 플랫폼별 개수
     private static final int WEB_COUNT = 11;
@@ -126,27 +126,27 @@ class ProjectQueryServiceIntegrationTest {
         class WithCategoryFilter {
 
             @Test
-            @DisplayName("AI_TECH 카테고리의 프로젝트만 반환한다")
-            void returns_only_ai_tech_projects() {
+            @DisplayName("CAPSTONE 카테고리의 프로젝트만 반환한다")
+            void returns_only_capstone_projects() {
                 // when
-                Slice<ProjectCardResponse> result = search(requestWithCategory(ProjectCategory.AI_TECH));
+                Slice<ProjectCardResponse> result = search(requestWithCategory(ProjectCategory.CAPSTONE));
 
                 // then
-                assertThat(result.getContent()).hasSize(AI_TECH_COUNT);
+                assertThat(result.getContent()).hasSize(CAPSTONE_COUNT);
                 assertThat(result.getContent())
-                        .allMatch(dto -> dto.getCategoryCode().equals(ProjectCategory.AI_TECH.name()));
+                        .allMatch(dto -> dto.getCategoryCode().equals(ProjectCategory.CAPSTONE.name()));
             }
 
             @Test
-            @DisplayName("HEALTHCARE 카테고리의 프로젝트만 반환한다")
-            void returns_only_healthcare_projects() {
+            @DisplayName("CREATIVE_SEMESTER 카테고리의 프로젝트만 반환한다")
+            void returns_only_creative_semester_projects() {
                 // when
-                Slice<ProjectCardResponse> result = search(requestWithCategory(ProjectCategory.HEALTHCARE));
+                Slice<ProjectCardResponse> result = search(requestWithCategory(ProjectCategory.CREATIVE_SEMESTER));
 
                 // then
-                assertThat(result.getContent()).hasSize(HEALTHCARE_COUNT);
+                assertThat(result.getContent()).hasSize(CREATIVE_SEMESTER_COUNT);
                 assertThat(result.getContent())
-                        .allMatch(dto -> dto.getCategoryCode().equals(ProjectCategory.HEALTHCARE.name()));
+                        .allMatch(dto -> dto.getCategoryCode().equals(ProjectCategory.CREATIVE_SEMESTER.name()));
             }
         }
 
@@ -294,15 +294,15 @@ class ProjectQueryServiceIntegrationTest {
             @Test
             @DisplayName("카테고리와 플랫폼을 동시에 필터링한다")
             void filters_by_category_and_platform() {
-                // when - AI_TECH + WEB
+                // when - CAPSTONE + WEB
                 Slice<ProjectCardResponse> result = search(
-                        new ProjectSearchRequest(null, ProjectCategory.AI_TECH, null, PlatformCategory.WEB, null, null)
+                        new ProjectSearchRequest(null, ProjectCategory.CAPSTONE, null, PlatformCategory.WEB, null, null)
                 );
 
                 // then
                 assertThat(result.getContent()).isNotEmpty();
                 assertThat(result.getContent()).allSatisfy(dto -> {
-                    assertThat(dto.getCategoryCode()).isEqualTo(ProjectCategory.AI_TECH.name());
+                    assertThat(dto.getCategoryCode()).isEqualTo(ProjectCategory.CAPSTONE.name());
                     assertThat(dto.getPlatformName()).isEqualTo(PlatformCategory.WEB.name());
                 });
             }
@@ -341,12 +341,12 @@ class ProjectQueryServiceIntegrationTest {
             @DisplayName("카테고리 displayName이 올바르게 변환된다")
             void category_display_name_is_converted() {
                 // when
-                Slice<ProjectCardResponse> result = search(requestWithCategory(ProjectCategory.AI_TECH));
+                Slice<ProjectCardResponse> result = search(requestWithCategory(ProjectCategory.CAPSTONE));
 
                 // then
                 assertThat(result.getContent()).isNotEmpty();
                 assertThat(result.getContent().get(0).getCategoryName())
-                        .isEqualTo(ProjectCategory.AI_TECH.getDisplayName());
+                        .isEqualTo(ProjectCategory.CAPSTONE.getDisplayName());
             }
 
             @Test

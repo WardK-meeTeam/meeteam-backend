@@ -39,7 +39,7 @@ public class ProjectPostRequest {
     private String communicationChannelUrl;
 
     @NotNull(message = "카테고리를 선택해주세요.")
-    @Schema(description = "프로젝트 카테고리", example = "ENVIRONMENT")
+    @Schema(description = "프로젝트 카테고리", example = "CAPSTONE")
     private ProjectCategory projectCategory;
 
     @Size(max = 5000, message = "설명은 최대 5,000자까지 입력 가능합니다.")

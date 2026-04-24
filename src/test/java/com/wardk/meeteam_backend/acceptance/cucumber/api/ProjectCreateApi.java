@@ -49,7 +49,7 @@ public class ProjectCreateApi {
      * 프로젝트 생성 요청 - 마감 방식 지정
      */
     public ExtractableResponse<Response> 생성_마감방식(String token, String deadlineType, LocalDate endDate) {
-        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "AI_TECH", "BACKEND", 2);
+        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "CAPSTONE", "BACKEND", 2);
         params.put("recruitmentDeadlineType", deadlineType);
         if (endDate != null) {
             params.put("endDate", endDate.toString());
@@ -195,7 +195,7 @@ public class ProjectCreateApi {
      * 프로젝트명 누락 요청
      */
     public ExtractableResponse<Response> 프로젝트명_누락_요청(String token) {
-        Map<String, Object> params = 기본_생성_요청("", "AI_TECH", "BACKEND", 2);
+        Map<String, Object> params = 기본_생성_요청("", "CAPSTONE", "BACKEND", 2);
         params.remove("projectName");
         return 생성_요청(token, params);
     }
@@ -204,7 +204,7 @@ public class ProjectCreateApi {
      * 모집 포지션 누락 요청
      */
     public ExtractableResponse<Response> 모집포지션_누락_요청(String token) {
-        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "AI_TECH", "BACKEND", 2);
+        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "CAPSTONE", "BACKEND", 2);
         params.put("recruitments", List.of());
         return 생성_요청(token, params);
     }
@@ -213,7 +213,7 @@ public class ProjectCreateApi {
      * 마감 방식 누락 요청
      */
     public ExtractableResponse<Response> 마감방식_누락_요청(String token) {
-        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "AI_TECH", "BACKEND", 2);
+        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "CAPSTONE", "BACKEND", 2);
         params.remove("recruitmentDeadlineType");
         return 생성_요청(token, params);
     }
@@ -222,7 +222,7 @@ public class ProjectCreateApi {
      * END_DATE 방식인데 마감일 누락
      */
     public ExtractableResponse<Response> 마감일_누락_요청(String token) {
-        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "AI_TECH", "BACKEND", 2);
+        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "CAPSTONE", "BACKEND", 2);
         params.put("recruitmentDeadlineType", "END_DATE");
         params.remove("endDate");
         return 생성_요청(token, params);
@@ -232,7 +232,7 @@ public class ProjectCreateApi {
      * RECRUITMENT_COMPLETED 방식인데 마감일 포함
      */
     public ExtractableResponse<Response> 모집완료_마감일_포함_요청(String token) {
-        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "AI_TECH", "BACKEND", 2);
+        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "CAPSTONE", "BACKEND", 2);
         params.put("recruitmentDeadlineType", "RECRUITMENT_COMPLETED");
         params.put("endDate", LocalDate.now().plusMonths(1).toString());
         return 생성_요청(token, params);
@@ -242,7 +242,7 @@ public class ProjectCreateApi {
      * 비인증 프로젝트 생성 요청
      */
     public ExtractableResponse<Response> 비인증_생성_요청() {
-        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "AI_TECH", "BACKEND", 2);
+        Map<String, Object> params = 기본_생성_요청("테스트 프로젝트", "CAPSTONE", "BACKEND", 2);
         return 생성_요청(null, params);
     }
 
