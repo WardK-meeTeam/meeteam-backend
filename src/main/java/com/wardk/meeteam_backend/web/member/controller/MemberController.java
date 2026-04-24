@@ -142,4 +142,34 @@ public class MemberController {
                 memberProfileService.searchMembersV1(name, jobFieldId, techStackNames, pageable);
         return SuccessResponse.onSuccess(results);
     }
+
+    @Operation(
+            summary = "나의 프로필 보기",
+            description = "로그인한 사용자의 프로필 정보를 조회합니다. 기본 정보, 자기소개, 참여 프로젝트, 보유 기술 등을 포함합니다."
+    )
+    @GetMapping("/api/v1/members/me")
+    public SuccessResponse<MemberProfileResponse> getMyProfile(
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        MemberProfileResponse profile = memberProfileService.profile(userDetails.getMemberId());
+        return SuccessResponse.onSuccess(profile);
+    }
+
+    @Operation(
+            summary = "나의 프로필 수정",
+            description = "로그인한 사용자의 프로필 정보를 수정합니다. 프로필 이미지, 기본 정보, 관심 직무, 기술 스택 등을 수정할 수 있습니다."
+    )
+    @PutMapping(value = "/api/v1/members/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SuccessResponse<MemberProfileUpdateResponse> updateMyProfile(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomSecurityUserDetails userDetails,
+            @RequestPart("memberInfo") @Valid MemberProfileUpdateRequest request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) {
+        MemberProfileUpdateResponse response = memberProfileService.updateProfile(
+                userDetails.getMemberId(),
+                request,
+                profileImage
+        );
+        return SuccessResponse.onSuccess(response);
+    }
 }
