@@ -83,6 +83,8 @@ public class Member extends BaseEntity {
 
     private String blogUrl;
 
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
 
     @Builder(access = AccessLevel.PRIVATE)
     private Member(String email, Integer age, String password, String realName,
@@ -264,5 +266,13 @@ public class Member extends BaseEntity {
 
     public void setStoreFileName(String storeFileName) {
         this.storeFileName = storeFileName;
+    }
+
+    /**
+     * 회원 탈퇴 처리 (소프트 삭제)
+     */
+    public void withdraw() {
+        this.isDeleted = true;
+        this.isParticipating = false;
     }
 }

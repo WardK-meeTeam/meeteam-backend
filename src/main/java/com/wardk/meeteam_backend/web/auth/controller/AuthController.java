@@ -27,6 +27,7 @@ import com.wardk.meeteam_backend.web.auth.dto.register.RegisterResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,6 +35,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -185,6 +187,31 @@ public class AuthController {
 
         log.info("로그아웃 완료 - AccessToken 블랙리스트 등록 및 토큰 쿠키 삭제");
         return SuccessResponse.onSuccess("로그아웃이 완료되었습니다.");
+    }
+
+    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 수행합니다. 계정이 비활성화되며 로그아웃 처리됩니다.")
+    @DeleteMapping("/withdraw")
+    public SuccessResponse<String> withdraw(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getMemberId();
+        log.info("회원 탈퇴 요청 - memberId: {}", memberId);
+
+        // 회원 탈퇴 처리 (소프트 삭제)
+        authService.withdraw(memberId);
+
+        // 토큰 블랙리스트 추가 및 OAuth 토큰 철회
+        String accessToken = extractAccessToken(request);
+        authService.logout(accessToken);
+
+        // 쿠키 삭제
+        accessTokenCookieProvider.deleteCookie(response);
+        refreshTokenCookieProvider.deleteCookie(response);
+
+        log.info("회원 탈퇴 완료 - memberId: {}", memberId);
+        return SuccessResponse.onSuccess("회원 탈퇴가 완료되었습니다.");
     }
 
     /**

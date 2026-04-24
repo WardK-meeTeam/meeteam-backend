@@ -405,9 +405,16 @@ public class AuthService {
         return imageUrl;
     }
 
+    /**
+     * 회원 탈퇴 처리 (소프트 삭제)
+     *
+     * @param memberId 탈퇴할 회원 ID
+     */
     @Transactional
-    public void deleteByEmail(String email) {
-        memberRepository.deleteByEmail(email);
+    public void withdraw(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        member.withdraw();
     }
 
     /**
