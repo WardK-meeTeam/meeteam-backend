@@ -8,7 +8,6 @@ import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.job.repository.JobFieldRepository;
-import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackRepository;
 import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.project.service.dto.RecruitmentCommand;
@@ -31,7 +30,6 @@ public class RecruitmentDomainService {
     private final JobFieldRepository jobFieldRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
-    private final JobFieldTechStackRepository jobFieldTechStackRepository;
 
     /**
      * 모집 커맨드 목록으로부터 RecruitmentState 목록을 생성합니다.
@@ -79,14 +77,7 @@ public class RecruitmentDomainService {
         List<TechStack> techStacks = techStackRepository.findByIdIn(techStackIds);
 
         for (TechStack techStack : techStacks) {
-            validateTechStackBelongsToField(techStack, jobField);
             recruitmentState.addRecruitmentTechStack(RecruitmentTechStack.create(techStack));
-        }
-    }
-
-    private void validateTechStackBelongsToField(TechStack techStack, JobField jobField) {
-        if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
-            throw new CustomException(ErrorCode.TECH_STACK_IS_NOT_MATCHING);
         }
     }
 }
