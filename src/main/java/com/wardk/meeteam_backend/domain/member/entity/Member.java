@@ -245,7 +245,7 @@ public class Member extends BaseEntity {
 
     public void updateProfile(String realName, Integer age, Gender gender,
                               Boolean isParticipating, String introduction,
-                              String githubUrl, String blogUrl) {
+                              String githubUrl, String blogUrl, Integer projectExperienceCount) {
 
         this.realName = realName;
         this.age = age;
@@ -254,6 +254,7 @@ public class Member extends BaseEntity {
         this.introduction = introduction;
         this.githubUrl = githubUrl;
         this.blogUrl = blogUrl;
+        this.projectExperienceCount = projectExperienceCount;
     }
 
     public void setIntroduction(String introduction) {

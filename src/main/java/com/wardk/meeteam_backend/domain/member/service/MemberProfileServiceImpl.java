@@ -15,6 +15,7 @@ import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
+import com.wardk.meeteam_backend.web.auth.dto.register.TechStackOrderRequest;
 import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
 import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberDetailResponse;
@@ -175,14 +176,15 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             request.getIsParticipating(),
             request.getIntroduction(),
             request.getGithubUrl(),
-            request.getBlogUrl()
+            request.getBlogUrl(),
+            request.getProjectExperienceCount()
         );
 
         // 기존 관심 분야 삭제 후 새로 추가
         updateMemberJobPositions(member, request.getJobPositionIds());
 
         // 기존 기술 스택 삭제 후 새로 추가
-        updateMemberTechStacks(member, request.getTechStackIds());
+        updateMemberTechStacks(member, request.getTechStacks());
 
         // 변경 사항 저장 (더티 체킹으로 자동 업데이트)
         Member savedMember = memberRepository.save(member);
@@ -274,19 +276,34 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     }
 
     /**
-     * 회원 기술 스택 업데이트
+     * 회원 기술 스택 업데이트 (displayOrder 지원)
      */
-    private void updateMemberTechStacks(Member member, List<Long> techStackIds) {
+    private void updateMemberTechStacks(Member member, List<TechStackOrderRequest> techStackRequests) {
         member.getMemberTechStacks().clear();
+
+        if (techStackRequests == null || techStackRequests.isEmpty()) {
+            return;
+        }
+
+        List<Long> techStackIds = techStackRequests.stream()
+                .map(TechStackOrderRequest::id)
+                .toList();
 
         List<TechStack> techStacks = techStackRepository.findAllById(techStackIds);
         if (techStacks.size() != techStackIds.size()) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
 
-        // 리스트 순서를 displayOrder로 사용
-        for (int i = 0; i < techStacks.size(); i++) {
-            member.addMemberTechStack(techStacks.get(i), i + 1);
+        // ID로 TechStack 매핑
+        Map<Long, TechStack> techStackMap = techStacks.stream()
+                .collect(Collectors.toMap(TechStack::getId, ts -> ts));
+
+        // 요청의 displayOrder 사용
+        for (TechStackOrderRequest request : techStackRequests) {
+            TechStack techStack = techStackMap.get(request.id());
+            if (techStack != null) {
+                member.addMemberTechStack(techStack, request.displayOrder());
+            }
         }
     }
 

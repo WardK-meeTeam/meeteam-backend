@@ -1,11 +1,13 @@
 package com.wardk.meeteam_backend.web.member.dto.request;
 
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
+import com.wardk.meeteam_backend.web.auth.dto.register.TechStackOrderRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.util.List;
@@ -37,9 +39,15 @@ public class MemberProfileUpdateRequest {
     private List<Long> jobPositionIds;
 
     @NotEmpty(message = "기술 스택을 하나 이상 선택해주세요.")
-    @Schema(description = "기술 스택 목록",
-        example = "[1, 2, 3]")
-    private List<Long> techStackIds;
+    @Valid
+    @Schema(description = "기술 스택 목록 (displayOrder 포함)",
+        example = "[{\"id\": 1, \"displayOrder\": 1}, {\"id\": 2, \"displayOrder\": 2}]")
+    private List<TechStackOrderRequest> techStacks;
+
+    @NotNull(message = "프로젝트 경험 횟수를 입력해주세요.")
+    @Min(value = 0, message = "프로젝트 경험 횟수는 0 이상이어야 합니다.")
+    @Schema(description = "프로젝트 경험 횟수", example = "3")
+    private Integer projectExperienceCount;
 
     @Schema(description = "프로젝트 참여 가능 여부", example = "true")
     private Boolean isParticipating;
