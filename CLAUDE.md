@@ -84,3 +84,18 @@ Javadoc required for public classes/methods. Use `@Operation` annotation on cont
 ## Code Convention
 
 새로운 기능 개발 or 리펙토링 시 [CODE_CONVENTION.md](./CODE_CONVENTION.md)를 참고하세요. Controller, Service, Entity, DTO 작성 규칙과 전체 예시 코드가 포함되어 있습니다.
+
+## 세종대 포털 SSL 호환성
+
+세종대 포털 서버가 SHA1 기반 인증서/서명 알고리즘을 사용하여 Java 17 기본 보안 정책과 충돌합니다.
+
+**해결 방법:**
+- `custom.java.security` 파일에서 SHA1 알고리즘 제한 해제
+- Dockerfile에서 `-Djava.security.properties` 옵션으로 커스텀 보안 설정 적용
+
+**관련 파일:**
+- `custom.java.security` - SHA1 제한 제거된 보안 설정
+- `Dockerfile` - 커스텀 보안 설정 적용
+- `SejongPortalClient.java` - 세종대 포털 인증 클라이언트
+
+**주의:** 세종대 포털 관련 SSL 오류 발생 시 `jdk.tls.disabledAlgorithms`, `jdk.certpath.disabledAlgorithms` 설정 확인 필요.
