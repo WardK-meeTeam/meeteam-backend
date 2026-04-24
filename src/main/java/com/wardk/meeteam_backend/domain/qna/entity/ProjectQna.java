@@ -40,18 +40,22 @@ public class ProjectQna {
     @Column(name = "question_created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private Boolean isSecret = false;
+
     @OneToMany(mappedBy = "projectQna", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QnaAnswer> answers = new ArrayList<>();
 
-    private ProjectQna(Project project, Member questioner, String question) {
+    private ProjectQna(Project project, Member questioner, String question, Boolean isSecret) {
         this.project = project;
         this.questioner = questioner;
         this.question = question;
         this.createdAt = LocalDateTime.now();
+        this.isSecret = isSecret != null ? isSecret : false;
     }
 
-    public static ProjectQna create(Project project, Member questioner, String question) {
-        return new ProjectQna(project, questioner, question);
+    public static ProjectQna create(Project project, Member questioner, String question, Boolean isSecret) {
+        return new ProjectQna(project, questioner, question, isSecret);
     }
 
     public void addAnswer(QnaAnswer answer) {

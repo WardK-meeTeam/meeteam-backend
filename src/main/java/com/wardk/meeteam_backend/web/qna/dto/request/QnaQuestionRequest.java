@@ -12,6 +12,9 @@ public record QnaQuestionRequest(
         @NotBlank(message = "질문 내용은 필수입니다.")
         @Size(max = 1000, message = "질문은 1000자 이하로 작성해주세요.")
         @Schema(description = "질문 내용", example = "프로젝트 모임은 매주 몇 번 하나요?")
-        String question
+        String question,
+
+        @Schema(description = "비밀글 여부", example = "false")
+        Boolean isSecret
 ) {
 }

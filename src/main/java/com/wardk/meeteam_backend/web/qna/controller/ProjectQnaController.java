@@ -34,7 +34,7 @@ public class ProjectQnaController {
 
     @Operation(
             summary = "Q&A 목록 조회",
-            description = "프로젝트의 Q&A 목록을 조회합니다. 최신순으로 정렬되며 페이징을 지원합니다."
+            description = "프로젝트의 Q&A 목록을 조회합니다. 최신순으로 정렬되며 페이징을 지원합니다. 비밀글은 질문자와 프로젝트 리더만 내용을 볼 수 있습니다."
     )
     @Parameters({
             @Parameter(name = "page", description = "페이지 번호 (0부터 시작)", in = ParameterIn.QUERY,
@@ -48,15 +48,17 @@ public class ProjectQnaController {
     public SuccessResponse<Page<ProjectQnaResponse>> getQnaList(
             @PathVariable Long projectId,
             @Parameter(hidden = true)
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
-        Page<ProjectQnaResponse> qnaList = projectQnaService.getQnaList(projectId, pageable);
+        Long viewerId = userDetails != null ? userDetails.getMemberId() : null;
+        Page<ProjectQnaResponse> qnaList = projectQnaService.getQnaList(projectId, pageable, viewerId);
         return SuccessResponse.onSuccess(qnaList);
     }
 
     @Operation(
             summary = "질문 등록",
-            description = "프로젝트에 질문을 등록합니다. 로그인한 회원만 질문할 수 있습니다."
+            description = "프로젝트에 질문을 등록합니다. 로그인한 회원만 질문할 수 있습니다. 비밀글로 등록하면 질문자와 프로젝트 리더만 내용을 볼 수 있습니다."
     )
     @PostMapping
     public SuccessResponse<ProjectQnaResponse> createQuestion(
@@ -67,7 +69,8 @@ public class ProjectQnaController {
         ProjectQnaResponse response = projectQnaService.createQuestion(
                 projectId,
                 userDetails.getMemberId(),
-                request.question()
+                request.question(),
+                request.isSecret()
         );
         return SuccessResponse.onSuccess(response);
     }

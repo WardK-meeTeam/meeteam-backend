@@ -34,32 +34,33 @@ public class ProjectQnaService {
 
     /**
      * Q&A 목록 조회 (페이징)
+     * @param viewerId 조회자 ID (null이면 비로그인 사용자)
      */
     @Transactional(readOnly = true)
-    public Page<ProjectQnaResponse> getQnaList(Long projectId, Pageable pageable) {
+    public Page<ProjectQnaResponse> getQnaList(Long projectId, Pageable pageable, Long viewerId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Long leaderId = project.getCreator().getId();
 
         Page<ProjectQna> qnaPage = projectQnaRepository.findByProjectIdWithQuestioner(projectId, pageable);
-        return qnaPage.map(qna -> ProjectQnaResponse.from(qna, leaderId));
+        return qnaPage.map(qna -> ProjectQnaResponse.fromWithSecretMasking(qna, leaderId, viewerId));
     }
 
     /**
      * 질문 등록 (회원만 가능)
      */
-    public ProjectQnaResponse createQuestion(Long projectId, Long memberId, String question) {
+    public ProjectQnaResponse createQuestion(Long projectId, Long memberId, String question, Boolean isSecret) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
         Member questioner = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        ProjectQna qna = ProjectQna.create(project, questioner, question);
+        ProjectQna qna = ProjectQna.create(project, questioner, question, isSecret);
         projectQnaRepository.save(qna);
 
-        log.info("Q&A 질문 등록 - projectId: {}, questionerId: {}", projectId, memberId);
+        log.info("Q&A 질문 등록 - projectId: {}, questionerId: {}, isSecret: {}", projectId, memberId, isSecret);
 
         Long leaderId = project.getCreator().getId();
         return ProjectQnaResponse.from(qna, leaderId);

@@ -30,10 +30,16 @@ public record ProjectQnaResponse(
         @Schema(description = "질문 등록 시간")
         LocalDateTime createdAt,
 
+        @Schema(description = "비밀글 여부")
+        Boolean isSecret,
+
         // 답변 목록
         @Schema(description = "답변 목록")
         List<QnaAnswerResponse> answers
 ) {
+    /**
+     * 기본 변환 (비밀글 마스킹 없음 - 권한 있는 사용자용)
+     */
     public static ProjectQnaResponse from(ProjectQna qna, Long leaderId) {
         List<QnaAnswerResponse> answerResponses = qna.getAnswers().stream()
                 .map(answer -> QnaAnswerResponse.from(answer, leaderId))
@@ -46,7 +52,32 @@ public record ProjectQnaResponse(
                 qna.getQuestioner().getStoreFileName(),
                 qna.getQuestion(),
                 qna.getCreatedAt(),
+                qna.getIsSecret(),
                 answerResponses
+        );
+    }
+
+    /**
+     * 비밀글 마스킹 처리 변환 (권한 없는 사용자용)
+     */
+    public static ProjectQnaResponse fromWithSecretMasking(ProjectQna qna, Long leaderId, Long viewerId) {
+        boolean canView = !qna.getIsSecret() ||
+                qna.getQuestioner().getId().equals(viewerId) ||
+                leaderId.equals(viewerId);
+
+        List<QnaAnswerResponse> answerResponses = qna.getAnswers().stream()
+                .map(answer -> QnaAnswerResponse.from(answer, leaderId))
+                .toList();
+
+        return new ProjectQnaResponse(
+                qna.getId(),
+                qna.getQuestioner().getId(),
+                canView ? qna.getQuestioner().getRealName() : "비밀글",
+                canView ? qna.getQuestioner().getStoreFileName() : null,
+                canView ? qna.getQuestion() : "비밀글입니다.",
+                qna.getCreatedAt(),
+                qna.getIsSecret(),
+                canView ? answerResponses : List.of()
         );
     }
 }
