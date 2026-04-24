@@ -418,6 +418,19 @@ public class AuthService {
     }
 
     /**
+     * 회원 삭제 (하드 삭제)
+     *
+     * @param memberId 삭제할 회원 ID
+     */
+    @Transactional
+    public void deleteMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        memberRepository.delete(member);
+        log.info("회원 하드 삭제 완료 - memberId: {}", memberId);
+    }
+
+    /**
      * 로그아웃 처리 - AccessToken을 블랙리스트에 추가하고, OAuth 토큰을 철회합니다.
      * 쿠키 삭제는 Controller에서 RefreshTokenCookieProvider를 사용하여 처리합니다.
      *

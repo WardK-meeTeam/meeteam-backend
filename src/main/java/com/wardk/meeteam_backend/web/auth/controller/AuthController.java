@@ -214,6 +214,31 @@ public class AuthController {
         return SuccessResponse.onSuccess("회원 탈퇴가 완료되었습니다.");
     }
 
+    @Operation(summary = "회원 삭제 (하드 삭제)", description = "회원 데이터를 완전히 삭제합니다. 본인 계정만 삭제 가능합니다.")
+    @DeleteMapping("/delete")
+    public SuccessResponse<String> deleteMember(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        Long memberId = userDetails.getMemberId();
+        log.info("회원 삭제 요청 (하드 삭제) - memberId: {}", memberId);
+
+        // 토큰 블랙리스트 추가 및 OAuth 토큰 철회
+        String accessToken = extractAccessToken(request);
+        authService.logout(accessToken);
+
+        // 회원 삭제 (하드 삭제)
+        authService.deleteMember(memberId);
+
+        // 쿠키 삭제
+        accessTokenCookieProvider.deleteCookie(response);
+        refreshTokenCookieProvider.deleteCookie(response);
+
+        log.info("회원 삭제 완료 (하드 삭제) - memberId: {}", memberId);
+        return SuccessResponse.onSuccess("회원 삭제가 완료되었습니다.");
+    }
+
     /**
      * Request에서 AccessToken 추출
      * 우선순위: Authorization 헤더 > 쿠키
