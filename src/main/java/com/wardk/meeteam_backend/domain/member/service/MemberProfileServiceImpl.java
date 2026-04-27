@@ -176,8 +176,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
             request.getIsParticipating(),
             request.getIntroduction(),
             request.getGithubUrl(),
-            request.getBlogUrl(),
-            request.getProjectExperienceCount()
+            request.getBlogUrl()
         );
 
         // 기존 관심 분야 삭제 후 새로 추가

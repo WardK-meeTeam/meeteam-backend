@@ -23,8 +23,8 @@ public record MemberCardResponse(
         @Schema(description = "회원 이름")
         String name,
 
-        @Schema(description = "프로젝트 경험 횟수")
-        Integer projectExperienceCount,
+        @Schema(description = "참여중인 프로젝트 수")
+        Integer projectCount,
 
         @Schema(description = "기술스택 목록 (displayOrder 순)")
         List<TechStackInfo> techStacks
@@ -67,7 +67,7 @@ public record MemberCardResponse(
                 member.getStoreFileName(),
                 jobFieldName,
                 member.getRealName(),
-                member.getProjectExperienceCount(),
+                member.getProjectMembers().size(),
                 techStacks
         );
     }

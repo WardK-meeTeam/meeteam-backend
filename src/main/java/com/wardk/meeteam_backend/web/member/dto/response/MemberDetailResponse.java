@@ -44,9 +44,6 @@ public class MemberDetailResponse {
     @Schema(description = "직군 목록", example = "[\"프론트\", \"웹 프론트엔드\"]")
     private final List<String> jobPositions;
 
-    @Schema(description = "프로젝트 경험 횟수")
-    private final Integer projectExperienceCount;
-
     @Schema(description = "이메일")
     private final String email;
 
@@ -148,7 +145,6 @@ public class MemberDetailResponse {
                 .gender(member.getGender())
                 .representativePosition(representativePosition)
                 .jobPositions(jobPositionNames)
-                .projectExperienceCount(member.getProjectExperienceCount())
                 .email(member.getEmail())
                 .githubUrl(member.getGithubUrl())
                 .blogUrl(member.getBlogUrl())

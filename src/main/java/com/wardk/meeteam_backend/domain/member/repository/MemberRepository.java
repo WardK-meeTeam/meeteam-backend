@@ -20,4 +20,26 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     Optional<Member> findByStudentId(String studentId);
 
     Boolean existsByStudentId(String studentId);
+
+    // ==================== 활성 회원 조회 (로그인용) ====================
+
+    /**
+     * 학번으로 활성 회원 조회 (탈퇴하지 않은 회원만)
+     */
+    Optional<Member> findByStudentIdAndIsDeletedFalse(String studentId);
+
+    /**
+     * 이메일로 활성 회원 조회 (탈퇴하지 않은 회원만)
+     */
+    Optional<Member> findByEmailAndIsDeletedFalse(String email);
+
+    /**
+     * OAuth provider로 활성 회원 조회 (탈퇴하지 않은 회원만)
+     */
+    Optional<Member> findByProviderAndProviderIdAndIsDeletedFalse(String provider, String providerId);
+
+    /**
+     * 학번으로 활성 회원 존재 여부 확인 (탈퇴하지 않은 회원만)
+     */
+    Boolean existsByStudentIdAndIsDeletedFalse(String studentId);
 }

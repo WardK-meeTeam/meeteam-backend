@@ -37,9 +37,6 @@ public class MemberProfileResponse {
     @Schema(description = "블로그 URL")
     private String blogUrl;
 
-    @Schema(description = "프로젝트 경험 횟수")
-    private int projectExperienceCount;
-
     @Schema(description = "대표 포지션 한글명", example = "웹 프론트엔드")
     private String representativePosition;
 
@@ -70,7 +67,6 @@ public class MemberProfileResponse {
         this.email = member.getEmail();
         this.githubUrl = member.getGithubUrl();
         this.blogUrl = member.getBlogUrl();
-        this.projectExperienceCount = member.getProjectExperienceCount();
 
         // 대표 포지션 (첫 번째 직무 포지션)
         if (!member.getJobPositions().isEmpty()) {

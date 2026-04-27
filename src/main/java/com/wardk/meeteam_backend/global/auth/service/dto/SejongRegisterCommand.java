@@ -15,7 +15,6 @@ public record SejongRegisterCommand(
         LocalDate birthDate,
         Gender gender,
         List<MemberJobPositionCommand> jobPositions,
-        Integer projectExperienceCount,
         String githubUrl,
         String blogUrl
 ) {
@@ -30,7 +29,6 @@ public record SejongRegisterCommand(
                 request.getBirthDate(),
                 request.getGender(),
                 jobPositionCommands,
-                request.getProjectExperienceCount(),
                 request.getGithubUrl(),
                 request.getBlogUrl()
         );

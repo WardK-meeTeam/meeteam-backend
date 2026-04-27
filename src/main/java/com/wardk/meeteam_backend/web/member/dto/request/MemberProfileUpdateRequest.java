@@ -44,11 +44,6 @@ public class MemberProfileUpdateRequest {
         example = "[{\"id\": 1, \"displayOrder\": 1}, {\"id\": 2, \"displayOrder\": 2}]")
     private List<TechStackOrderRequest> techStacks;
 
-    @NotNull(message = "프로젝트 경험 횟수를 입력해주세요.")
-    @Min(value = 0, message = "프로젝트 경험 횟수는 0 이상이어야 합니다.")
-    @Schema(description = "프로젝트 경험 횟수", example = "3")
-    private Integer projectExperienceCount;
-
     @Schema(description = "프로젝트 참여 가능 여부", example = "true")
     private Boolean isParticipating;
 

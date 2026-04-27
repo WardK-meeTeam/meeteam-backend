@@ -287,7 +287,6 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         List<ProjectApplication> applications = applicationRepository.findAllByApplicantId(userDetails.getMemberId());
 
         return applications.stream()
-                .filter(application -> application.getStatus() == ApplicationStatus.PENDING)
                 .map(AppliedProjectResponse::from)
                 .toList();
     }
@@ -318,5 +317,33 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 .toList();
 
         return ApplicationPageResponse.of(member, recruitments);
+    }
+
+    @Override
+    public ApplicationCancelResponse cancel(Long applicationId, Long memberId) {
+        // 1단계: 지원서 조회
+        ProjectApplication application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
+
+        // 2단계: 본인 확인
+        if (!application.isApplicant(memberId)) {
+            throw new CustomException(ErrorCode.APPLICATION_CANCEL_FORBIDDEN);
+        }
+
+        // 3단계: PENDING 상태 확인
+        if (!application.isPending()) {
+            throw new CustomException(ErrorCode.APPLICATION_CANCEL_NOT_ALLOWED);
+        }
+
+        // 4단계: 취소 처리
+        application.cancel();
+
+        log.info("지원 취소 완료 - applicationId: {}, memberId: {}", applicationId, memberId);
+
+        return ApplicationCancelResponse.of(
+                application.getId(),
+                application.getProject().getId(),
+                application.getProject().getName()
+        );
     }
 }

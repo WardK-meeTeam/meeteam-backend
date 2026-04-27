@@ -65,4 +65,33 @@ public class ProjectApplication extends BaseEntity {
     public void updateStatus(ApplicationStatus status) {
         this.status = status;
     }
+
+    /**
+     * 지원서를 거절 처리합니다.
+     */
+    public void reject() {
+        this.status = ApplicationStatus.REJECTED;
+    }
+
+    /**
+     * 대기 중인 지원서인지 확인합니다.
+     */
+    public boolean isPending() {
+        return this.status == ApplicationStatus.PENDING;
+    }
+
+    /**
+     * 지원서를 취소 처리합니다.
+     * PENDING 상태에서만 취소 가능합니다.
+     */
+    public void cancel() {
+        this.status = ApplicationStatus.CANCELLED;
+    }
+
+    /**
+     * 지원자 본인인지 확인합니다.
+     */
+    public boolean isApplicant(Long memberId) {
+        return this.applicant.getId().equals(memberId);
+    }
 }

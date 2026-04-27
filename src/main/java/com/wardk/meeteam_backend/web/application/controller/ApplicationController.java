@@ -89,6 +89,17 @@ public class ApplicationController {
         return SuccessResponse.onSuccess(appliedProjects);
     }
 
+    @Operation(summary = "지원 취소", description = "본인의 지원을 취소합니다. PENDING 상태에서만 취소 가능합니다.")
+    @DeleteMapping("/api/v1/members/me/applications/{applicationId}")
+    public SuccessResponse<ApplicationCancelResponse> cancelApplication(
+            @PathVariable Long applicationId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        ApplicationCancelResponse response = applicationService.cancel(applicationId, userDetails.getMemberId());
+
+        return SuccessResponse.onSuccess(response);
+    }
+
     /**
      * @deprecated Use {@link #getMyApplications} instead.
      */

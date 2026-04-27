@@ -1,30 +1,20 @@
 package com.wardk.meeteam_backend.global.config;
 
-import com.wardk.meeteam_backend.global.auth.cookie.AccessTokenCookieProvider;
-import com.wardk.meeteam_backend.global.auth.cookie.RefreshTokenCookieProvider;
 import com.wardk.meeteam_backend.global.auth.repository.TokenBlacklistRepository;
-import com.wardk.meeteam_backend.global.auth.service.CustomOidcUserService;
 import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
 import com.wardk.meeteam_backend.global.exception.RestAuthenticationEntryPoint;
 import com.wardk.meeteam_backend.global.auth.filter.JwtFilter;
-import com.wardk.meeteam_backend.global.auth.filter.LoginFilter;
-import com.wardk.meeteam_backend.global.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
@@ -33,6 +23,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/**
+ * Spring Security 설정.
+ * 세종대 포털 로그인만 지원하며, OAuth2/자체 로그인은 제거되었습니다.
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -40,29 +34,17 @@ public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
     private final SecurityUrls securityUrls;
-    private final AuthenticationConfiguration authenticationConfiguration;
     private final CustomUserDetailsService customUserDetailsService;
-    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOauth2UserService;
-    private final CustomOidcUserService customOidcUserService;
-    private final OAuth2AuthenticationSuccessHandler oauth2SuccessHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-    private final OAuth2Properties oAuth2Properties; // OAuth2 설정 주입
-    private final CorsProperties corsProperties; // CORS 설정 주입
-    private final TokenBlacklistRepository tokenBlacklistRepository; // 토큰 블랙리스트 저장소
-    private final RefreshTokenCookieProvider refreshTokenCookieProvider; // Refresh 토큰 쿠키 설정
-    private final AccessTokenCookieProvider accessTokenCookieProvider; // Access 토큰 쿠키 설정
+    private final CorsProperties corsProperties;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
     /**
      * Security Filter Chain 설정
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-        // 로그인 경로를 설정하기 위해 LoginFilter 생성
-        LoginFilter loginFilter = new LoginFilter(jwtUtil, authenticationManager(authenticationConfiguration), refreshTokenCookieProvider, accessTokenCookieProvider);
-        loginFilter.setFilterProcessesUrl("/api/v1/auth/login"); // 로그인 경로 커스텀 "/api/v1/auth/login"
-        //->경로를 커스텀 할 수 있다.
         return http
                 // cors 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -74,48 +56,25 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 // 미인증 진입 시 401로 JSON/빈 응답 처리, 권한 부족 시 403
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(restAuthenticationEntryPoint) // 인증 실패 시 401 반환 (기본 /login 리다이렉트 막기)
-                        .accessDeniedHandler(restAccessDeniedHandler)           // 403을 ErrorResponse로
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
                 )
                 // 인증 필요 없는(화이트리스트) 경로 한 곳에서 관리
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(securityUrls.getRequestMatchers()).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated() // 나머지는 인증이 된 사용자만 가능
+                        .anyRequest().authenticated()
                 )
-                // OAuth 2.0 로그인 설정
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oauth2SuccessHandler) // OAuth 성공 후 핸들러 설정
-                        .failureUrl(oAuth2Properties.getOauth2RedirectUrl()) // 설정에서 가져온 실패 URL
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOauth2UserService) // 커스텀 OAuth2UserService 사용
-                                .oidcUserService(customOidcUserService)
-                        )
-                )
-                // ★ 완전한 STATELESS (세션 사용하지 않음)
+                // 완전한 STATELESS (세션 사용하지 않음)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                // JWT 필터만 사용
                 .addFilterBefore(
                         new JwtFilter(jwtUtil, securityUrls, customUserDetailsService, tokenBlacklistRepository),
-                        LoginFilter.class
-                )
-                .addFilterAt(
-                        loginFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
                 .build();
-    }
-
-    /**
-     * 인증 메니저 설정
-     */
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-
-        return authenticationConfiguration.getAuthenticationManager();
     }
 
     /**
@@ -125,7 +84,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // application.yml에서 설정한 값들 사용
         configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
         configuration.setAllowedMethods(corsProperties.getAllowedMethods());
         configuration.setAllowCredentials(corsProperties.isAllowCredentials());
@@ -134,9 +92,6 @@ public class SecurityConfig {
         configuration.setMaxAge(corsProperties.getMaxAge());
 
         UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
-        /**
-         * "/**" -> 모든 API 사용가능 ( 추후에 admin API 를 따로 만들면 cors도 분리해서 설정가능)
-         */
         urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", configuration);
         return urlBasedCorsConfigurationSource;
     }

@@ -87,6 +87,15 @@ public class RecruitmentState {
         this.currentCount++;
     }
 
+    /**
+     * 팀원 방출/탈퇴 시 현재 인원을 감소시킵니다.
+     */
+    public void decreaseCurrentCount() {
+        if (this.currentCount > 0) {
+            this.currentCount--;
+        }
+    }
+
     public void updateCurrentCount(Integer currentCount) {
         if (currentCount < 0 || currentCount > this.recruitmentCount) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);

@@ -417,6 +417,16 @@ public class Project extends BaseEntity {
                 .count();
     }
 
+    /**
+     * 대기 중인 모든 지원서를 거절 처리합니다.
+     * 프로젝트 삭제 시 호출됩니다.
+     */
+    public void rejectAllPendingApplications() {
+        this.applications.stream()
+                .filter(ProjectApplication::isPending)
+                .forEach(ProjectApplication::reject);
+    }
+
     // ==================== Tell, Don't Ask 검증 메서드 ====================
 
     /**

@@ -124,8 +124,12 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     @Override
     public WithdrawResponse withdraw(WithdrawRequest request, String requesterEmail) {
 
-        Project project = projectRepository.findActiveById(request.getProjectId())
+        Project project = projectRepository.findByIdWithRecruitment(request.getProjectId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (project.isDeleted()) {
+            throw new CustomException(ErrorCode.PROJECT_NOT_FOUND);
+        }
 
         if (project.isCompleted()) {
             throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
@@ -141,7 +145,18 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         ProjectMember projectMember = projectMemberRepository.findByProjectIdAndMemberId(project.getId(), member.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
 
+        Long jobPositionId = projectMember.getJobPosition().getId();
+
         projectMemberRepository.delete(projectMember);
+
+        // 해당 포지션의 모집 인원 감소
+        project.getRecruitments().stream()
+                .filter(r -> r.getJobPosition().getId().equals(jobPositionId))
+                .findFirst()
+                .ifPresent(recruitmentState -> {
+                    recruitmentState.decreaseCurrentCount();
+                    project.updateRecruitmentsStatus();
+                });
 
         return WithdrawResponse.responseDto(
                 project.getId(),

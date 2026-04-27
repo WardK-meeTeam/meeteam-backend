@@ -27,14 +27,8 @@ public enum ErrorCode {
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "TOKEN402", "세션이 만료되었습니다. 다시 로그인해주세요"),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "TOKEN403", "유효하지 않은 리프레시 토큰입니다"),
 
-    // OAUTH2
-    OAUTH2_ATTRIBUTES_EMPTY(HttpStatus.BAD_REQUEST, "OAUTH400", "OAuth2 사용자 정보가 비어있습니다."),
-    OAUTH2_PROVIDER_ID_NOT_FOUND(HttpStatus.BAD_REQUEST, "OAUTH401", "OAuth2 제공자 ID를 찾을 수 없습니다."),
-    OAUTH2_EMAIL_NOT_FOUND(HttpStatus.BAD_REQUEST, "OAUTH402", "OAuth2 이메일 정보를 찾을 수 없습니다."),
-    OAUTH2_NAME_EXTRACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "OAUTH403", "OAuth2 사용자 이름 추출에 실패했습니다."),
-    INVALID_OAUTH_CODE(HttpStatus.BAD_REQUEST, "OAUTH404", "유효하지 않거나 만료된 OAuth 인증 코드입니다."),
-
     // SEJONG PORTAL
+    INVALID_SEJONG_CODE(HttpStatus.BAD_REQUEST, "SEJONG404", "유효하지 않거나 만료된 세종대 인증 코드입니다."),
     SEJONG_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "SEJONG401", "학번 또는 비밀번호가 일치하지 않습니다."),
     SEJONG_PASSWORD_RESET_REQUIRED(HttpStatus.BAD_REQUEST, "SEJONG402", "비밀번호 재설정이 필요합니다. 세종대 포털에서 비밀번호를 변경해주세요."),
     SEJONG_PORTAL_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "SEJONG503", "세종대 포털 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요."),
@@ -48,6 +42,7 @@ public enum ErrorCode {
     FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "FILE405", "파일 크기가 허용된 크기를 초과했습니다."),
 
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER404", "회원을 찾을 수 없습니다."),
+    MEMBER_WITHDRAWN(HttpStatus.UNAUTHORIZED, "MEMBER401", "탈퇴한 회원입니다."),
 
     // PROJECT
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "PROJECT404", "프로젝트를 찾을 수 없습니다."),
@@ -87,6 +82,8 @@ public enum ErrorCode {
     PROJECT_RECRUITMENT_SUSPENDED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 프로젝트는 모집이 마감되었습니다."),
     RECRUITMENT_POSITION_NOT_RECRUITING(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 포지션은 현재 모집하고 있지 않습니다."),
     RECRUITMENT_POSITION_CLOSED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "해당 포지션은 모집이 마감되었습니다."),
+    APPLICATION_CANCEL_FORBIDDEN(HttpStatus.FORBIDDEN, "PROJECT_APPLICATION403", "본인의 지원서만 취소할 수 있습니다."),
+    APPLICATION_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "PROJECT_APPLICATION400", "대기 중인 지원서만 취소할 수 있습니다."),
 
     // MEMBER SKILL
     SKILL_NOT_FOUND(HttpStatus.NOT_FOUND, "SKILL404", "해당 기술스택이 존재하지 않습니다."),

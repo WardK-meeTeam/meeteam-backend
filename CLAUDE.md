@@ -63,7 +63,10 @@ throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
 
 ## Key Configuration
 
-- **Authentication:** JWT (Access: 10h, Refresh: 7d) + OAuth2 (Google, GitHub)
+- **Authentication:** 세종대 포털 인증 + JWT (Access: 10h, Refresh: 7d)
+  - OAuth2/자체 로그인은 제거됨 (2026-04-27)
+  - 세종대 학번/비밀번호로 로그인 → JWT 발급
+  - Token Rotation 적용 (Refresh 시 새 RT 발급)
 - **WebSocket:** STOMP over RabbitMQ (port 61613), endpoint `/ws`
 - **Caching:** EhCache for main page projects, Redis for sessions
 - **File storage:** AWS S3

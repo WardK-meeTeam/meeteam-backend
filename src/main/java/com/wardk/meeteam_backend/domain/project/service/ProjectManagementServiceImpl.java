@@ -85,9 +85,13 @@ public class ProjectManagementServiceImpl implements ProjectManagementService {
 
     @Override
     public MemberExpelResponse expelMember(Long projectId, Long memberId, String requesterEmail) {
-        // 1단계: 엔티티 조회 및 기본 검증
-        Project project = projectRepository.findActiveById(projectId)
+        // 1단계: 엔티티 조회 및 기본 검증 (모집 정보 포함)
+        Project project = projectRepository.findByIdWithRecruitment(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (project.isDeleted()) {
+            throw new CustomException(ErrorCode.PROJECT_NOT_FOUND);
+        }
 
         project.validateNotCompleted();
 
@@ -104,14 +108,26 @@ public class ProjectManagementServiceImpl implements ProjectManagementService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_MEMBER_NOT_FOUND));
 
         String expelledMemberName = projectMember.getMember().getRealName();
+        Long jobPositionId = projectMember.getJobPosition().getId();
 
         // 4단계: 멤버 삭제
         projectMemberRepository.delete(projectMember);
 
+        // 5단계: 해당 포지션의 모집 인원 감소
+        project.getRecruitments().stream()
+                .filter(r -> r.getJobPosition().getId().equals(jobPositionId))
+                .findFirst()
+                .ifPresent(recruitmentState -> {
+                    recruitmentState.decreaseCurrentCount();
+                    project.updateRecruitmentsStatus();
+                    log.info("모집 인원 감소 - projectId: {}, jobPositionId: {}, newCurrentCount: {}",
+                            projectId, jobPositionId, recruitmentState.getCurrentCount());
+                });
+
         log.info("팀원 방출 완료 - projectId: {}, expelledMemberId: {}, requesterEmail: {}",
                 projectId, memberId, requesterEmail);
 
-        // 5단계: 응답 반환
+        // 6단계: 응답 반환
         return MemberExpelResponse.of(projectId, memberId, expelledMemberName);
     }
 }

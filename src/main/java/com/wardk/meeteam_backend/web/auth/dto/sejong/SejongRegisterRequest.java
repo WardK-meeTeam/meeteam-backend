@@ -17,7 +17,7 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"code", "name", "birthDate", "gender", "jobPositions", "projectExperienceCount", "githubUrl", "blogUrl"})
+@JsonPropertyOrder({"code", "name", "birthDate", "gender", "jobPositions", "githubUrl", "blogUrl"})
 public class SejongRegisterRequest {
 
     @Schema(description = "세종대 로그인 시 발급받은 일회용 코드", example = "550e8400-e29b-41d4-a716-446655440000", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -39,10 +39,6 @@ public class SejongRegisterRequest {
     @NotEmpty(message = "관심분야를 최소 1개 이상 선택해주세요")
     @Valid
     private List<MemberJobPositionRequest> jobPositions = new ArrayList<>();
-
-    @Schema(description = "프로젝트 경험 횟수", example = "3", minimum = "0", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "프로젝트 경험 횟수를 입력해주세요")
-    private Integer projectExperienceCount;
 
     @Schema(description = "GitHub URL", example = "https://github.com/username")
     private String githubUrl;

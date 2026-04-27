@@ -89,10 +89,13 @@ public class ProjectCommandServiceImpl implements ProjectCommandService {
         // 2단계: 권한 검증
         project.validateLeaderPermission(requesterEmail);
 
-        // 3단계: 삭제 처리
+        // 3단계: 대기 중인 지원서 자동 거절 처리
+        project.rejectAllPendingApplications();
+
+        // 4단계: 삭제 처리
         project.delete();
 
-        // 4단계: 알림 처리
+        // 5단계: 알림 처리
         List<Member> members = project.getMembers().stream()
                 .map(pm -> pm.getMember())
                 .toList();

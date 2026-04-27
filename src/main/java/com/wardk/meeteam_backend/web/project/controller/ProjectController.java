@@ -55,7 +55,15 @@ public class ProjectController {
         return SuccessResponse.onSuccess(project);
     }
 
-
+    @Operation(summary = "프로젝트 삭제", description = "프로젝트를 삭제합니다. 프로젝트 리더만 삭제할 수 있습니다.")
+    @DeleteMapping("/api/v1/projects/{projectId}")
+    public SuccessResponse<ProjectDeleteResponse> deleteProjectV1(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
+    ) {
+        ProjectDeleteResponse response = projectCommandService.delete(projectId, userDetails.getUsername());
+        return SuccessResponse.onSuccess(response);
+    }
 
 
     // ================== Legacy ======================

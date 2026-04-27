@@ -3,9 +3,6 @@ package com.wardk.meeteam_backend.domain.member.entity;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
-import com.wardk.meeteam_backend.global.auth.service.dto.OAuth2RegisterCommand;
-import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
-import com.wardk.meeteam_backend.global.auth.service.dto.RegisterMemberCommand;
 import com.wardk.meeteam_backend.global.auth.service.dto.SejongRegisterCommand;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 
@@ -14,6 +11,7 @@ import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,8 +75,6 @@ public class Member extends BaseEntity {
     @Column(length = 2048)
     private String oauthAccessToken;
 
-    private Integer projectExperienceCount;
-
     private String githubUrl;
 
     private String blogUrl;
@@ -90,7 +86,7 @@ public class Member extends BaseEntity {
     private Member(String email, Integer age, String password, String realName,
                    String storeFileName, Gender gender, LocalDate birth,
                    Boolean isParticipating, UserRole role, String provider,
-                   String providerId, String studentId, Integer projectExperienceCount,
+                   String providerId, String studentId,
                    String githubUrl, String blogUrl) {
         this.email = email;
         this.age = age;
@@ -104,50 +100,8 @@ public class Member extends BaseEntity {
         this.provider = provider;
         this.providerId = providerId;
         this.studentId = studentId;
-        this.projectExperienceCount = projectExperienceCount != null ? projectExperienceCount : 0;
         this.githubUrl = githubUrl;
         this.blogUrl = blogUrl;
-    }
-
-    /**
-     * 일반 회원가입용 정적 팩토리 메서드
-     */
-    public static Member createMember(RegisterMemberCommand command, String encodedPassword, String imageUrl ) {
-        return Member.builder()
-                .email(command.email())
-                .password(encodedPassword)
-                .realName(command.name())
-                .birth(command.birthDate())
-                .gender(command.gender())
-                .storeFileName(imageUrl)
-                .isParticipating(true)
-                .role(UserRole.USER)
-                .projectExperienceCount(command.projectExperienceCount())
-                .githubUrl(command.githubUrl())
-                .blogUrl(command.blogUrl())
-                .build();
-    }
-
-    /**
-     * OAuth 회원가입용 정적 팩토리 메서드
-     */
-    public static Member createOAuthMember(OAuth2RegisterCommand command, OAuthRegisterInfo registerInfo,
-                                            String encodedPassword, String imageUrl) {
-        return Member.builder()
-                .email(registerInfo.getEmail())
-                .password(encodedPassword)
-                .realName(command.name())
-                .birth(command.birthDate())
-                .gender(command.gender())
-                .storeFileName(imageUrl)
-                .isParticipating(true)
-                .role(UserRole.USER)
-                .provider(registerInfo.getProvider())
-                .providerId(registerInfo.getProviderId())
-                .projectExperienceCount(command.projectExperienceCount())
-                .githubUrl(command.githubUrl())
-                .blogUrl(command.blogUrl())
-                .build();
     }
 
     /**
@@ -167,22 +121,8 @@ public class Member extends BaseEntity {
                 .role(UserRole.USER)
                 .provider("sejong")
                 .studentId(studentId)
-                .projectExperienceCount(command.projectExperienceCount())
                 .githubUrl(command.githubUrl())
                 .blogUrl(command.blogUrl())
-                .build();
-    }
-
-    /**
-     * OAuth2 인증 과정에서 임시 회원 생성용 (DB 저장 전)
-     */
-    public static Member createOAuth2Guest(String email, String realName, String provider, String providerId) {
-        return Member.builder()
-                .email(email)
-                .realName(realName)
-                .provider(provider)
-                .providerId(providerId)
-                .role(UserRole.OAUTH2_GUEST)
                 .build();
     }
 
@@ -212,22 +152,6 @@ public class Member extends BaseEntity {
                 .build();
     }
 
-    /**
-     * 테스트용 OAuth 회원 생성
-     */
-    public static Member createOAuthForTest(String email, String realName, String provider, String providerId) {
-        return Member.builder()
-                .email(email)
-                .realName(realName)
-                .birth(java.time.LocalDate.of(2000, 1, 1))
-                .gender(Gender.MALE)
-                .isParticipating(true)
-                .role(UserRole.USER)
-                .provider(provider)
-                .providerId(providerId)
-                .build();
-    }
-
     public void addJobPosition(JobPosition jobPosition) {
         jobPositions.add(new MemberJobPosition(this, jobPosition));
     }
@@ -245,7 +169,7 @@ public class Member extends BaseEntity {
 
     public void updateProfile(String realName, Integer age, Gender gender,
                               Boolean isParticipating, String introduction,
-                              String githubUrl, String blogUrl, Integer projectExperienceCount) {
+                              String githubUrl, String blogUrl) {
 
         this.realName = realName;
         this.age = age;
@@ -254,15 +178,10 @@ public class Member extends BaseEntity {
         this.introduction = introduction;
         this.githubUrl = githubUrl;
         this.blogUrl = blogUrl;
-        this.projectExperienceCount = projectExperienceCount;
     }
 
     public void setIntroduction(String introduction) {
         this.introduction = introduction;
-    }
-
-    public void setOauthAccessToken(String oauthAccessToken) {
-        this.oauthAccessToken = oauthAccessToken;
     }
 
     public void setStoreFileName(String storeFileName) {
@@ -275,5 +194,20 @@ public class Member extends BaseEntity {
     public void withdraw() {
         this.isDeleted = true;
         this.isParticipating = false;
+    }
+
+    /**
+     * 나이를 반환합니다.
+     * age 필드가 설정되어 있으면 해당 값을 반환하고,
+     * 그렇지 않으면 birth 필드에서 계산합니다.
+     */
+    public Integer getAge() {
+        if (this.age != null) {
+            return this.age;
+        }
+        if (this.birth == null) {
+            return null;
+        }
+        return Period.between(this.birth, LocalDate.now()).getYears();
     }
 }

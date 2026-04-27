@@ -19,11 +19,20 @@ public record AppliedProjectResponse(
         @Schema(description = "프로젝트명")
         String projectName,
 
+        @Schema(description = "프로젝트 이미지 URL")
+        String projectImageUrl,
+
         @Schema(description = "지원 포지션 ID")
         Long jobPositionId,
 
         @Schema(description = "지원 포지션명")
         String jobPositionName,
+
+        @Schema(description = "지원 상태", example = "PENDING | ACCEPTED | REJECTED")
+        String status,
+
+        @Schema(description = "지원 상태 한글명", example = "대기중 | 승인됨 | 거절됨")
+        String statusDisplayName,
 
         @Schema(description = "지원 일시")
         LocalDateTime appliedAt
@@ -33,8 +42,11 @@ public record AppliedProjectResponse(
                 application.getId(),
                 application.getProject().getId(),
                 application.getProject().getName(),
+                application.getProject().getImageUrl(),
                 application.getJobPosition().getId(),
                 application.getJobPosition().getName(),
+                application.getStatus().name(),
+                application.getStatus().getDisplayName(),
                 application.getCreatedAt()
         );
     }

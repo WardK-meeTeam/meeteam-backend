@@ -41,4 +41,10 @@ public interface ProjectApplicationService {
      * 프로젝트 리더는 접근 불가.
      */
     ApplicationPageResponse getApplicationPage(Long projectId, Long memberId);
+
+    /**
+     * 지원 취소.
+     * 본인만 취소 가능하며, PENDING 상태에서만 취소 가능.
+     */
+    ApplicationCancelResponse cancel(Long applicationId, Long memberId);
 }
