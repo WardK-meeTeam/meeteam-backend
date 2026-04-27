@@ -51,6 +51,9 @@ public class ApplicationPageResponse {
         @Schema(description = "이메일")
         private final String email;
 
+        @Schema(description = "기술스택 목록 (displayOrder 순)")
+        private final List<TechStackInfo> techStacks;
+
         @Schema(description = "프로필 요약 (직군 / 기술스택)")
         private final String profileSummary;
 
@@ -64,11 +67,19 @@ public class ApplicationPageResponse {
                     .map(mjp -> mjp.getJobPosition().getName())
                     .toList();
 
+            // 기술스택 목록 (displayOrder 순)
+            List<TechStackInfo> techStacks = member.getMemberTechStacks().stream()
+                    .sorted((a, b) -> Integer.compare(a.getDisplayOrder(), b.getDisplayOrder()))
+                    .map(mts -> new TechStackInfo(
+                            mts.getTechStack().getId(),
+                            mts.getTechStack().getName(),
+                            mts.getDisplayOrder()
+                    ))
+                    .toList();
+
             // 프로필 요약: 첫 번째 직군 / 첫 번째 기술스택
             String firstJobField = jobFieldNames.isEmpty() ? null : jobFieldNames.get(0);
-            String firstTechStack = member.getMemberTechStacks().isEmpty()
-                    ? null
-                    : member.getMemberTechStacks().get(0).getTechStack().getName();
+            String firstTechStack = techStacks.isEmpty() ? null : techStacks.get(0).name();
 
             String profileSummary = null;
             if (firstJobField != null && firstTechStack != null) {
@@ -94,9 +105,26 @@ public class ApplicationPageResponse {
                     .age(member.getAge())
                     .gender(genderStr)
                     .email(member.getEmail())
+                    .techStacks(techStacks)
                     .profileSummary(profileSummary)
                     .build();
         }
+    }
+
+    /**
+     * 기술스택 정보.
+     */
+    @Schema(description = "기술스택 정보")
+    public record TechStackInfo(
+            @Schema(description = "기술스택 ID")
+            Long id,
+
+            @Schema(description = "기술스택명")
+            String name,
+
+            @Schema(description = "표시 순서")
+            Integer displayOrder
+    ) {
     }
 
     /**

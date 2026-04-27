@@ -19,5 +19,12 @@ public interface MemberRepositoryCustom {
      * @param pageable       페이징 및 정렬 정보
      */
     Page<Member> searchMembersV1(String name, Long jobFieldId, List<String> techStackNames, Pageable pageable);
+
+    /**
+     * 메인페이지 회원 목록 조회 (projectCount 정렬 지원).
+     *
+     * @param pageable 페이징 및 정렬 정보 (sort=projectCount,desc 지원)
+     */
+    Page<Member> findAllWithProjectCountSort(Pageable pageable);
 }
 

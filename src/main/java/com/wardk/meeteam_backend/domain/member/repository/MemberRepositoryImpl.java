@@ -158,6 +158,14 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
 
     @Override
     public Page<Member> searchMembersV1(String name, Long jobFieldId, List<String> techStackNames, Pageable pageable) {
+        // projectCount 정렬이 있는지 확인
+        boolean hasProjectCountSort = pageable.getSort().stream()
+                .anyMatch(order -> "projectCount".equals(order.getProperty()));
+
+        if (hasProjectCountSort) {
+            return searchMembersV1WithProjectCountSort(name, jobFieldId, techStackNames, pageable);
+        }
+
         return applyPagination(pageable, qf ->
                 qf.select(member)
                         .from(member)
@@ -167,6 +175,52 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                                 techStackNamesExist(techStackNames)
                         )
         );
+    }
+
+    /**
+     * v1 검색 + projectCount 정렬 처리
+     */
+    private Page<Member> searchMembersV1WithProjectCountSort(String name, Long jobFieldId,
+                                                              List<String> techStackNames, Pageable pageable) {
+        JPAQuery<Member> query = queryFactory
+                .select(member)
+                .from(member)
+                .where(
+                        nameContains(name),
+                        jobFieldIdEquals(jobFieldId),
+                        techStackNamesExist(techStackNames)
+                );
+
+        // 정렬 적용
+        for (Sort.Order sortOrder : pageable.getSort()) {
+            Order direction = sortOrder.isAscending() ? Order.ASC : Order.DESC;
+
+            if ("projectCount".equals(sortOrder.getProperty())) {
+                JPQLQuery<Long> projectCountExpr = JPAExpressions
+                        .select(projectMember.count())
+                        .from(projectMember)
+                        .where(projectMember.member.eq(member));
+                query.orderBy(new OrderSpecifier<>(direction, projectCountExpr));
+            } else {
+                getQuerydsl().applySorting(Sort.by(sortOrder), query);
+            }
+        }
+
+        List<Member> content = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(member.count())
+                .from(member)
+                .where(
+                        nameContains(name),
+                        jobFieldIdEquals(jobFieldId),
+                        techStackNamesExist(techStackNames)
+                );
+
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
     /**
@@ -216,5 +270,53 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                         techStack.name.in(techStackNames)
                 )
                 .exists();
+    }
+
+    @Override
+    public Page<Member> findAllWithProjectCountSort(Pageable pageable) {
+        // projectCount 정렬이 있는지 확인
+        boolean hasProjectCountSort = pageable.getSort().stream()
+                .anyMatch(order -> "projectCount".equals(order.getProperty()));
+
+        if (!hasProjectCountSort) {
+            // projectCount 정렬이 없으면 기본 applyPagination 사용
+            return applyPagination(pageable, qf ->
+                    qf.select(member)
+                            .from(member)
+                            .where(member.isDeleted.eq(false))
+            );
+        }
+
+        // projectCount 정렬 처리
+        JPAQuery<Member> query = queryFactory
+                .select(member)
+                .from(member)
+                .where(member.isDeleted.eq(false));
+
+        for (Sort.Order sortOrder : pageable.getSort()) {
+            Order direction = sortOrder.isAscending() ? Order.ASC : Order.DESC;
+
+            if ("projectCount".equals(sortOrder.getProperty())) {
+                JPQLQuery<Long> projectCountExpr = JPAExpressions
+                        .select(projectMember.count())
+                        .from(projectMember)
+                        .where(projectMember.member.eq(member));
+                query.orderBy(new OrderSpecifier<>(direction, projectCountExpr));
+            } else {
+                getQuerydsl().applySorting(Sort.by(sortOrder), query);
+            }
+        }
+
+        List<Member> content = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(member.count())
+                .from(member)
+                .where(member.isDeleted.eq(false));
+
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 }

@@ -230,11 +230,12 @@ public class MemberProfileServiceImpl implements MemberProfileService {
 
     /**
      * 메인페이지 유저 카드 목록 조회.
+     * projectCount 정렬 지원 (sort=projectCount,desc)
      */
     @Override
     @Transactional(readOnly = true)
     public Page<MemberCardResponse> getMainPageMembers(Pageable pageable) {
-        Page<Member> memberPage = memberRepository.findAll(pageable);
+        Page<Member> memberPage = memberRepository.findAllWithProjectCountSort(pageable);
 
         return memberPage.map(MemberCardResponse::from);
     }
