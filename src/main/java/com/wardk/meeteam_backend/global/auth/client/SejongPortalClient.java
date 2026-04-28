@@ -2,26 +2,38 @@ package com.wardk.meeteam_backend.global.auth.client;
 
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PostConstruct;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.client5.http.ssl.TrustAllStrategy;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.apache.hc.core5.util.TimeValue;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.X509Certificate;
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
- * 세종대학교 포털 로그인 클라이언트
+ * 세종대학교 포털 로그인 클라이언트.
  * <p>
- * 세종대 포털(portal.sejong.ac.kr)에 HTTP 요청을 보내 학생 인증을 수행합니다.
- * Java 11+ HttpClient 사용 (Docker 환경 TLS 호환성 개선)
+ * Apache HttpClient 5를 사용하여 커넥션 풀을 관리합니다.
+ * - 최대 커넥션: 5개 (DDoS 방지)
+ * - Idle 커넥션: 120초 후 제거 (세종대 Keep-Alive 300초 대비 안전 마진)
  */
 @Slf4j
 @Component
@@ -29,10 +41,40 @@ public class SejongPortalClient {
 
     private static final String LOGIN_URL = "https://portal.sejong.ac.kr/jsp/login/login_action.jsp";
 
-    private final HttpClient httpClient;
+    private static final int MAX_CONNECTIONS = 5;
+    private static final int IDLE_TIMEOUT_SECONDS = 120;
+    private static final int CONNECTION_TTL_SECONDS = 300;  // 커넥션 최대 수명 (서버 max 요청 제한 대비)
+    private static final int CONNECTION_TIMEOUT_SECONDS = 30;
+    private static final int RESPONSE_TIMEOUT_SECONDS = 30;
+
+    private final CloseableHttpClient httpClient;
+    private final PoolingHttpClientConnectionManager connectionManager;
 
     public SejongPortalClient() {
-        this.httpClient = buildClient();
+        this.connectionManager = createConnectionManager();
+        this.httpClient = createHttpClient();
+        log.info("SejongPortalClient 초기화 완료 - maxConnections: {}, idleTimeout: {}초, TTL: {}초",
+                MAX_CONNECTIONS, IDLE_TIMEOUT_SECONDS, CONNECTION_TTL_SECONDS);
+    }
+
+    /**
+     * 애플리케이션 시작 시 커넥션 워밍업.
+     * TCP + SSL 핸드셰이크를 미리 수행하여 첫 요청 지연을 방지합니다.
+     */
+    @PostConstruct
+    public void warmUp() {
+        try {
+            HttpGet warmUpRequest = new HttpGet("https://portal.sejong.ac.kr");
+            httpClient.execute(warmUpRequest, response -> {
+                EntityUtils.consume(response.getEntity());
+                return null;
+            });
+            log.info("SejongPortalClient 커넥션 워밍업 완료 - 풀 상태: leased={}, available={}",
+                    connectionManager.getTotalStats().getLeased(),
+                    connectionManager.getTotalStats().getAvailable());
+        } catch (Exception e) {
+            log.warn("SejongPortalClient 워밍업 실패 (무시): {}", e.getMessage());
+        }
     }
 
     /**
@@ -59,29 +101,42 @@ public class SejongPortalClient {
      * 세종대 포털에 로그인 POST 요청을 보냅니다.
      */
     private String performLogin(String studentId, String password) throws Exception {
+        // 요청 전 커넥션 풀 상태
+        log.info("[요청 전] 커넥션 풀 - leased: {}, available: {}, pending: {}",
+                connectionManager.getTotalStats().getLeased(),
+                connectionManager.getTotalStats().getAvailable(),
+                connectionManager.getTotalStats().getPending());
+
         String formData = "mainLogin=" + URLEncoder.encode("N", StandardCharsets.UTF_8)
                 + "&id=" + URLEncoder.encode(studentId, StandardCharsets.UTF_8)
                 + "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(LOGIN_URL))
-                .timeout(Duration.ofSeconds(30))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("User-Agent", "Mozilla/5.0")
-                .header("Referer", "https://portal.sejong.ac.kr")
-                .POST(HttpRequest.BodyPublishers.ofString(formData))
-                .build();
+        HttpPost httpPost = new HttpPost(LOGIN_URL);
+        httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
+        httpPost.setHeader("User-Agent", "Mozilla/5.0");
+        httpPost.setHeader("Referer", "https://portal.sejong.ac.kr");
+        httpPost.setEntity(new StringEntity(formData, ContentType.APPLICATION_FORM_URLENCODED));
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        String result = httpClient.execute(httpPost, response -> {
+            int statusCode = response.getCode();
+            String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
 
-        log.info("세종대 포털 응답 코드: {}", response.statusCode());
-        String body = response.body();
-        if (body != null) {
-            log.info("세종대 포털 응답 길이: {}, 내용 미리보기: {}",
-                    body.length(),
-                    body.substring(0, Math.min(200, body.length())));
-        }
-        return body;
+            log.info("세종대 포털 응답 코드: {}", statusCode);
+            if (body != null) {
+                log.info("세종대 포털 응답 길이: {}, 내용 미리보기: {}",
+                        body.length(),
+                        body.substring(0, Math.min(200, body.length())));
+            }
+            return body;
+        });
+
+        // 요청 후 커넥션 풀 상태
+        log.info("[요청 후] 커넥션 풀 - leased: {}, available: {}, pending: {}",
+                connectionManager.getTotalStats().getLeased(),
+                connectionManager.getTotalStats().getAvailable(),
+                connectionManager.getTotalStats().getPending());
+
+        return result;
     }
 
     /**
@@ -112,37 +167,68 @@ public class SejongPortalClient {
             throw new CustomException(ErrorCode.SEJONG_PORTAL_ERROR);
         }
 
-        log.warn("세종대 포털 로그인 실패: 알 수 없는 응답 - {}", response.substring(0, Math.min(500, response.length())));
+        log.warn("세종대 포털 로그인 실패: 알 수 없는 응답 - {}",
+                response.substring(0, Math.min(500, response.length())));
         throw new CustomException(ErrorCode.SEJONG_LOGIN_FAILED);
     }
 
     /**
-     * SSL 검증을 우회하는 HttpClient를 생성합니다.
+     * 커넥션 풀 매니저를 생성합니다.
      */
-    private HttpClient buildClient() {
+    private PoolingHttpClientConnectionManager createConnectionManager() {
         try {
-            X509TrustManager trustAllManager = new X509TrustManager() {
-                @Override
-                public void checkClientTrusted(X509Certificate[] chain, String authType) {}
-                @Override
-                public void checkServerTrusted(X509Certificate[] chain, String authType) {}
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return new X509Certificate[0];
-                }
-            };
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, new TrustManager[]{trustAllManager}, new java.security.SecureRandom());
-
-            return HttpClient.newBuilder()
-                    .sslContext(sslContext)
-                    .connectTimeout(Duration.ofSeconds(30))
-                    .followRedirects(HttpClient.Redirect.NORMAL)
+            return PoolingHttpClientConnectionManagerBuilder.create()
+                    .setSSLSocketFactory(SSLConnectionSocketFactoryBuilder.create()
+                            .setSslContext(SSLContextBuilder.create()
+                                    .loadTrustMaterial(null, TrustAllStrategy.INSTANCE)
+                                    .build())
+                            .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                            .build())
+                    .setMaxConnTotal(MAX_CONNECTIONS)
+                    .setMaxConnPerRoute(MAX_CONNECTIONS)
+                    .setDefaultConnectionConfig(ConnectionConfig.custom()
+                            .setConnectTimeout(Timeout.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                            .setSocketTimeout(Timeout.ofSeconds(RESPONSE_TIMEOUT_SECONDS))
+                            .setTimeToLive(TimeValue.ofSeconds(CONNECTION_TTL_SECONDS))
+                            .build())
                     .build();
         } catch (Exception e) {
-            log.error("HttpClient 생성 실패: {}", e.getMessage(), e);
-            return HttpClient.newHttpClient();
+            log.error("ConnectionManager 생성 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("ConnectionManager 생성 실패", e);
+        }
+    }
+
+    /**
+     * HttpClient를 생성합니다.
+     */
+    private CloseableHttpClient createHttpClient() {
+        return HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectionRequestTimeout(Timeout.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                        .setResponseTimeout(Timeout.ofSeconds(RESPONSE_TIMEOUT_SECONDS))
+                        .build())
+                .evictIdleConnections(TimeValue.of(IDLE_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+                .evictExpiredConnections()
+                .build();
+    }
+
+    /**
+     * 애플리케이션 종료 시 리소스 정리.
+     */
+    @PreDestroy
+    public void close() {
+        try {
+            if (httpClient != null) {
+                httpClient.close();
+                log.info("SejongPortalClient HttpClient 종료");
+            }
+            if (connectionManager != null) {
+                connectionManager.close();
+                log.info("SejongPortalClient ConnectionManager 종료");
+            }
+        } catch (Exception e) {
+            log.error("SejongPortalClient 종료 중 오류: {}", e.getMessage(), e);
         }
     }
 }

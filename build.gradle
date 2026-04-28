@@ -35,8 +35,8 @@ dependencies {
 	// webflux
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-	// OAuth2
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	// Apache HttpClient (커넥션 풀 관리)
+	implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
 
 	// 마이크로미터 프로메테우스 구현 라이브러리
 	implementation 'io.micrometer:micrometer-registry-prometheus'
