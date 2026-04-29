@@ -6,7 +6,6 @@ import com.wardk.meeteam_backend.domain.job.entity.JobField;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.job.repository.JobFieldRepository;
-import com.wardk.meeteam_backend.domain.job.repository.JobFieldTechStackRepository;
 import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -62,7 +61,6 @@ public class AuthService {
     private final JobFieldRepository jobFieldRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
-    private final JobFieldTechStackRepository jobFieldTechStackRepository;
     private final JwtUtil jwtUtil;
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final SejongCodeRepository sejongCodeRepository;
@@ -171,18 +169,12 @@ public class AuthService {
 
             member.addJobPosition(jobPosition);
 
-            // 기술스택 조회 및 검증 (ID + displayOrder)
+            // 기술스택 조회 (ID + displayOrder) - 직군 제약 없이 선택 가능
             if (command.techStacks() != null && !command.techStacks().isEmpty()) {
                 for (TechStackOrderCommand techStackCommand : command.techStacks()) {
                     TechStack techStack = techStackRepository.findById(techStackCommand.id())
                             .orElseThrow(() -> new CustomException(ErrorCode.TECH_STACK_NOT_FOUND));
 
-                    // 기술스택이 해당 직군에 속하는지 검증
-                    if (!jobFieldTechStackRepository.existsByJobFieldIdAndTechStackId(jobField.getId(), techStack.getId())) {
-                        throw new CustomException(ErrorCode.TECH_STACK_IS_NOT_MATCHING);
-                    }
-
-                    // displayOrder와 함께 추가
                     member.addMemberTechStack(techStack, techStackCommand.displayOrder());
                 }
             }

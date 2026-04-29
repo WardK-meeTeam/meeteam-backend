@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -60,21 +62,45 @@ public class SejongPortalClient {
     /**
      * 애플리케이션 시작 시 커넥션 워밍업.
      * TCP + SSL 핸드셰이크를 미리 수행하여 첫 요청 지연을 방지합니다.
+     * 병렬 실행으로 여러 커넥션을 동시에 생성합니다.
      */
-    @PostConstruct
+    // @PostConstruct
     public void warmUp() {
-        try {
-            HttpGet warmUpRequest = new HttpGet("https://portal.sejong.ac.kr");
-            httpClient.execute(warmUpRequest, response -> {
-                EntityUtils.consume(response.getEntity());
-                return null;
+        // 워밍업 임시 비활성화
+        /*
+        int warmUpCount = 2;
+        List<Thread> threads = new ArrayList<>();
+
+        for (int i = 0; i < warmUpCount; i++) {
+            final int index = i + 1;
+            Thread t = new Thread(() -> {
+                try {
+                    HttpGet warmUpRequest = new HttpGet("https://portal.sejong.ac.kr");
+                    httpClient.execute(warmUpRequest, response -> {
+                        EntityUtils.consume(response.getEntity());
+                        return null;
+                    });
+                    log.info("커넥션 워밍업 ({}/{}) 완료", index, warmUpCount);
+                } catch (Exception e) {
+                    log.warn("커넥션 워밍업 ({}/{}) 실패: {}", index, warmUpCount, e.getMessage());
+                }
             });
-            log.info("SejongPortalClient 커넥션 워밍업 완료 - 풀 상태: leased={}, available={}",
-                    connectionManager.getTotalStats().getLeased(),
-                    connectionManager.getTotalStats().getAvailable());
-        } catch (Exception e) {
-            log.warn("SejongPortalClient 워밍업 실패 (무시): {}", e.getMessage());
+            threads.add(t);
+            t.start();
         }
+
+        // 모든 워밍업 완료 대기
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        log.info("SejongPortalClient 워밍업 완료 - available: {}",
+                connectionManager.getTotalStats().getAvailable());
+        */
     }
 
     /**
