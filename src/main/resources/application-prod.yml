@@ -160,7 +160,7 @@ app:
     cookie:
         domain: .meeteam.alom-sejong.com
         secure: true
-        same-site: Lax
+        same-site: None
 
 # CORS 설정 추가
 cors:
