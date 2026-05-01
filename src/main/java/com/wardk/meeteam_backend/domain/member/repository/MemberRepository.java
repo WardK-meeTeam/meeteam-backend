@@ -26,20 +26,20 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     /**
      * 학번으로 활성 회원 조회 (탈퇴하지 않은 회원만)
      */
-    Optional<Member> findByStudentIdAndIsDeletedFalse(String studentId);
+    Optional<Member> findByStudentIdAndDeletedAtIsNull(String studentId);
 
     /**
      * 이메일로 활성 회원 조회 (탈퇴하지 않은 회원만)
      */
-    Optional<Member> findByEmailAndIsDeletedFalse(String email);
+    Optional<Member> findByEmailAndDeletedAtIsNull(String email);
 
     /**
      * OAuth provider로 활성 회원 조회 (탈퇴하지 않은 회원만)
      */
-    Optional<Member> findByProviderAndProviderIdAndIsDeletedFalse(String provider, String providerId);
+    Optional<Member> findByProviderAndProviderIdAndDeletedAtIsNull(String provider, String providerId);
 
     /**
      * 학번으로 활성 회원 존재 여부 확인 (탈퇴하지 않은 회원만)
      */
-    Boolean existsByStudentIdAndIsDeletedFalse(String studentId);
+    Boolean existsByStudentIdAndDeletedAtIsNull(String studentId);
 }

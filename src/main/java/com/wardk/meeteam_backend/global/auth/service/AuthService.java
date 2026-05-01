@@ -90,7 +90,7 @@ public class AuthService {
         sejongPortalClient.authenticate(command.studentId(), command.password());
 
         // 활성 회원 조회 (탈퇴하지 않은 회원만)
-        return memberRepository.findByStudentIdAndIsDeletedFalse(command.studentId())
+        return memberRepository.findByStudentIdAndDeletedAtIsNull(command.studentId())
                 .map(member -> {
                     String accessToken = jwtUtil.createAccessToken(member);
                     String refreshToken = jwtUtil.createRefreshToken(member);
@@ -144,7 +144,7 @@ public class AuthService {
 
     private void validateStudentIdNotDuplicated(String studentId) {
         // 활성 회원 중 중복 검증 (탈퇴 회원은 재가입 가능)
-        if (memberRepository.existsByStudentIdAndIsDeletedFalse(studentId)) {
+        if (memberRepository.existsByStudentIdAndDeletedAtIsNull(studentId)) {
             throw new CustomException(ErrorCode.SEJONG_STUDENT_ID_ALREADY_EXISTS);
         }
     }
@@ -221,7 +221,7 @@ public class AuthService {
             String email = jwtUtil.getUsername(refreshToken);
 
             // DB에서 활성 사용자 존재 여부 확인 (탈퇴 회원 차단)
-            Member member = memberRepository.findByEmailAndIsDeletedFalse(email)
+            Member member = memberRepository.findByEmailAndDeletedAtIsNull(email)
                     .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_WITHDRAWN));
 
             // 새로운 Access Token 및 Refresh Token 생성 (Token Rotation)

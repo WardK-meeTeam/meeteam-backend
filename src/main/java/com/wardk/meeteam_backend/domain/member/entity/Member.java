@@ -11,6 +11,7 @@ import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +19,17 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "member")
+@Table(name = "member", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_member_email_deleted", columnNames = {"email", "deleted_at"}),
+        @UniqueConstraint(name = "uk_member_student_id_deleted", columnNames = {"student_id", "deleted_at"})
+})
 public class Member extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id")
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String email;
 
     private Integer age;
@@ -69,7 +73,6 @@ public class Member extends BaseEntity {
 
     private String providerId;
 
-    @Column(unique = true)
     private String studentId;
 
     @Column(length = 2048)
@@ -79,8 +82,8 @@ public class Member extends BaseEntity {
 
     private String blogUrl;
 
-    @Column(nullable = false)
-    private Boolean isDeleted = false;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Builder(access = AccessLevel.PRIVATE)
     private Member(String email, Integer age, String password, String realName,
@@ -192,8 +195,15 @@ public class Member extends BaseEntity {
      * 회원 탈퇴 처리 (소프트 삭제)
      */
     public void withdraw() {
-        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
         this.isParticipating = false;
+    }
+
+    /**
+     * 회원이 탈퇴했는지 확인
+     */
+    public boolean isDeleted() {
+        return this.deletedAt != null;
     }
 
     /**

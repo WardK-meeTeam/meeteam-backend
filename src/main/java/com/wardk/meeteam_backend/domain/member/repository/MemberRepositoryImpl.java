@@ -283,7 +283,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
             return applyPagination(pageable, qf ->
                     qf.select(member)
                             .from(member)
-                            .where(member.isDeleted.eq(false))
+                            .where(member.deletedAt.isNull())
             );
         }
 
@@ -291,7 +291,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
         JPAQuery<Member> query = queryFactory
                 .select(member)
                 .from(member)
-                .where(member.isDeleted.eq(false));
+                .where(member.deletedAt.isNull());
 
         for (Sort.Order sortOrder : pageable.getSort()) {
             Order direction = sortOrder.isAscending() ? Order.ASC : Order.DESC;
@@ -315,7 +315,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
         JPAQuery<Long> countQuery = queryFactory
                 .select(member.count())
                 .from(member)
-                .where(member.isDeleted.eq(false));
+                .where(member.deletedAt.isNull());
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
