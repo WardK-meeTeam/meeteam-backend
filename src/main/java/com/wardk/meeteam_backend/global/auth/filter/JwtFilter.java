@@ -7,6 +7,9 @@ import com.wardk.meeteam_backend.global.auth.service.CustomUserDetailsService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.global.config.SecurityUrls;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
+import com.wardk.meeteam_backend.global.response.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -14,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -54,19 +58,32 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // 토큰 검증
         if (token == null) {
-            log.error("토큰이 존재하지 않습니다.");
-            filterChain.doFilter(request, response);
+            log.warn("인증 필요 경로에 토큰이 없습니다: {} {}", method, uri);
+            sendUnauthorizedResponse(response, "토큰이 존재하지 않습니다.");
             return;
         }
 
-        log.info("토큰이 존재합니다");
+        log.debug("토큰이 존재합니다");
 
         // 토큰 처리 및 사용자 정보 설정
         if (processTokenAndSetUserDetails(token)) {
             filterChain.doFilter(request, response);
         } else {
-            filterChain.doFilter(request, response);
+            // 토큰이 유효하지 않음 (만료, 블랙리스트, 탈퇴 회원 등)
+            sendUnauthorizedResponse(response, "유효하지 않은 토큰입니다.");
         }
+    }
+
+    /**
+     * 401 Unauthorized 응답을 반환합니다.
+     */
+    private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
+        ErrorCode ec = ErrorCode.UNAUTHORIZED;
+        ErrorResponse body = ErrorResponse.getResponse(ec.getCode(), message);
+
+        response.setStatus(ec.getStatus().value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
+        new ObjectMapper().writeValue(response.getWriter(), body);
     }
 
     /**

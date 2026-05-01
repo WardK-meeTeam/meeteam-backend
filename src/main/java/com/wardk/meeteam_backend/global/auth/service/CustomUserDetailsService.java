@@ -20,16 +20,11 @@ public class CustomUserDetailsService implements UserDetailsService {
   @Override
   public CustomSecurityUserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-    // DB에서 조회
-    Member member = memberRepository.findByEmail(email)
-        .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    // DB에서 활성 회원만 조회 (탈퇴 회원 제외)
+    Member member = memberRepository.findByEmailAndDeletedAtIsNull(email)
+        .orElseThrow(() -> new UsernameNotFoundException("회원을 찾을 수 없거나 탈퇴한 회원입니다: " + email));
 
-    if (member != null) {
-
-      // UserDetails에 담아서 return 하면 AuthenticationManager가 검증함
-      return new CustomSecurityUserDetails(member);
-    }
-
-    return null;
+    // UserDetails에 담아서 return 하면 AuthenticationManager가 검증함
+    return new CustomSecurityUserDetails(member);
   }
 }

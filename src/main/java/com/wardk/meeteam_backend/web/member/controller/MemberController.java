@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.Operation;
 
 import com.wardk.meeteam_backend.domain.member.service.MemberProfileService;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
+import com.wardk.meeteam_backend.global.exception.CustomException;
+import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -151,6 +153,9 @@ public class MemberController {
     public SuccessResponse<MemberProfileResponse> getMyProfile(
             @AuthenticationPrincipal CustomSecurityUserDetails userDetails
     ) {
+        if (userDetails == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
         MemberProfileResponse profile = memberProfileService.profile(userDetails.getMemberId());
         return SuccessResponse.onSuccess(profile);
     }
@@ -165,6 +170,9 @@ public class MemberController {
             @RequestPart("memberInfo") @Valid MemberProfileUpdateRequest request,
             @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
+        if (userDetails == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
         MemberProfileUpdateResponse response = memberProfileService.updateProfile(
                 userDetails.getMemberId(),
                 request,
