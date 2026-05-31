@@ -5,7 +5,6 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.PostConstruct;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -26,8 +25,6 @@ import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -60,44 +57,23 @@ public class SejongPortalClient {
     }
 
     /**
-     * 커넥션 풀 워밍업.
-     * TCP + SSL 핸드셰이크를 미리 수행하여 첫 요청 지연을 방지합니다.
-     * 병렬 실행으로 여러 커넥션을 동시에 생성합니다.
+     * 커넥션 풀 및 클래스 로딩 워밍업.
+     * 실제 로그인 API를 호출하여 TCP + SSL 핸드셰이크와 클래스 로딩을 수행합니다.
      *
      * <p>WarmUpRunner에서 호출됩니다.</p>
      */
     public void warmUp() {
-        int warmUpCount = 2;
-        List<Thread> threads = new ArrayList<>();
+        log.info("커넥션 풀 + 클래스 로딩 워밍업 시작");
 
-        for (int i = 0; i < warmUpCount; i++) {
-            final int index = i + 1;
-            Thread t = new Thread(() -> {
-                try {
-                    HttpGet warmUpRequest = new HttpGet("https://portal.sejong.ac.kr");
-                    httpClient.execute(warmUpRequest, response -> {
-                        EntityUtils.consume(response.getEntity());
-                        return null;
-                    });
-                    log.info("커넥션 워밍업 ({}/{}) 완료", index, warmUpCount);
-                } catch (Exception e) {
-                    log.warn("커넥션 워밍업 ({}/{}) 실패: {}", index, warmUpCount, e.getMessage());
-                }
-            });
-            threads.add(t);
-            t.start();
+        try {
+            // 실제 로그인 API 호출 (더미 계정 - 실패해도 OK)
+            // HttpPost, URLEncoder, StringEntity 등 모든 클래스 로딩
+            authenticate("_warmup_", "_warmup_");
+        } catch (Exception ignored) {
+            // 인증 실패는 예상된 것 - 무시
         }
 
-        // 모든 워밍업 완료 대기
-        for (Thread t : threads) {
-            try {
-                t.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        log.info("SejongPortalClient 워밍업 완료 - available: {}",
+        log.info("워밍업 완료 - 커넥션 풀: available={}",
                 connectionManager.getTotalStats().getAvailable());
     }
 
