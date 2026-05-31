@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.global.response.ErrorCode;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.PostConstruct;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -58,23 +59,45 @@ public class SejongPortalClient {
 
     /**
      * 커넥션 풀 및 클래스 로딩 워밍업.
-     * 실제 로그인 API를 호출하여 TCP + SSL 핸드셰이크와 클래스 로딩을 수행합니다.
+     * GET 요청으로 TCP + SSL 핸드셰이크를 수행하고 커넥션을 풀에 유지합니다.
      *
      * <p>WarmUpRunner에서 호출됩니다.</p>
      */
     public void warmUp() {
-        log.info("커넥션 풀 + 클래스 로딩 워밍업 시작");
+        log.info("커넥션 풀 워밍업 시작");
 
         try {
-            // 실제 로그인 API 호출 (더미 계정 - 실패해도 OK)
-            // HttpPost, URLEncoder, StringEntity 등 모든 클래스 로딩
-            authenticate("_warmup_", "_warmup_");
-        } catch (Exception ignored) {
-            // 인증 실패는 예상된 것 - 무시
+            // GET 요청으로 커넥션 생성 (성공하는 요청으로 커넥션 유지)
+            HttpGet warmUpRequest = new HttpGet("https://portal.sejong.ac.kr");
+            httpClient.execute(warmUpRequest, response -> {
+                EntityUtils.consume(response.getEntity());
+                log.info("워밍업 GET 요청 완료 - status: {}", response.getCode());
+                return null;
+            });
+
+            // POST 관련 클래스 로딩 (실제 요청은 안 보냄)
+            loadPostClasses();
+
+        } catch (Exception e) {
+            log.warn("워밍업 중 예외: {}", e.getMessage());
         }
 
         log.info("워밍업 완료 - 커넥션 풀: available={}",
                 connectionManager.getTotalStats().getAvailable());
+    }
+
+    /**
+     * POST 요청에 필요한 클래스들을 미리 로딩합니다.
+     */
+    private void loadPostClasses() {
+        // 클래스 로딩만 수행 (인스턴스 생성으로 클래스 로더가 로딩)
+        try {
+            new HttpPost("http://dummy");
+            URLEncoder.encode("dummy", StandardCharsets.UTF_8);
+            new StringEntity("dummy", ContentType.APPLICATION_FORM_URLENCODED);
+            log.info("POST 관련 클래스 로딩 완료");
+        } catch (Exception ignored) {
+        }
     }
 
     /**

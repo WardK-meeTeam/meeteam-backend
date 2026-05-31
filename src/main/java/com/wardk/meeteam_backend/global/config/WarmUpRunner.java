@@ -14,17 +14,22 @@ import org.springframework.web.client.RestTemplate;
 /**
  * 애플리케이션 시작 시 Warm-up 수행.
  *
- * <p>실제 로그인 API를 호출하여 전체 요청 플로우를 워밍업합니다:</p>
+ * <p>실제 로그인 API를 5회 호출하여 전체 요청 플로우를 워밍업합니다:</p>
  * <ul>
  *   <li>Spring Security 필터 체인</li>
- *   <li>Controller, Service 클래스 로딩</li>
- *   <li>세종대 포털 커넥션 풀 (TCP + SSL)</li>
- *   <li>DB 커넥션 풀 (HikariCP)</li>
+ *   <li>AOP 프록시 초기화</li>
+ *   <li>세종대 포털 커넥션 풀</li>
+ *   <li>DB 커넥션 풀</li>
+ *   <li>JWT 생성 로직</li>
  * </ul>
  */
 @Slf4j
 @Component
 public class WarmUpRunner implements ApplicationRunner {
+
+    private static final int WARMUP_COUNT = 5;
+    private static final String STUDENT_ID = "21013220";
+    private static final String PASSWORD = "19980611";
 
     @Value("${app.warmup.enabled:true}")
     private boolean warmupEnabled;
@@ -39,32 +44,38 @@ public class WarmUpRunner implements ApplicationRunner {
             return;
         }
 
-        log.info("=== 애플리케이션 Warm-up 시작 ===");
+        log.info("=== 애플리케이션 Warm-up 시작 ({}회) ===", WARMUP_COUNT);
         long startTime = System.currentTimeMillis();
 
-        performWarmupCall();
+        for (int i = 1; i <= WARMUP_COUNT; i++) {
+            long reqStart = System.currentTimeMillis();
+            performWarmupCall(i);
+            long reqElapsed = System.currentTimeMillis() - reqStart;
+            log.info("Warm-up {}/{} 완료 ({}ms)", i, WARMUP_COUNT, reqElapsed);
+        }
 
         long elapsed = System.currentTimeMillis() - startTime;
-        log.info("=== 애플리케이션 Warm-up 완료 ({}ms) ===", elapsed);
+        log.info("=== 애플리케이션 Warm-up 완료 (총 {}ms) ===", elapsed);
     }
 
-    private void performWarmupCall() {
+    private void performWarmupCall(int attempt) {
         RestTemplate restTemplate = new RestTemplate();
         String url = "http://localhost:" + serverPort + "/api/v1/auth/login/sejong";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String requestJson = "{\"studentId\": \"_warmup_\", \"password\": \"_warmup_\"}";
+        String requestJson = String.format(
+                "{\"studentId\": \"%s\", \"password\": \"%s\"}",
+                STUDENT_ID, PASSWORD
+        );
 
         HttpEntity<String> requestEntity = new HttpEntity<>(requestJson, headers);
 
         try {
             restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
-            log.info("Warm-up 요청 성공");
         } catch (Exception e) {
-            // 인증 실패해도 워밍업은 완료됨
-            log.info("Warm-up 요청 완료 (클래스 로딩 완료)");
+            log.debug("Warm-up {} 응답: {}", attempt, e.getMessage());
         }
     }
 }
