@@ -1,41 +1,36 @@
 package com.wardk.meeteam_backend.global.config;
 
-import com.wardk.meeteam_backend.global.auth.client.SejongPortalClient;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 /**
- * 애플리케이션 시작 시 Warm-up 수행
+ * 애플리케이션 시작 시 Warm-up 수행.
  *
- * <p>JVM JIT 컴파일 최적화 및 커넥션 풀 초기화를 위해
- * 애플리케이션이 완전히 시작된 후 warm-up을 수행합니다.</p>
- *
- * <h3>설정</h3>
- * <pre>
- * # application.yml
- * app:
- *   warmup:
- *     enabled: true  # false로 설정하면 warm-up 비활성화
- * </pre>
- *
- * <h3>Warm-up 대상</h3>
+ * <p>실제 로그인 API를 호출하여 전체 요청 플로우를 워밍업합니다:</p>
  * <ul>
- *   <li>세종대 포털 커넥션 풀 (TCP + SSL 핸드셰이크)</li>
+ *   <li>Spring Security 필터 체인</li>
+ *   <li>Controller, Service 클래스 로딩</li>
+ *   <li>세종대 포털 커넥션 풀 (TCP + SSL)</li>
+ *   <li>DB 커넥션 풀 (HikariCP)</li>
  * </ul>
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class WarmUpRunner implements ApplicationRunner {
-
-    private final SejongPortalClient sejongPortalClient;
 
     @Value("${app.warmup.enabled:true}")
     private boolean warmupEnabled;
+
+    @Value("${server.port:8080}")
+    private int serverPort;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -47,15 +42,29 @@ public class WarmUpRunner implements ApplicationRunner {
         log.info("=== 애플리케이션 Warm-up 시작 ===");
         long startTime = System.currentTimeMillis();
 
-        try {
-            // 세종대 포털 커넥션 풀 워밍업
-            sejongPortalClient.warmUp();
-            log.info("세종대 포털 커넥션 풀 Warm-up 완료");
-        } catch (Exception e) {
-            log.warn("세종대 포털 Warm-up 실패 (서비스는 정상 동작): {}", e.getMessage());
-        }
+        performWarmupCall();
 
         long elapsed = System.currentTimeMillis() - startTime;
         log.info("=== 애플리케이션 Warm-up 완료 ({}ms) ===", elapsed);
+    }
+
+    private void performWarmupCall() {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://localhost:" + serverPort + "/api/v1/auth/login/sejong";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        String requestJson = "{\"studentId\": \"_warmup_\", \"password\": \"_warmup_\"}";
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(requestJson, headers);
+
+        try {
+            restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+            log.info("Warm-up 요청 성공");
+        } catch (Exception e) {
+            // 인증 실패해도 워밍업은 완료됨
+            log.info("Warm-up 요청 완료 (클래스 로딩 완료)");
+        }
     }
 }

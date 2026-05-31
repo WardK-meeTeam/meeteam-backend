@@ -145,7 +145,7 @@ github:
 
 app:
     warmup:
-        enabled: true  # false로 변경하면 warm-up 비활성화
+        enabled: true
     oauth2:
         oauth2-redirect-url: https://meeteam.alom-sejong.com/oauth2/redirect
         providers:
