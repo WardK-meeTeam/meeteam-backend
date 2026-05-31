@@ -40,7 +40,7 @@ public class ProjectLikeService {
         Project project = projectRepository.findByIdForUpdate(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        Member member = memberRepository.findByEmail(email)
+        Member member = memberRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 1) Optional 로 좋아요 여부 확인
@@ -67,7 +67,7 @@ public class ProjectLikeService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
 
-        Member member = memberRepository.findByEmail(email)
+        Member member = memberRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 1) Optional 로 좋아요 여부 확인

@@ -46,7 +46,7 @@ spring:
 
     jpa:
         hibernate:
-            ddl-auto: create
+            ddl-auto: none
         show-sql: true
         defer-datasource-initialization: true # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
         properties:
@@ -56,7 +56,7 @@ spring:
         open-in-view: false
     sql:
         init:
-            mode: always
+            mode: never
             data-locations: classpath:db/seed/job-seed.sql
     data:
         redis:
@@ -144,6 +144,8 @@ github:
         private-key-pem: ${GITHUB_APP_PRIVATE_KEY_PEM}
 
 app:
+    warmup:
+        enabled: false  # false로 변경하면 warm-up 비활성화
     oauth2:
         oauth2-redirect-url: https://meeteam.alom-sejong.com/oauth2/redirect
         providers:

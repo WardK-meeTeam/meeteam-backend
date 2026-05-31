@@ -7,9 +7,6 @@ import com.wardk.meeteam_backend.acceptance.cucumber.support.TestRepositorySuppo
 import com.wardk.meeteam_backend.domain.job.entity.JobFieldCode;
 import com.wardk.meeteam_backend.domain.job.entity.JobPositionCode;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.global.auth.repository.OAuthCodeRepository;
-import com.wardk.meeteam_backend.global.auth.service.dto.OAuthLoginInfo;
-import com.wardk.meeteam_backend.global.auth.service.dto.OAuthRegisterInfo;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.ko.그러면;
@@ -46,8 +43,8 @@ public class AuthSteps {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Autowired
-    private OAuthCodeRepository oAuthCodeRepository;
+    // OAuth 기능 제거됨 (2026-04-27)
+    // private OAuthCodeRepository oAuthCodeRepository;
 
     private String refreshToken;
     private String previousAccessToken;
@@ -105,22 +102,10 @@ public class AuthSteps {
         assertThat(repository.member().findByEmail(email)).isEmpty();
     }
 
-    @먼저("{string}가 Google OAuth 인증 후 회원가입 코드를 발급받은 상태이다")
-    public void Google_OAuth_인증_후_회원가입_코드를_발급받은_상태이다(String name) {
-        // OAuth 신규 회원 정보를 Redis에 저장하고 코드 발급
-        String testEmail = name.toLowerCase().replace(" ", "") + "@gmail.com";
-        OAuthRegisterInfo registerInfo = new OAuthRegisterInfo(
-                testEmail,
-                "google",
-                "google-provider-id-" + System.currentTimeMillis(),
-                null,  // oauthAccessToken
-                "register"
-        );
-        String oauthCode = oAuthCodeRepository.saveRegisterInfo(registerInfo);
-        context.member().setOauthCode(oauthCode);
-        context.member().setEmail(testEmail);
-        context.member().setName(name);
-    }
+    // OAuth 기능 제거됨 (2026-04-27)
+    // @Disabled
+    // @먼저("{string}가 Google OAuth 인증 후 회원가입 코드를 발급받은 상태이다")
+    // public void Google_OAuth_인증_후_회원가입_코드를_발급받은_상태이다(String name) { ... }
 
     @먼저("{string} Google 계정으로 가입된 회원이 존재한다")
     public void Google_계정으로_가입된_회원이_존재한다(String email) {
@@ -263,21 +248,9 @@ public class AuthSteps {
         context.setResponse(response);
     }
 
-    @만약("Google OAuth 인증에 성공하면")
-    public void Google_OAuth_인증에_성공하면() {
-        // OAuth 신규 회원 정보를 Redis에 저장하고 코드 발급
-        String testEmail = "test-oauth-user@gmail.com";
-        OAuthRegisterInfo registerInfo = new OAuthRegisterInfo(
-                testEmail,
-                "google",
-                "google-provider-id-" + System.currentTimeMillis(),
-                null,
-                "register"
-        );
-        String oauthCode = oAuthCodeRepository.saveRegisterInfo(registerInfo);
-        context.member().setOauthCode(oauthCode);
-        context.member().setEmail(testEmail);
-    }
+    // OAuth 기능 제거됨 (2026-04-27)
+    // @만약("Google OAuth 인증에 성공하면")
+    // public void Google_OAuth_인증에_성공하면() { ... }
 
     @만약("다음 추가 정보로 OAuth 회원가입을 완료하면:")
     public void 다음_추가_정보로_OAuth_회원가입을_완료하면(DataTable dataTable) {
@@ -310,51 +283,13 @@ public class AuthSteps {
         }
     }
 
-    @만약("동일한 Google 계정으로 OAuth 인증에 성공하면")
-    public void 동일한_Google_계정으로_OAuth_인증에_성공하면() {
-        // OAuth 로그인 정보를 Redis에 저장하고 코드 발급
-        OAuthLoginInfo loginInfo = new OAuthLoginInfo(
-                context.member().getId(),
-                null,  // oauthAccessToken
-                "login"
-        );
-        String oauthCode = oAuthCodeRepository.saveLoginInfo(loginInfo);
+    // OAuth 기능 제거됨 (2026-04-27)
+    // @만약("동일한 Google 계정으로 OAuth 인증에 성공하면")
+    // public void 동일한_Google_계정으로_OAuth_인증에_성공하면() { ... }
 
-        // 토큰 교환 API 호출
-        var response = api.auth().토큰교환_요청(oauthCode);
-        context.setResponse(response);
-
-        // 성공 시 토큰 추출
-        if (response.statusCode() == HTTP_OK) {
-            String accessToken = response.jsonPath().getString("result.accessToken");
-            if (accessToken != null) {
-                context.setAccessToken(accessToken);
-            }
-        }
-    }
-
-    @만약("동일한 GitHub 계정으로 OAuth 인증에 성공하면")
-    public void 동일한_GitHub_계정으로_OAuth_인증에_성공하면() {
-        // OAuth 로그인 정보를 Redis에 저장하고 코드 발급
-        OAuthLoginInfo loginInfo = new OAuthLoginInfo(
-                context.member().getId(),
-                null,  // oauthAccessToken
-                "login"
-        );
-        String oauthCode = oAuthCodeRepository.saveLoginInfo(loginInfo);
-
-        // 토큰 교환 API 호출
-        var response = api.auth().토큰교환_요청(oauthCode);
-        context.setResponse(response);
-
-        // 성공 시 토큰 추출
-        if (response.statusCode() == HTTP_OK) {
-            String accessToken = response.jsonPath().getString("result.accessToken");
-            if (accessToken != null) {
-                context.setAccessToken(accessToken);
-            }
-        }
-    }
+    // OAuth 기능 제거됨 (2026-04-27)
+    // @만약("동일한 GitHub 계정으로 OAuth 인증에 성공하면")
+    // public void 동일한_GitHub_계정으로_OAuth_인증에_성공하면() { ... }
 
     @만약("리프레시 토큰으로 토큰 재발급을 요청하면")
     public void 리프레시_토큰으로_토큰_재발급을_요청하면() {

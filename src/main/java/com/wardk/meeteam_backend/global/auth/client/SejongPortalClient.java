@@ -60,14 +60,13 @@ public class SejongPortalClient {
     }
 
     /**
-     * 애플리케이션 시작 시 커넥션 워밍업.
+     * 커넥션 풀 워밍업.
      * TCP + SSL 핸드셰이크를 미리 수행하여 첫 요청 지연을 방지합니다.
      * 병렬 실행으로 여러 커넥션을 동시에 생성합니다.
+     *
+     * <p>WarmUpRunner에서 호출됩니다.</p>
      */
-    // @PostConstruct
     public void warmUp() {
-        // 워밍업 임시 비활성화
-        /*
         int warmUpCount = 2;
         List<Thread> threads = new ArrayList<>();
 
@@ -100,7 +99,6 @@ public class SejongPortalClient {
 
         log.info("SejongPortalClient 워밍업 완료 - available: {}",
                 connectionManager.getTotalStats().getAvailable());
-        */
     }
 
     /**

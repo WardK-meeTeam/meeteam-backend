@@ -48,14 +48,10 @@ public class MemberFactory {
         return memberRepository.save(member);
     }
 
-    /**
-     * OAuth 회원 생성
-     */
+    // OAuth 기능 제거됨 (2026-04-27) - 일반 회원으로 대체
     public Member createOAuthMember(String name, String email, String provider, String providerId) {
-        Member member = Member.createOAuthForTest(email, name, provider, providerId);
-        jobPositionRepository.findByCode(JobPositionCode.WEB_FRONTEND)
-                .ifPresent(member::addJobPosition);
-        return memberRepository.save(member);
+        // OAuth 회원 대신 일반 회원으로 생성
+        return create(name, email, "oauth-password");
     }
 
     /**
