@@ -13,7 +13,7 @@ PASSWORD = "19980611"
 
 TOTAL_RUNS = 10
 CONCURRENT_REQUESTS = 2
-INTERVAL = 2
+INTERVAL = 5
 # ===============================================
 
 def send_login_request(session):
