@@ -1,14 +1,16 @@
--- V2: GitHub 관련 테이블 삭제
--- GitHub 연동 기능 제거로 인해 관련 테이블 삭제
+-- V2: 사용하지 않는 테이블 삭제
+-- GitHub 연동, LLM, PR Review 기능 제거로 인해 관련 테이블 삭제
 
--- pull_request_file 테이블 삭제 (pull_request에 의존)
+-- GitHub 관련 테이블
 DROP TABLE IF EXISTS pull_request_file;
-
--- pull_request 테이블 삭제 (project_repo에 의존)
 DROP TABLE IF EXISTS pull_request;
-
--- project_repo 테이블 삭제
 DROP TABLE IF EXISTS project_repo;
-
--- webhook_delivery 테이블 삭제
 DROP TABLE IF EXISTS webhook_delivery;
+
+-- LLM 관련 테이블
+DROP TABLE IF EXISTS llm_task_result;
+DROP TABLE IF EXISTS llm_task;
+
+-- PR Review 관련 테이블
+DROP TABLE IF EXISTS pr_review_finding;
+DROP TABLE IF EXISTS pr_review_job;
