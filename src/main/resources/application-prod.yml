@@ -16,7 +16,7 @@ spring:
         hibernate:
             ddl-auto: validate  # Flyway가 스키마 관리, JPA는 검증만
         show-sql: true
-        defer-datasource-initialization: true # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
+        defer-datasource-initialization: false  # Flyway 사용 시 false
         properties:
             hibernate:
                 format_sql: true
