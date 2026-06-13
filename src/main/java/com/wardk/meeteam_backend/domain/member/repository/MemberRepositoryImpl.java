@@ -253,21 +253,28 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     }
 
     /**
-     * 기술스택 이름 조건 (OR 조건).
-     * 요청한 기술스택 중 하나라도 가지고 있으면 매칭.
+     * 기술스택 이름 조건 (AND 조건).
+     * 요청한 모든 기술스택을 가지고 있어야 매칭.
      */
     private BooleanExpression techStackNamesExist(List<String> techStackNames) {
         if (techStackNames == null || techStackNames.isEmpty()) {
             return null;
         }
 
+        return techStackNames.stream()
+                .map(this::hasTechStack)
+                .reduce(BooleanExpression::and)
+                .orElse(null);
+    }
+
+    private BooleanExpression hasTechStack(String techStackName) {
         return JPAExpressions
                 .selectOne()
                 .from(memberTechStack)
                 .join(memberTechStack.techStack, techStack)
                 .where(
                         memberTechStack.member.eq(member),
-                        techStack.name.in(techStackNames)
+                        techStack.name.eq(techStackName)
                 )
                 .exists();
     }

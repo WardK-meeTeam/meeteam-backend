@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MeeTeam Backend - A Spring Boot API server for a developer team matching and project collaboration platform. Features include team matching, project management, real-time WebSocket chat, AI-powered code review (GPT-4o-mini), GitHub integration, and SSE notifications.
+MeeTeam Backend - A Spring Boot API server for a developer team matching and project collaboration platform. Features include team matching, project management, real-time WebSocket chat, and SSE notifications.
 
 ## Build & Development Commands
 
@@ -40,7 +40,7 @@ domain/     → Business logic, entities, repositories per domain
 global/     → Cross-cutting concerns (config, auth, exceptions, response)
 ```
 
-**Domain modules:** applicant, category, chat, codereview, file, llm, member, notification, pr, project, projectLike, projectMember, review, skill, webhook
+**Domain modules:** applicant, category, chat, file, member, notification, project, projectLike, projectMember, review, skill
 
 **Key patterns:**
 - All entities extend `BaseEntity` (provides `createdAt`, `editedAt` with JPA auditing)
@@ -70,23 +70,22 @@ throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
 - **WebSocket:** STOMP over RabbitMQ (port 61613), endpoint `/ws`
 - **Caching:** EhCache for main page projects, Redis for sessions
 - **File storage:** AWS S3
-- **AI:** Spring AI with OpenAI GPT-4o-mini
 
 ## Chat Room Types
 
-`PROJECT` (team chat), `TOPIC` (subject-based), `PRIVATE` (1:1), `PR_REVIEW` (code review discussions)
+`PROJECT` (team chat), `TOPIC` (subject-based), `PRIVATE` (1:1)
 
 ## Testing
 
 Uses JUnit 5 with H2 in-memory database. Tests located in `src/test/java/`.
 
 ## Code Documentation
-
+1
 Javadoc required for public classes/methods. Use `@Operation` annotation on controller methods for Swagger documentation. API docs available at `/swagger-ui.html`.
 
 ## Code Convention
 
-새로운 기능 개발 or 리펙토링 시 [CODE_CONVENTION.md](./CODE_CONVENTION.md)를 참고하세요. Controller, Service, Entity, DTO 작성 규칙과 전체 예시 코드가 포함되어 있습니다.
+새로운 기능 개발 or 리펙토링 시 [CODE_CONVENTION.md](./docs/CODE_CONVENTION.md)를 참고하세요. Controller, Service, Entity, DTO 작성 규칙과 전체 예시 코드가 포함되어 있습니다.
 
 ## 세종대 포털 SSL 호환성
 

@@ -11,6 +11,8 @@ spring:
   sql:
     init:
       mode: never  # data.sql 실행 비활성화 (테스트에서는 필요 없음)
+  flyway:
+    enabled: false  # 테스트는 H2 + ddl-auto:create-drop 사용
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -18,35 +20,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  ai:
-    openai:
-      api-key: dummy-api-key
-      model: gpt-4o-mini
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: test-google-client-id
-            client-secret: test-google-client-secret
-            scope: openid, email
-            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
-          github:
-            client-id: test-github-client-id
-            client-secret: test-github-client-secret
-            scope: user:email, read:user
-            redirect-uri: "http://localhost:8080/login/oauth2/code/github"
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
-            user-name-attribute: sub
-          github:
-            authorization-uri: https://github.com/login/oauth/authorize
-            token-uri: https://github.com/login/oauth/access_token
-            user-info-uri: https://api.github.com/user
-            user-name-attribute: id
 
 cloud:
   aws:
@@ -72,16 +45,6 @@ jwt:
   access-exp-time: 3600000
   refresh-exp-time: 86400000
 
-github:
-  app:
-    id: 12345
-    private-key-pem: |
-      -----BEGIN PRIVATE KEY-----
-      MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7test
-      -----END PRIVATE KEY-----
-  webhook:
-    secret: test-webhook-secret
-
 logging:
   level:
     org.hibernate.SQL: DEBUG
@@ -102,21 +65,7 @@ security:
     - method: GET
       uri: /api/v1/main/**
 
-# OAuth2 및 쿠키 설정
 app:
-  oauth2:
-    oauth2-redirect-url: http://localhost:3000/oauth2/redirect
-    providers:
-      google:
-        name: google
-        user-name-attribute: name
-        email-attribute: email
-        id-attribute: sub
-      github:
-        name: github
-        user-name-attribute: name
-        email-attribute: email
-        id-attribute: id
   cookie:
     domain: # 테스트에서는 비워둠
     secure: false

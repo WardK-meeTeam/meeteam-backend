@@ -92,7 +92,7 @@ def main():
         ax.set_xlabel('Run Number', fontsize=11)
         ax.set_ylabel('Latency (ms)', fontsize=11)
         ax.set_xlim(0, TOTAL_RUNS + 1)
-        ax.set_ylim(0, max(results) * 1.1 if results else 100)
+        ax.set_ylim(0, 1000)
         ax.set_xticks(runs)
         ax.grid(True, linestyle='--', alpha=0.5)
         plt.tight_layout()
