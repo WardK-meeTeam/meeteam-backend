@@ -13,8 +13,6 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
 
     Optional<Member> findByEmail(String email);
 
-    Optional<Member> findByProviderAndProviderId(String provider, String providerId);
-
     Boolean existsByEmail(String email);
 
     Optional<Member> findByStudentId(String studentId);
@@ -32,11 +30,6 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
      * 이메일로 활성 회원 조회 (탈퇴하지 않은 회원만)
      */
     Optional<Member> findByEmailAndDeletedAtIsNull(String email);
-
-    /**
-     * OAuth provider로 활성 회원 조회 (탈퇴하지 않은 회원만)
-     */
-    Optional<Member> findByProviderAndProviderIdAndDeletedAtIsNull(String provider, String providerId);
 
     /**
      * 학번으로 활성 회원 존재 여부 확인 (탈퇴하지 않은 회원만)

@@ -2,15 +2,12 @@ package com.wardk.meeteam_backend.web.project.controller;
 
 import com.wardk.meeteam_backend.domain.project.service.ProjectEditService;
 import com.wardk.meeteam_backend.domain.project.service.ProjectManagementService;
-import com.wardk.meeteam_backend.domain.project.service.ProjectRepoService;
 import com.wardk.meeteam_backend.global.response.SuccessResponse;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import com.wardk.meeteam_backend.web.project.dto.request.ProjectEditRequest;
-import com.wardk.meeteam_backend.web.project.dto.request.ProjectRepoRequest;
 import com.wardk.meeteam_backend.web.project.dto.response.MemberExpelResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectEditPrefillResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.ProjectEditResponse;
-import com.wardk.meeteam_backend.web.project.dto.response.ProjectRepoResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.RecruitmentStatusResponse;
 import com.wardk.meeteam_backend.web.project.dto.response.TeamManagementResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,11 +16,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 /**
  * 프로젝트 관리 페이지 관련 API 컨트롤러.
@@ -36,7 +30,6 @@ public class ProjectManagementController {
 
     private final ProjectManagementService projectManagementService;
     private final ProjectEditService projectEditService;
-    private final ProjectRepoService projectRepoService;
 
     @Operation(summary = "모집 상태 토글", description = "프로젝트 모집 상태를 토글합니다. (모집중 ↔ 모집중단)")
     @PostMapping("/api/v1/projects/{projectId}/recruitment/toggle")
@@ -98,28 +91,5 @@ public class ProjectManagementController {
                 userDetails.getUsername()
         );
         return SuccessResponse.onSuccess(response);
-    }
-
-
-    // =============Legacy ==============================
-
-    @Deprecated
-    @Operation(summary = "GitHub 레포지토리 연결", description = "프로젝트에 GitHub 레포지토리를 연결합니다.", deprecated = true)
-    @PostMapping("/api/projects/{projectId}/repos")
-    public SuccessResponse<List<ProjectRepoResponse>> addRepository(
-            @PathVariable Long projectId,
-            @RequestBody @Validated ProjectRepoRequest request,
-            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
-    ) {
-        List<ProjectRepoResponse> responses = projectRepoService.addRepo(projectId, request, userDetails.getUsername());
-        return SuccessResponse.onSuccess(responses);
-    }
-
-    @Deprecated
-    @Operation(summary = "프로젝트 레포지토리 조회", description = "프로젝트에 연결된 레포지토리 목록을 조회합니다.", deprecated = true)
-    @GetMapping("/api/projects/{projectId}/repos")
-    public SuccessResponse<List<ProjectRepoResponse>> findProjectRepos(@PathVariable Long projectId) {
-        List<ProjectRepoResponse> responses = projectRepoService.findRepos(projectId);
-        return SuccessResponse.onSuccess(responses);
     }
 }

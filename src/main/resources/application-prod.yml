@@ -1,52 +1,20 @@
 spring:
-    security:
-        oauth2:
-            client:
-                registration:
-                    google:
-                        client-id: ${GOOGLE_CLIENT_ID}
-                        client-secret: ${GOOGLE_CLIENT_SECRET}
-                        scope: openid, email
-                        redirect-uri: https://api.meeteam.alom-sejong.com/login/oauth2/code/google  # 강제 지정
-                    github:
-                        client-id: ${GITHUB_CLIENT_ID}
-                        client-secret: ${GITHUB_CLIENT_SECRET}
-                        scope:
-                            - user:email
-                            - read:user
-                        redirect-uri: https://api.meeteam.alom-sejong.com/login/oauth2/code/github  # 강제 지정
-
     datasource:
         url: ${DATASOURCE_URL}
         username: ${DATASOURCE_USERNAME}
         password: ${DATASOURCE_PASSWORD}
         driver-class-name: com.mysql.cj.jdbc.Driver
 
-    ai:
-        retry:
-            max-attempts: 3
-            initial-interval: 1000  # 1초로 단축
-            multiplier: 1.5         # 배수 축소
-            max-interval: 5000      # 5초로 단축
-            backoff:
-                initial-interval: 500ms  # 초기 간격 단축
-                max-interval: 3s         # 최대 간격 단축
-        openai:
-            base-url: ${OPENAI_BASE_URL:https://api.openai.com}
-            api-key: ${OPENAI_API_KEY}
-
-            chat:
-                options:
-                    model: gpt-4o-mini      # 더 빠른 모델로 변경
-                    temperature: 0.0
-                    max-tokens: 2048        # 토큰 수 절반으로 축소
-                    timeout: 30s            # 30초로 단축
-                    connect-timeout: 30s
-                    read-timeout: 30s       # 읽기 타임아웃 추가
+    flyway:
+        enabled: true
+        baseline-on-migrate: true  # 기존 DB에 처음 적용 시 필요
+        baseline-version: 0        # 기존 스키마를 버전 0으로 취급
+        locations: classpath:db/migration
+        validate-on-migrate: true
 
     jpa:
         hibernate:
-            ddl-auto: none
+            ddl-auto: validate  # Flyway가 스키마 관리, JPA는 검증만
         show-sql: true
         defer-datasource-initialization: true # false: 데이터소스 준비되자마자 data.sql 실행 // true: JPA/Hibernate 초기화 이후 실행
         properties:
@@ -119,46 +87,9 @@ management:
         health:
             show-components: always
 
-logging:
-    config: classpath:logback-spring.xml
-    level:
-        root: info
-        p6spy: off
-        org.springframework.security: info
-        org.springframework.security.oauth2: info
-        com.wardk.meeteam_backend.global.loginRegister: info
-        com.wardk.meeteam_backend.global.filter: info
-
-decorator:
-    datasource:
-        p6spy:
-            enable-logging: true
-
-
-github:
-    webhook:
-        secret: ${GITHUB_WEBHOOK_SECRET}
-    token: ${GITHUB_TOKEN}
-    app:
-        id: ${GITHUB_APP_ID}
-        private-key-pem: ${GITHUB_APP_PRIVATE_KEY_PEM}
-
 app:
     warmup:
         enabled: true
-    oauth2:
-        oauth2-redirect-url: https://meeteam.alom-sejong.com/oauth2/redirect
-        providers:
-            google:
-                name: "google"
-                user-name-attribute: "name"
-                email-attribute: "email"
-                id-attribute: "sub"
-            github:
-                name: "github"
-                user-name-attribute: "name"
-                email-attribute: "email"
-                id-attribute: "id"
     cookie:
         domain: .meeteam.alom-sejong.com
         secure: true
@@ -192,85 +123,5 @@ cors:
     allow-credentials: true
     max-age: 3600
 
-security:
-    whitelist:
-        - method: "*"
-          uri: /webjars/**
-        - method: "*"
-          uri: /swagger-resources/**
-        - method: "*"
-          uri: /v3/api-docs/**
-        - method: "*"
-          uri: /swagger-ui/**
-        - method: "*"
-          uri: /swagger-ui.html
-        - method: "*"
-          uri: /actuator/**
-        - method: "*"
-          uri: /docs/**
-        - method: "*"
-          uri: /default-ui.css
-        - method: "*"
-          uri: /favicon.ico
-        - method: "*"
-          uri: /api/login
-        - method: "*"
-          uri: /api/v1/auth/**
-        - method: "*"
-          uri: /
-        - method: "*"
-          uri: /uploads/**
-        - method: "*"
-          uri: /api/register
-        - method: "*"
-          uri: /api/project/register
-        - method: "*"
-          uri: /oauth2/**
-        - method: "*"
-          uri: /login/oauth2/**
-        - method: "*"
-          uri: /login/oauth2/code/**
-        - method: "*"
-          uri: /api/v1/auth/oauth2/**
-        - method: "*"
-          uri: /api/webhooks/github
-        - method: "*"
-          uri: /api/v1/files/**
-        - method: "*"
-          uri: /index.html
-        - method: GET
-          uri: /api/projects/condition # 프로젝트 전체 조회
-        - method: GET
-          uri: /api/v1/projects/search # 프로젝트 검색 (v1)
-        - method: GET
-          uri: /api/v1/projects/* # 프로젝트 상세 조회 (v1)
-        - method: GET
-          uri: /api/v1/projects/*/qna # 프로젝트 Q&A 목록 조회
-        - method: GET
-          uri: /api/v1/main/projects # 메인 페이지 프로젝트 카드 조회
-        - method: GET
-          uri: /api/v1/main/members # 메인 페이지 유저 카드 조회
-        - method: GET
-          uri: /api/v1/members/search # 팀원 찾기 (v1)
-        - method: GET
-          uri: /api/v1/members/* # 특정 사용자 상세 조회 (v1)
-        - method: GET
-          uri: /api/projects/* # 특정 사용자 프로필 보기
-        - method: GET
-          uri: /api/projects/V2/* # 프로젝트 상세 조회
-        - method: GET
-          uri: /api/v1/jobs/options # 직군/포지션/기술스택 조회
-        - method: "*"
-          uri: /oauth2/redirect # OAuth2 리다이렉트 url
-        - method: "*"
-          uri: /main            # 로그인 성공 url
-        - method: "*"
-          uri: /login           # 로그인 실패 url
-        - method: "*"
-          uri: /oauth2/authorization/**
-        - method: GET
-          uri: /api/members/all # 회원 목록 조회
-        - method: GET
-          uri: /api/members/search # 회원 검색
-        - method: GET
-          uri: api/project/like/* # 좋아요 개수
+# security.whitelist는 PublicEndpoint enum으로 이동됨
+# 경로: global/config/PublicEndpoint.java

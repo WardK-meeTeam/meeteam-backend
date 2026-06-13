@@ -84,7 +84,6 @@ public class AuthService {
      * @param command 세종대 로그인 커맨드 (학번, 비밀번호)
      * @return 로그인 결과 (기존 회원: 토큰, 신규 회원: 코드)
      */
-    @Transactional
     public SejongLoginResult sejongLogin(SejongLoginCommand command) {
         // 세종대 포털 인증
         sejongPortalClient.authenticate(command.studentId(), command.password());

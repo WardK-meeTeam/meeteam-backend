@@ -3,7 +3,6 @@ package com.wardk.meeteam_backend.domain.project.entity;
 import com.wardk.meeteam_backend.domain.application.entity.ApplicationStatus;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.pr.entity.ProjectRepo;
 import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
 import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
@@ -92,9 +91,6 @@ public class Project extends BaseEntity {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecruitmentState> recruitments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjectRepo> repos = new ArrayList<>();
-
     public void increaseLike() {
         this.likeCount++;
     }
@@ -181,11 +177,6 @@ public class Project extends BaseEntity {
     public void addProjectSkill(ProjectSkill projectSkill) {
         this.projectSkills.add(projectSkill);
         projectSkill.assignProject(this);
-    }
-
-    public void addRepo(ProjectRepo repo) {
-        this.repos.add(repo);
-        repo.setProject(this);
     }
 
     public void updateProject(String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,

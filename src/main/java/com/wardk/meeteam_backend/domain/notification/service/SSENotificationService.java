@@ -103,7 +103,7 @@ public class SSENotificationService {
         }
     }
 
-    // ==================== Private Methods ====================
+
 
     private void validateActorIfRequired(NotificationType type, Long actorId) {
         if (type.requiresActor() && actorId == null) {
@@ -136,6 +136,7 @@ public class SSENotificationService {
     }
 
     private void broadcastToReceiver(Long receiverId, NotificationType type, Payload payload) {
+
         SseEnvelope<Object> envelope = SseEnvelope.builder()
                 .type(type)
                 .data(payload)

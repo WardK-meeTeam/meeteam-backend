@@ -71,12 +71,7 @@ public class Member extends BaseEntity {
 
     private String provider;
 
-    private String providerId;
-
     private String studentId;
-
-    @Column(length = 2048)
-    private String oauthAccessToken;
 
     private String githubUrl;
 
@@ -89,8 +84,7 @@ public class Member extends BaseEntity {
     private Member(String email, Integer age, String password, String realName,
                    String storeFileName, Gender gender, LocalDate birth,
                    Boolean isParticipating, UserRole role, String provider,
-                   String providerId, String studentId,
-                   String githubUrl, String blogUrl) {
+                   String studentId, String githubUrl, String blogUrl) {
         this.email = email;
         this.age = age;
         this.password = password;
@@ -101,7 +95,6 @@ public class Member extends BaseEntity {
         this.isParticipating = isParticipating;
         this.role = role;
         this.provider = provider;
-        this.providerId = providerId;
         this.studentId = studentId;
         this.githubUrl = githubUrl;
         this.blogUrl = blogUrl;
