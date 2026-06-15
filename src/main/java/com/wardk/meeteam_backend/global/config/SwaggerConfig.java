@@ -34,8 +34,7 @@ import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
                 version = "1.0v"
         ),
         servers = {
-                @Server(url = "http://localhost:8080", description = "로컬 서버"),
-                @Server(url = "https://api.meeteam.alom-sejong.com", description = "EC2 서버")
+                @Server(url = "/", description = "현재 접속한 서버 (자동)")
         }
 
 )
@@ -60,12 +59,8 @@ public class SwaggerConfig {
                 .addSecurityItem(securityRequirement)
                 .servers(List.of(
                                 new io.swagger.v3.oas.models.servers.Server()
-                                        .url("http://localhost:8080")
-                                        .description("로컬 서버"),
-                                new io.swagger.v3.oas.models.servers.Server()
-                                        .url("https://api.meeteam.alom-sejong.com")
-                                        .description("EC2 서버")
-
+                                        .url("/")
+                                        .description("현재 접속한 서버 (자동)")
                         )
                 )
                 .path("/api/v1/auth/login", createLoginPathItem());
