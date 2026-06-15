@@ -1,0 +1,128 @@
+spring:
+    datasource:
+        url: ${DATASOURCE_URL}
+        username: ${DATASOURCE_USERNAME}
+        password: ${DATASOURCE_PASSWORD}
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        hikari:
+            # t3.micro 메모리 절약: 커넥션 풀 작게 유지
+            minimum-idle: 2
+            maximum-pool-size: 10
+
+    flyway:
+        enabled: true
+        baseline-on-migrate: true  # 기존 DB에 처음 적용 시 필요
+        baseline-version: 0        # 기존 스키마를 버전 0으로 취급
+        locations: classpath:db/migration
+        validate-on-migrate: true
+
+    jpa:
+        hibernate:
+            ddl-auto: validate  # Flyway가 스키마 관리, JPA는 검증만
+        show-sql: true
+        defer-datasource-initialization: false  # Flyway 사용 시 false
+        properties:
+            hibernate:
+                format_sql: true
+                default_batch_fetch_size: 500
+        open-in-view: false
+    sql:
+        init:
+            mode: never
+            data-locations: classpath:db/seed/job-seed.sql
+    data:
+        redis:
+            host: redis    # compose-test.yml 의 redis 서비스명
+            port: 6379
+
+
+jwt:
+    secret-key: ${JWT_SECRET_KEY}
+    access-exp-time: ${JWT_ACCESS_EXP_TIME:36000000}                # 액세스 토큰 만료 시간
+    refresh-exp-time: ${JWT_REFRESH_EXP_TIME:604800000}             # 리프레시 토큰 만료 시간
+
+
+# AWS S3 설정
+cloud:
+    aws:
+        credentials:
+            access-key: ${AWS_ACCESS_KEY_ID}
+            secret-key: ${AWS_SECRET_ACCESS_KEY}
+        s3:
+            bucket: ${S3_BUCKET:meeteam-test-bucket}
+        region:
+            static: ${AWS_REGION:ap-northeast-2}
+        stack:
+            auto: false
+
+# 파일 업로드 설정
+file:
+    dir: ${FILE_UPLOAD_DIR:/home/ubuntu/meeteam/upload}
+    upload:
+        max-size: 10MB
+        allowed-extensions: jpg,jpeg,png,gif,webp
+        s3:
+            base-url: https://${cloud.aws.s3.bucket}.s3.${cloud.aws.region.static}.amazonaws.com
+
+
+
+springdoc:
+    swagger-ui:
+        path: /swagger-ui.html
+    api-docs:
+        path: /v3/api-docs
+
+server:
+    servlet:
+        context-path: /
+    tomcat:
+        mbeanregistry:
+            enabled: true
+    forward-headers-strategy: framework
+
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include:
+                    - "*"
+    endpoint:
+        health:
+            show-components: always
+
+app:
+    warmup:
+        enabled: true
+    # 테스트 서버는 기본적으로 HTTP 직접 접속(http://<EC2_IP>:8080)을 가정합니다.
+    # → 쿠키 도메인은 비우고(host-only), secure=false / SameSite=Lax 로 둬야 로그인 쿠키가 정상 동작합니다.
+    # 만약 테스트용 HTTPS 도메인(예: test.meeteam.alom-sejong.com)을 앞단에 붙이면
+    # domain / secure=true / same-site=None 으로 변경하세요.
+    cookie:
+        domain: ${COOKIE_DOMAIN:}
+        secure: ${COOKIE_SECURE:false}
+        same-site: ${COOKIE_SAME_SITE:Lax}
+
+# CORS 설정 (테스트 프론트/로컬 개발용)
+cors:
+    allowed-origins:
+        - https://meeteam-front-test.vercel.app
+        - https://*.vercel.app
+        - http://localhost:3000
+        - http://localhost:3001
+        - https://localhost:3000
+    allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - OPTIONS
+    allowed-headers:
+        - "*"
+    exposed-headers:
+        - Authorization
+        - Set-Cookie
+        - X-Total-Count
+    allow-credentials: true
+    max-age: 3600
