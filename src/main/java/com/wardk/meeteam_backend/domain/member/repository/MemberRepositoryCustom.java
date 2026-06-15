@@ -8,8 +8,6 @@ import java.util.List;
 
 public interface MemberRepositoryCustom {
 
-    Page<Member> searchMembers(List<Long> jobFieldIds, List<Long> skillIds, Pageable pageable);
-
     /**
      * 팀원 찾기 v1 검색.
      *
