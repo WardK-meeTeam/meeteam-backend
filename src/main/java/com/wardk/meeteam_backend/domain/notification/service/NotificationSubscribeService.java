@@ -35,7 +35,9 @@ public class NotificationSubscribeService {
 
     public SseEmitter subscribe(String email, String lastEventId) {
 
-        Member member = memberRepository.findOptionByEmail(email)
+        // 소프트 삭제(deletedAt) 회원이 같은 이메일로 남아있을 수 있어(uk: email+deleted_at),
+        // 활성 회원만 조회해야 NonUniqueResultException(2 results)이 발생하지 않는다. (로그인과 동일 기준)
+        Member member = memberRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow( () -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         Long memberId = member.getId();

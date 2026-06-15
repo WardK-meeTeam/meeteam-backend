@@ -135,7 +135,8 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
             throw new CustomException(ErrorCode.PROJECT_ALREADY_COMPLETED);
         }
 
-        Member member = memberRepository.findOptionByEmail(requesterEmail)
+        // 소프트 삭제(deletedAt) 회원이 같은 이메일로 남아있을 수 있어 활성 회원만 조회 (NonUniqueResult 방지)
+        Member member = memberRepository.findByEmailAndDeletedAtIsNull(requesterEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (project.getCreator().getId().equals(member.getId())) {

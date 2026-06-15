@@ -34,6 +34,13 @@ spring:
             host: redis    # compose-test.yml 의 redis 서비스명
             port: 6379
 
+    # 파일 업로드(멀티파트) 한도 - Boot 기본값(1MB)은 모바일 사진에 너무 작아 등록 실패를 유발함
+    # 초과 시 MaxUploadSizeExceededException → GlobalExceptionHandler에서 413(FILE413) 응답
+    servlet:
+        multipart:
+            max-file-size: 10MB
+            max-request-size: 12MB
+
 
 jwt:
     secret-key: ${JWT_SECRET_KEY}
