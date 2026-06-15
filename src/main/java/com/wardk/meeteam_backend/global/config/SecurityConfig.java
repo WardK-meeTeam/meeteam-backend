@@ -6,6 +6,7 @@ import com.wardk.meeteam_backend.global.exception.RestAccessDeniedHandler;
 import com.wardk.meeteam_backend.global.exception.RestAuthenticationEntryPoint;
 import com.wardk.meeteam_backend.global.auth.filter.JwtFilter;
 import com.wardk.meeteam_backend.global.util.JwtUtil;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,6 +62,10 @@ public class SecurityConfig {
                 )
                 // 인증 필요 없는(화이트리스트) 경로 한 곳에서 관리
                 .authorizeHttpRequests((authorize) -> authorize
+                        // ERROR/ASYNC 재디스패치는 1차 요청에서 이미 인증을 거쳤으므로 통과시킨다.
+                        // (SSE 등 async 응답이 commit된 뒤 /error로 떨어질 때 "response already committed" 예외 방지,
+                        //  일반 요청도 예외 발생 시 /error에서 인증에 막혀 진짜 에러가 가려지는 문제 방지)
+                        .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.ASYNC).permitAll()
                         .requestMatchers(securityUrls.getRequestMatchers()).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
