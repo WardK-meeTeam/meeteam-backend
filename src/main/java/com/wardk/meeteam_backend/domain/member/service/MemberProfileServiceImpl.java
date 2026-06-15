@@ -17,7 +17,6 @@ import com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse;
 import com.wardk.meeteam_backend.web.mainpage.dto.response.ProjectCardResponse;
 import com.wardk.meeteam_backend.web.auth.dto.register.TechStackOrderRequest;
 import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
-import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberDetailResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileUpdateResponse;
@@ -191,42 +190,6 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         return new MemberProfileUpdateResponse(savedMember);
     }
 
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> getAllMemberCards() {
-
-        List<Member> members = memberRepository.findAll();
-
-        if (members.isEmpty()) {
-            log.info("=== 조회된 회원이 없습니다. ===");
-            return List.of();
-        }
-
-        return members.stream()
-                .map(com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse::responseToDto)
-                .toList();
-    }
-
-    /**
-     * 회원 검색 (QueryDSL을 사용한 동적 쿼리 및 정렬)
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public Page<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable) {
-        // QueryDSL로 조회
-        Page<Member> memberPage = memberRepository.searchMembers(
-                searchRequest.getJobFieldIds(),
-                searchRequest.getSkillIds(),
-                pageable
-        );
-
-        log.info("검색 결과 - 총 {}개 회원 조회됨", memberPage.getTotalElements());
-        log.info("페이지 정보 - 총 {}페이지 중 {}페이지, 총 {}개 회원",
-                memberPage.getTotalPages(), memberPage.getNumber() + 1, memberPage.getTotalElements());
-
-        return memberPage.map(com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse::responseToDto);
-    }
 
     /**
      * 메인페이지 유저 카드 목록 조회.

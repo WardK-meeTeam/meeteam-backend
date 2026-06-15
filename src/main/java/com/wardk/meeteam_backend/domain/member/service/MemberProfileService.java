@@ -2,7 +2,6 @@ package com.wardk.meeteam_backend.domain.member.service;
 
 import com.wardk.meeteam_backend.web.mainpage.dto.response.MemberCardResponse;
 import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
-import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberDetailResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileUpdateResponse;
@@ -22,12 +21,6 @@ public interface MemberProfileService {
     MemberDetailResponse getMemberDetail(Long memberId);
 
     MemberProfileUpdateResponse updateProfile(Long memberId, MemberProfileUpdateRequest request, MultipartFile profileImage);
-
-    @Deprecated
-    List<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> getAllMemberCards();
-
-    @Deprecated
-    Page<com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse> searchMembers(MemberSearchRequest searchRequest, Pageable pageable);
 
     /**
      * 메인페이지 유저 카드 목록 조회.

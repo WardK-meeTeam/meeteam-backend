@@ -1,8 +1,6 @@
 package com.wardk.meeteam_backend.web.member.controller;
 
 import com.wardk.meeteam_backend.web.member.dto.request.MemberProfileUpdateRequest;
-import com.wardk.meeteam_backend.web.member.dto.request.MemberSearchRequest;
-import com.wardk.meeteam_backend.web.member.dto.response.MemberCardResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberDetailResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileResponse;
 import com.wardk.meeteam_backend.web.member.dto.response.MemberProfileUpdateResponse;
@@ -36,79 +34,6 @@ public class MemberController {
 
 
     private final MemberProfileService memberProfileService;
-
-    /**
-     * 나의 프로필보기에서 나의 memberId;
-     */
-
-    @Deprecated
-    @Operation(summary = "나의 프로필 보기", description = "로그인한 사용자의 프로필 정보를 조회합니다.", deprecated = true)
-    @GetMapping("api/members")
-    public SuccessResponse<MemberProfileResponse> getMember(
-            @AuthenticationPrincipal CustomSecurityUserDetails userDetails
-            ) {
-
-        MemberProfileResponse profile = memberProfileService.profile(userDetails.getMemberId());
-
-        return SuccessResponse.onSuccess(profile);
-    }
-
-    @Deprecated
-    @PutMapping(value = "/api/members", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "나의 프로필 수정", description = "현재 로그인한 회원의 프로필 정보를 수정합니다.", deprecated = true)
-    public SuccessResponse<MemberProfileUpdateResponse> updateMember(
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomSecurityUserDetails userDetails,
-            @RequestPart("memberInfo") @Valid MemberProfileUpdateRequest request,
-            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
-    ) {
-        MemberProfileUpdateResponse response = memberProfileService.updateProfile(
-                userDetails.getMemberId(),
-                request,
-                profileImage
-        );
-        return SuccessResponse.onSuccess(response);
-    }
-
-
-
-    @Deprecated
-    @Operation(summary = "특정 사용자 프로필 보기" , description = "특정 사용자의 프로필 정보를 조회합니다.", deprecated = true)
-    @GetMapping("api/members/{memberId}")
-    public SuccessResponse<MemberProfileResponse> getMember(
-            @PathVariable Long memberId
-    ) {
-
-        MemberProfileResponse profile = memberProfileService.profile(memberId);
-
-        return SuccessResponse.onSuccess(profile);
-    }
-
-    @Deprecated
-    @Operation(summary = "메인 페이지 사용자 카드 조회 " , description = "메인 페이지에서 팀을 구해요 에서 전체 사용자의 프로필 정보를 조회합니다.", deprecated = true)
-    @GetMapping("api/members/all")
-    public SuccessResponse<List<MemberCardResponse>> getAllMembers() {
-        List<MemberCardResponse> cards = memberProfileService.getAllMemberCards();
-
-        return SuccessResponse.onSuccess(cards);
-    }
-
-
-    @Deprecated
-    @Operation(summary = "사용자 조건 검색", description = "사용자 이름, 플랫폼, 분야, 기술 스택 등 다양한 조건으로 사용자를 검색합니다.", deprecated = true)
-    @GetMapping("api/members/search")
-    public SuccessResponse<Page<MemberCardResponse>> searchMembers (
-            @RequestParam(value = "jobFieldIds", required = false) List<Long> jobFieldIds,
-            @RequestParam(value = "skillIds", required = false) List<Long> skillIds,
-            @ParameterObject Pageable pageable
-            ) {
-
-        MemberSearchRequest searchRequest = new MemberSearchRequest();
-        searchRequest.setJobFieldIds(jobFieldIds);
-        searchRequest.setSkillIds(skillIds);
-
-        Page<MemberCardResponse> searchResults = memberProfileService.searchMembers(searchRequest, pageable);
-        return SuccessResponse.onSuccess(searchResults);
-    }
 
     @Operation(
             summary = "특정 사용자 상세 조회",
