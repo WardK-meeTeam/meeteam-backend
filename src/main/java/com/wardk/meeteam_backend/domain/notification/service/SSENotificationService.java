@@ -12,6 +12,7 @@ import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.notification.SseEnvelope;
+import com.wardk.meeteam_backend.web.notification.SsePublishMessage;
 import com.wardk.meeteam_backend.web.notification.context.NotificationContext;
 import com.wardk.meeteam_backend.web.notification.factory.NotificationPayloadFactory;
 import com.wardk.meeteam_backend.web.notification.payload.Payload;
@@ -19,11 +20,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.Map;
+import java.time.LocalDateTime;
 
 /**
  * SSE 기반 실시간 알림 서비스.
@@ -43,6 +41,7 @@ public class SSENotificationService {
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
     private final NotificationPayloadFactory payloadFactory;
+    private final SseEventPublisher ssePublisher;
 
     /**
      * NotificationEvent 처리 - 단일 수신자 알림
@@ -140,29 +139,27 @@ public class SSENotificationService {
         SseEnvelope<Object> envelope = SseEnvelope.builder()
                 .type(type)
                 .data(payload)
-                .createdAt(LocalDate.now())
+                .createdAt(LocalDateTime.now())
                 .build();
 
-        Map<String, SseEmitter> emitters =
-                emitterRepository.findAllEmitterStartWithByMemberId(String.valueOf(receiverId));
-
+        // 1) 재연결 복구용 캐시 저장 (Redis)
         String eventId = makeEventId(receiverId);
         emitterRepository.saveEventCache(eventId, envelope);
 
-        emitters.forEach((emitterId, emitter) -> {
-            try {
-                emitter.send(SseEmitter.event()
-                        .id(eventId)
-                        .name(type.name())
-                        .data(envelope));
-            } catch (IOException e) {
-                log.warn("[알림] SSE 전송 실패 - emitter: {}", emitterId);
-                emitter.completeWithError(e);
-            }
-        });
+        // 2) 멀티 인스턴스 전파: 직접 emitter에 쓰지 않고 채널에 발행한다.
+        //    수신자 연결을 보유한 인스턴스가 구독을 통해 받아 전송한다(발행 인스턴스 자신 포함).
+        ssePublisher.publish(SsePublishMessage.builder()
+                .receiverId(receiverId)
+                .eventId(eventId)
+                .envelope(envelope)
+                .build());
     }
 
+    /**
+     * eventId = "{memberId}_{seq}". seq는 Redis INCR 기반 전역 단조 증가 값으로,
+     * 동일 ms 충돌을 차단하고 멀티 인스턴스 순서의 단일 소스가 된다.
+     */
     private String makeEventId(Long memberId) {
-        return memberId + "_" + System.currentTimeMillis();
+        return memberId + "_" + emitterRepository.nextSequence(memberId);
     }
 }

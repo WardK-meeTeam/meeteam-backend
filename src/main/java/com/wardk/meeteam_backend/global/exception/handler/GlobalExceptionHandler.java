@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 @Slf4j
@@ -79,7 +80,21 @@ public class GlobalExceptionHandler {
 
 
     /**
-     * 5) 그 외 예외 처리
+     * 5) 업로드 파일 크기 초과 처리 (멀티파트 한도 초과)
+     * 프론트는 이 413 응답(FILE413)을 받고 "파일이 너무 큽니다" 안내를 띄우면 된다.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("파일 업로드 크기 초과: {}", e.getMessage());
+
+        ErrorCode errorCode = ErrorCode.FILE_TOO_LARGE;  // PAYLOAD_TOO_LARGE (413)
+        ErrorResponse response = ErrorResponse.getResponse(errorCode.getCode(), errorCode.getMessage());
+
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    /**
+     * 6) 그 외 예외 처리
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {

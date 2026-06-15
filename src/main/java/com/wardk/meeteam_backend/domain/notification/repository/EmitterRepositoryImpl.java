@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * SSE Emitter와 이벤트 캐시를 관리하는 Repository 구현체.
@@ -84,6 +85,14 @@ public class EmitterRepositoryImpl implements EmitterRepository {
     private static final String EVENT_CACHE_PREFIX = "eventCache:";
     private static final String EVENT_DATA_PREFIX = "eventCache:evt:";
 
+    /**
+     * 이벤트 시퀀스 키 prefix.
+     * TTL은 이벤트 캐시(2h)보다 충분히 길게 잡아, 캐시가 살아있는 동안 시퀀스가 리셋되어
+     * 과거 score와 충돌하는 일이 없도록 한다.
+     */
+    private static final String EVENT_SEQ_PREFIX = "eventSeq:";
+    private static final Duration EVENT_SEQ_TTL = Duration.ofDays(7);
+
     // ==================== 저장소 ====================
 
     /**
@@ -145,6 +154,29 @@ public class EmitterRepositoryImpl implements EmitterRepository {
             }
         });
         return result;
+    }
+
+    /**
+     * 수신자별 전역 단조 증가 이벤트 시퀀스 발급 (Redis INCR).
+     *
+     * <pre>
+     * - 원자적 연산이라 동일 밀리초에 여러 알림이 발생해도 시퀀스가 겹치지 않는다.
+     * - Redis 단일 시계가 순서를 정의하므로, 발행 인스턴스가 달라도(clock skew) 순서가 보장된다.
+     * - 반환값은 ZSET score(정렬 기준) 및 eventId 접미사로 사용된다.
+     * </pre>
+     */
+    @Override
+    public long nextSequence(Long memberId) {
+        String key = EVENT_SEQ_PREFIX + memberId;
+        Long seq = stringRedisTemplate.opsForValue().increment(key);
+        stringRedisTemplate.expire(key, EVENT_SEQ_TTL);
+        // increment는 정상 상황에서 null이 아니지만, 방어적으로 fallback 제공
+        return seq != null ? seq : System.currentTimeMillis();
+    }
+
+    @Override
+    public void forEachEmitter(BiConsumer<String, SseEmitter> action) {
+        emitters.forEach(action);
     }
 
     @Override
