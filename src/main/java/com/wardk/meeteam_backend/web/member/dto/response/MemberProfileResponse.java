@@ -1,6 +1,5 @@
 package com.wardk.meeteam_backend.web.member.dto.response;
 
-import com.wardk.meeteam_backend.domain.job.entity.JobField;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -13,8 +12,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
@@ -43,7 +40,7 @@ public class MemberProfileResponse {
     @Schema(description = "대표 포지션 영문명", example = "Frontend Dev")
     private String representativePositionEn;
 
-    private List<GroupedSkillResponse> groupedSkills;
+    @Schema(description = "보유 기술 목록 (직군과 무관하게 회원이 보유한 전체 기술)", example = "[\"React.js\", \"Spring\", \"SwiftUI\"]")
     private List<String> skills;
 
     private Boolean isParticipating;
@@ -75,31 +72,9 @@ public class MemberProfileResponse {
             this.representativePositionEn = firstPosition.getCode().getEnglishName();
         }
 
-        // 분야별 기술스택 그룹핑 (JobField 기준으로 필터링)
-        this.groupedSkills = member.getJobPositions().stream()
-            .map(mjp -> {
-                JobPosition jp = mjp.getJobPosition();
-                JobField jf = jp.getJobField();
-
-                // 해당 직군에 속하는 기술스택 ID 목록
-                Set<Long> fieldTechStackIds = jf.getJobFieldTechStacks().stream()
-                    .map(jfts -> jfts.getTechStack().getId())
-                    .collect(Collectors.toSet());
-
-                // 회원의 기술스택 중 해당 직군에 속하는 것만 필터링
-                List<String> techStacks = member.getMemberTechStacks().stream()
-                    .filter(mts -> fieldTechStackIds.contains(mts.getTechStack().getId()))
-                    .map(mts -> mts.getTechStack().getName())
-                    .toList();
-
-                return GroupedSkillResponse.builder()
-                    .jobFieldName(jf.getName())
-                    .jobPositionName(jp.getName())
-                    .techStacks(techStacks)
-                    .build();
-            }).toList();
-
+        // 보유 기술 전체 (직군 종속 필터 없이 회원의 모든 기술을 displayOrder 순으로)
         this.skills = member.getMemberTechStacks().stream()
+                .sorted((a, b) -> Integer.compare(a.getDisplayOrder(), b.getDisplayOrder()))
                 .map(memberTechStack -> memberTechStack.getTechStack().getName())
                 .toList();
         this.isParticipating = member.getIsParticipating();
