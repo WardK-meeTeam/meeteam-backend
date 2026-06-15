@@ -9,18 +9,17 @@ spring:
             minimum-idle: 2
             maximum-pool-size: 10
 
+    # 테스트 DB는 비어있는 컨테이너 MySQL이라 Flyway(삭제/정리 전용 스크립트)로는
+    # 스키마를 만들 수 없음 → Flyway 끄고 Hibernate가 엔티티 기준으로 스키마 생성.
+    # (주의: 이 테스트 환경은 Flyway 마이그레이션 자체를 검증하지는 않음)
     flyway:
-        enabled: true
-        baseline-on-migrate: true  # 기존 DB에 처음 적용 시 필요
-        baseline-version: 0        # 기존 스키마를 버전 0으로 취급
-        locations: classpath:db/migration
-        validate-on-migrate: true
+        enabled: false
 
     jpa:
         hibernate:
-            ddl-auto: validate  # Flyway가 스키마 관리, JPA는 검증만
+            ddl-auto: create  # 매 기동 시 엔티티 기준으로 스키마 새로 생성 (테스트 DB는 초기화돼도 무방)
         show-sql: true
-        defer-datasource-initialization: false  # Flyway 사용 시 false
+        defer-datasource-initialization: true  # 테이블 생성 후 시드 데이터 주입
         properties:
             hibernate:
                 format_sql: true
@@ -28,7 +27,7 @@ spring:
         open-in-view: false
     sql:
         init:
-            mode: never
+            mode: always  # job-seed.sql 로 직군/직무/기술스택 기본 데이터 주입
             data-locations: classpath:db/seed/job-seed.sql
     data:
         redis:
