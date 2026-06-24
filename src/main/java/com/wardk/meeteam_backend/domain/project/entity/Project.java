@@ -3,7 +3,6 @@ package com.wardk.meeteam_backend.domain.project.entity;
 import com.wardk.meeteam_backend.domain.application.entity.ApplicationStatus;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
-import com.wardk.meeteam_backend.domain.project.service.dto.ProjectPostCommand;
 import com.wardk.meeteam_backend.domain.project.vo.RecruitmentDeadline;
 import com.wardk.meeteam_backend.domain.projectlike.entity.ProjectLike;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
@@ -110,7 +109,7 @@ public class Project extends BaseEntity {
             PlatformCategory platformCategory,
             String imageUrl,
             Recruitment recruitmentStatus,
-            RecruitmentDeadlineType recruitmentDeadlineType,
+            RecruitmentDeadlineType recruitmentDeadlineType, 
             LocalDate startDate,
             LocalDate endDate,
             boolean isDeleted,
@@ -135,31 +134,44 @@ public class Project extends BaseEntity {
     /**
      * 프로젝트를 생성하는 정적 팩토리 메서드.
      *
-     * @param command   프로젝트 생성 커맨드
-     * @param creator   프로젝트 생성자
-     * @param deadline  모집 마감 정책 (값 객체)
-     * @param imageUrl  프로젝트 이미지 URL
+     * <p>도메인 계층 순수성을 위해 서비스 계층 DTO(ProjectPostCommand)에 의존하지 않고,
+     * 필요한 값만 명시적으로 전달받는다. DTO 해체는 호출하는 서비스의 책임이다.
+     *
+     * @param creator                 프로젝트 생성자
+     * @param name                    프로젝트명
+     * @param description             프로젝트 설명
+     * @param projectCategory         프로젝트 카테고리
+     * @param platformCategory        플랫폼 카테고리
+     * @param githubRepositoryUrl     깃허브 저장소 URL
+     * @param communicationChannelUrl 커뮤니케이션 채널 URL
+     * @param deadline                모집 마감 정책 (값 객체)
+     * @param imageUrl                프로젝트 이미지 URL
      * @return 생성된 프로젝트
      */
     public static Project create(
-            ProjectPostCommand command,
             Member creator,
+            String name,
+            String description,
+            ProjectCategory projectCategory,
+            PlatformCategory platformCategory,
+            String githubRepositoryUrl,
+            String communicationChannelUrl,
             RecruitmentDeadline deadline,
             String imageUrl
     ) {
         return Project.builder()
                 .creator(creator)
-                .name(command.projectName())
-                .description(command.description())
-                .projectCategory(command.projectCategory())
-                .platformCategory(command.platformCategory())
+                .name(name)
+                .description(description)
+                .projectCategory(projectCategory)
+                .platformCategory(platformCategory)
                 .imageUrl(imageUrl)
                 .recruitmentStatus(Recruitment.RECRUITING)
                 .recruitmentDeadlineType(deadline.type())
                 .startDate(LocalDate.now())
                 .endDate(deadline.resolveEndDate())
-                .githubRepositoryUrl(command.githubRepositoryUrl())
-                .communicationChannelUrl(command.communicationChannelUrl())
+                .githubRepositoryUrl(githubRepositoryUrl)
+                .communicationChannelUrl(communicationChannelUrl)
                 .isDeleted(false)
                 .build();
     }
@@ -179,56 +191,6 @@ public class Project extends BaseEntity {
         projectSkill.assignProject(this);
     }
 
-    public void updateProject(String name, String description, ProjectCategory projectCategory, PlatformCategory platformCategory,
-                              String imageUrl, LocalDate startDate, LocalDate endDate) {
-        this.name = name;
-        this.description = description;
-        this.projectCategory = projectCategory;
-        this.platformCategory = platformCategory;
-        this.imageUrl = imageUrl;
-        this.startDate = startDate;
-        this.endDate = endDate;
-    }
-
-    public void updateRecruitments(List<RecruitmentState> recruitments) {
-        Map<Long, RecruitmentState> current = this.recruitments.stream()
-                .collect(Collectors.toMap(r -> r.getJobPosition().getId(), r -> r));
-
-        for (RecruitmentState newPca : recruitments) {
-            RecruitmentState existing = current.get(newPca.getJobPosition().getId());
-
-            if(existing != null) {
-                int oldCurrentCount = existing.getCurrentCount();
-                int oldRecruitmentCount = existing.getRecruitmentCount();
-                int newRecruitmentCount = newPca.getRecruitmentCount();
-
-                // 기존 모집에 참여자가 있었던 경우
-                if (oldCurrentCount > 0) {
-                    // 모집이 완료된 경우는 인원을 늘리는 것만 허용
-                    if (oldCurrentCount == oldRecruitmentCount && newRecruitmentCount < oldRecruitmentCount) {
-                        throw new CustomException(ErrorCode.RECRUITMENT_ALREADY_COMPLETED);
-                    }
-
-                    existing.updateRecruitmentCount(newRecruitmentCount);
-                }
-
-            } else {
-                this.addRecruitment(newPca);
-            }
-        }
-
-        this.recruitments.removeIf(existing -> recruitments.stream()
-                .noneMatch(n -> n.getJobPosition().getId().equals(existing.getJobPosition().getId()))
-                && existing.getCurrentCount() == 0
-        );
-    }
-
-    public void updateProjectSkills(List<ProjectSkill> projectSkills) {
-        this.projectSkills.clear();
-        for (ProjectSkill projectSkill : projectSkills) {
-            this.addProjectSkill(projectSkill);
-        }
-    }
 
     public void delete() {
         this.isDeleted = true;
