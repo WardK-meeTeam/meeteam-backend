@@ -1,14 +1,20 @@
 package com.wardk.meeteam_backend.domain.application.service;
 
+import com.wardk.meeteam_backend.domain.application.entity.ApplicationAnswer;
+import com.wardk.meeteam_backend.domain.application.entity.ApplicationQuestion;
 import com.wardk.meeteam_backend.domain.application.entity.ApplicationStatus;
 import com.wardk.meeteam_backend.domain.application.entity.ProjectApplication;
+import com.wardk.meeteam_backend.domain.application.entity.QuestionInputType;
+import com.wardk.meeteam_backend.domain.application.repository.ApplicationAnswerRepository;
+import com.wardk.meeteam_backend.domain.application.repository.ApplicationQuestionRepository;
+import com.wardk.meeteam_backend.domain.application.repository.ApplicationSearchRepository;
 import com.wardk.meeteam_backend.domain.application.repository.ProjectApplicationRepository;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.domain.notification.NotificationEvent;
-import com.wardk.meeteam_backend.domain.notification.entity.NotificationType;
+import com.wardk.meeteam_backend.domain.notification.entity.Notification;
 import com.wardk.meeteam_backend.domain.notification.service.NotificationSaveService;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
@@ -28,7 +34,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 프로젝트 지원 서비스 구현체.
@@ -43,6 +52,9 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final MemberRepository memberRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectApplicationRepository applicationRepository;
+    private final ApplicationQuestionRepository applicationQuestionRepository;
+    private final ApplicationAnswerRepository applicationAnswerRepository;
+    private final ApplicationSearchRepository applicationSearchRepository;
     private final ProjectMemberService projectMemberService;
     private final JobPositionRepository jobPositionRepository;
     private final RecruitmentStateRepository recruitmentStateRepository;
@@ -70,7 +82,10 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         // 4단계: 지원서 생성 및 저장
         ProjectApplication savedApplication = createAndSaveApplication(project, member, jobPosition, request.motivation());
 
-        // 5단계: 알림 발행 및 응답
+        // 5단계: 동적 지원서 답변 저장 (EAV)
+        saveAnswers(project, savedApplication, request.answers());
+
+        // 6단계: 알림 발행 및 응답
         publishApplyNotifications(project, member, savedApplication);
 
         log.info("프로젝트 지원 완료 - projectId: {}, applicantId: {}, jobPositionCode: {}",
@@ -119,28 +134,71 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         return applicationRepository.save(application);
     }
 
-    private void publishApplyNotifications(Project project, Member member, ProjectApplication savedApplication) {
-        Long receiverId = project.getCreator().getId();
-        Long actorId = member.getId();
+    /**
+     * 동적 지원서 답변을 EAV(application_answer)로 저장합니다.
+     * 질문마다 1행씩 생성되며, 필수 질문에 답이 없으면 예외를 던집니다.
+     */
+    private void saveAnswers(Project project, ProjectApplication application, Map<Long, String> answers) {
+        List<ApplicationQuestion> questions =
+                applicationQuestionRepository.findByProjectIdOrderByDisplayOrderAsc(project.getId());
 
-        notificationSaveService.saveForApply(
+        if (questions.isEmpty()) {
+            return;
+        }
+
+        Map<Long, String> given = (answers == null) ? Map.of() : answers;
+        List<ApplicationAnswer> toSave = new ArrayList<>();
+
+        for (ApplicationQuestion question : questions) {
+            String value = given.get(question.getId());
+
+            if (value == null || value.isBlank()) {
+                if (question.isRequired()) {
+                    throw new CustomException(ErrorCode.APPLICATION_ANSWER_REQUIRED);
+                }
+                continue;
+            }
+
+            // value 가 VARCHAR 라 DB 가 타입을 막아주지 못하므로 애플리케이션에서 검증한다. (EAV 비용)
+            validateAnswerType(question, value);
+
+            toSave.add(ApplicationAnswer.of(application, question, value));
+        }
+
+        applicationAnswerRepository.saveAll(toSave);
+    }
+
+    /**
+     * 질문 타입에 맞는 답변인지 검증합니다.
+     * EAV 는 모든 값을 VARCHAR 로 저장하므로 타입 안전성을 애플리케이션이 전담합니다.
+     */
+    private void validateAnswerType(ApplicationQuestion question, String value) {
+        switch (question.getInputType()) {
+            case NUMBER -> {
+                // 숫자 컬럼(valInt, INT)에 저장되므로 int 로 파싱 가능한 값만 허용 (범위 초과도 차단)
+                try {
+                    Integer.parseInt(value);
+                } catch (NumberFormatException e) {
+                    throw new CustomException(ErrorCode.APPLICATION_ANSWER_INVALID_TYPE);
+                }
+            }
+            case SELECT -> {
+                if (!question.getOptions().contains(value)) {
+                    throw new CustomException(ErrorCode.APPLICATION_ANSWER_INVALID_OPTION);
+                }
+            }
+            case TEXT, TEXTAREA -> {
+                // 자유 입력 - 별도 형식 검증 없음
+            }
+        }
+    }
+
+    private void publishApplyNotifications(Project project, Member member, ProjectApplication savedApplication) {
+        List<Notification> notifications = notificationSaveService.saveForApply(
                 project.getCreator(), member, project, savedApplication.getId()
         );
 
-        eventPublisher.publishEvent(new NotificationEvent(
-                receiverId,
-                project.getId(),
-                actorId,
-                NotificationType.PROJECT_APPLY,
-                savedApplication.getId()
-        ));
-
-        eventPublisher.publishEvent(new NotificationEvent(
-                actorId,
-                project.getId(),
-                actorId,
-                NotificationType.PROJECT_MY_APPLY
-        ));
+        eventPublisher.publishEvent(NotificationEvent.of(notifications));
     }
 
     @Override
@@ -168,6 +226,72 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
 
     @Override
     @Transactional(readOnly = true)
+    public List<ApplicationSearchResponse> searchApplications(Long projectId, String requesterEmail,
+                                                              ApplicationSearchRequest request) {
+        // 1단계: 프로젝트 조회 및 리더 권한 검증
+        Project project = projectRepository.findActiveById(projectId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+
+        if (!project.getCreator().getEmail().equals(requesterEmail)) {
+            throw new CustomException(ErrorCode.PROJECT_MEMBER_FORBIDDEN);
+        }
+
+        List<ApplicationSearchRequest.FilterCondition> filters =
+                (request.filters() == null) ? List.of() : request.filters();
+
+        // 2단계: 필터 조건이 리더의 질문/타입과 맞는지 검증
+        Map<Long, ApplicationQuestion> questionMap = applicationQuestionRepository
+                .findByProjectIdOrderByDisplayOrderAsc(projectId).stream()
+                .collect(Collectors.toMap(ApplicationQuestion::getId, question -> question));
+
+
+        validateFilters(filters, questionMap);
+
+        // 3단계: EAV 동적 쿼리로 조건을 만족하는 지원서 조회
+        List<ProjectApplication> matched = applicationSearchRepository.search(projectId, filters);
+
+        // 4단계: 각 지원서의 답변을 함께 담아 응답
+        return matched.stream()
+                .map(application -> ApplicationSearchResponse.from(
+                        application,
+                        applicationAnswerRepository.findByApplicationIdWithQuestion(application.getId())
+                ))
+                .toList();
+    }
+
+    private void validateFilters(List<ApplicationSearchRequest.FilterCondition> filters,
+                                 Map<Long, ApplicationQuestion> questionMap) {
+        for (ApplicationSearchRequest.FilterCondition filter : filters) {
+            ApplicationQuestion question = questionMap.get(filter.questionId());
+
+            if (question == null) {
+                throw new CustomException(ErrorCode.APPLICATION_FILTER_INVALID);
+            }
+
+            switch (filter.operator()) {
+                case GTE, LTE -> {
+                    // 숫자 비교는 NUMBER 질문 + int 범위 숫자일 때만 허용
+                    if (question.getInputType() != QuestionInputType.NUMBER) {
+                        throw new CustomException(ErrorCode.APPLICATION_FILTER_INVALID);
+                    }
+                    try {
+                        Integer.parseInt(filter.value());
+                    } catch (NumberFormatException e) {
+                        throw new CustomException(ErrorCode.APPLICATION_FILTER_INVALID);
+                    }
+                }
+                case EQ, CONTAINS -> {
+                    // 숫자 질문에는 등가/포함 필터를 적용하지 않음
+                    if (question.getInputType() == QuestionInputType.NUMBER) {
+                        throw new CustomException(ErrorCode.APPLICATION_FILTER_INVALID);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ApplicationDetailResponse getApplicationDetail(Long projectId, Long applicationId, String requesterEmail) {
         Project project = projectRepository.findActiveById(projectId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
@@ -179,7 +303,10 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         ProjectApplication application = applicationRepository.findByIdWithApplicantAndJobPosition(projectId, applicationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.APPLICATION_NOT_FOUND));
 
-        return ApplicationDetailResponse.from(application);
+        // 동적 지원서 답변(EAV)을 질문과 함께 조회
+        List<ApplicationAnswer> answers = applicationAnswerRepository.findByApplicationIdWithQuestion(applicationId);
+
+        return ApplicationDetailResponse.from(application, answers);
     }
 
     @Override
@@ -234,19 +361,14 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 application.getJobPosition()
         );
 
-        notificationSaveService.saveForApprove(
+        Notification notification = notificationSaveService.saveForApprove(
                 application.getApplicant(),
                 application.getProject(),
                 projectCreatorId,
                 application.getId()
         );
 
-        eventPublisher.publishEvent(new NotificationEvent(
-                applicantId,
-                projectId,
-                projectCreatorId,
-                NotificationType.PROJECT_APPROVE
-        ));
+        eventPublisher.publishEvent(NotificationEvent.of(notification));
 
         return ApplicationDecisionResponse.acceptResponseDto(
                 application.getId(),
@@ -257,23 +379,16 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     }
 
     private ApplicationDecisionResponse processRejection(ProjectApplication application) {
-        Long projectId = application.getProject().getId();
-        Long applicantId = application.getApplicant().getId();
         Long projectCreatorId = application.getProject().getCreator().getId();
 
-        notificationSaveService.saveForReject(
+        Notification notification = notificationSaveService.saveForReject(
                 application.getApplicant(),
                 application.getProject(),
                 projectCreatorId,
                 application.getId()
         );
 
-        eventPublisher.publishEvent(new NotificationEvent(
-                applicantId,
-                projectId,
-                projectCreatorId,
-                NotificationType.PROJECT_REJECT
-        ));
+        eventPublisher.publishEvent(NotificationEvent.of(notification));
 
         return ApplicationDecisionResponse.rejectResponseDto(
                 application.getId(),

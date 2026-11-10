@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.Map;
+
 /**
  * 프로젝트 지원 요청 DTO.
  */
@@ -16,6 +18,9 @@ public record ApplicationRequest(
 
         @NotBlank
         @Schema(description = "지원 사유 및 자기소개", example = "이 프로젝트에 참여하고 싶습니다. 저는 3년차 프론트엔드 개발자입니다.")
-        String motivation
+        String motivation,
+
+        @Schema(description = "동적 지원서 답변 (questionId -> 값)", example = "{\"1\": \"github.com/heeun\", \"2\": \"20\"}")
+        Map<Long, String> answers
 ) {
 }

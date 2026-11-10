@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.web.application.dto.response;
 
+import com.wardk.meeteam_backend.domain.application.entity.ApplicationAnswer;
 import com.wardk.meeteam_backend.domain.application.entity.ProjectApplication;
 import com.wardk.meeteam_backend.domain.member.entity.Gender;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -43,9 +44,28 @@ public record ApplicationDetailResponse(
         @Schema(description = "지원 사유 및 자기소개")
         String motivation,
 
+        @Schema(description = "동적 지원서 질문/답변 목록")
+        List<AnswerInfo> answers,
+
         @Schema(description = "지원 상태")
         String status
 ) {
+    @Schema(description = "지원서 질문/답변 정보")
+    public record AnswerInfo(
+            @Schema(description = "질문 ID")
+            Long questionId,
+
+            @Schema(description = "질문 문구")
+            String label,
+
+            @Schema(description = "입력 타입")
+            String inputType,
+
+            @Schema(description = "답변 값")
+            String value
+    ) {
+    }
+
     @Schema(description = "지원 포지션 정보")
     public record JobPositionInfo(
             @Schema(description = "포지션 ID")
@@ -75,7 +95,7 @@ public record ApplicationDetailResponse(
     ) {
     }
 
-    public static ApplicationDetailResponse from(ProjectApplication application) {
+    public static ApplicationDetailResponse from(ProjectApplication application, List<ApplicationAnswer> answers) {
         Member applicant = application.getApplicant();
 
         List<TechStackInfo> techStacks = applicant.getMemberTechStacks().stream()
@@ -84,6 +104,15 @@ public record ApplicationDetailResponse(
                         mts.getTechStack().getId(),
                         mts.getTechStack().getName(),
                         mts.getDisplayOrder()
+                ))
+                .toList();
+
+        List<AnswerInfo> answerInfos = answers.stream()
+                .map(answer -> new AnswerInfo(
+                        answer.getQuestion().getId(),
+                        answer.getQuestion().getLabel(),
+                        answer.getQuestion().getInputType().name(),
+                        answer.getValue()
                 ))
                 .toList();
 
@@ -103,6 +132,7 @@ public record ApplicationDetailResponse(
                 ),
                 techStacks,
                 application.getMotivation(),
+                answerInfos,
                 application.getStatus().getDisplayName()
         );
     }
