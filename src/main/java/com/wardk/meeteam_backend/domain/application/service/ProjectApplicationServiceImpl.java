@@ -28,15 +28,19 @@ import com.wardk.meeteam_backend.web.application.dto.request.*;
 import com.wardk.meeteam_backend.web.application.dto.response.*;
 import com.wardk.meeteam_backend.web.auth.dto.CustomSecurityUserDetails;
 import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -60,6 +64,7 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
     private final RecruitmentStateRepository recruitmentStateRepository;
     private final NotificationSaveService notificationSaveService;
     private final ApplicationEventPublisher eventPublisher;
+    private final MeterRegistry meterRegistry;
 
     @Counted("project.apply")
     @Override
@@ -79,6 +84,12 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         validateApplyPrecondition(project, member, projectId, memberId);
         validateRecruitmentPosition(projectId, jobPosition);
 
+        // 누적 지원 수 +1 — 지원서 INSERT(FK 검증이 project 행 S-lock을 잡음)보다 먼저
+        // X-lock을 획득해 S→X 승격 데드락을 차단한다. 검증 단계는 락 밖, INSERT~커밋은 락 안.
+        long updateStartNanos = System.nanoTime();
+        projectRepository.increaseApplicationCount(projectId);
+        recordLockTiming(projectId, updateStartNanos, System.nanoTime());
+
         // 4단계: 지원서 생성 및 저장
         ProjectApplication savedApplication = createAndSaveApplication(project, member, jobPosition, request.motivation());
 
@@ -92,6 +103,31 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
                 projectId, memberId, request.jobPositionCode());
 
         return ApplicationResponse.from(savedApplication);
+    }
+
+    /**
+     * applicationCount UPDATE가 잡은 project 행 X-lock의 소유 시간을 측정합니다.
+     * <p>
+     * InnoDB는 커밋 시점에 행 락을 해제하므로, UPDATE 반환 직후부터 트랜잭션 완료까지가 락 소유 구간입니다.
+     * <ul>
+     *   <li>{@code project.apply.lock.acquire} — UPDATE 문 수행 시간 (다른 트랜잭션의 락 대기 포함)</li>
+     *   <li>{@code project.apply.lock.held} — 락 획득 후 커밋 완료까지 소유 시간</li>
+     * </ul>
+     */
+    private void recordLockTiming(Long projectId, long updateStartNanos, long lockAcquiredNanos) {
+        meterRegistry.timer("project.apply.lock.acquire")
+                .record(lockAcquiredNanos - updateStartNanos, TimeUnit.NANOSECONDS);
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                long heldNanos = System.nanoTime() - lockAcquiredNanos;
+                meterRegistry.timer("project.apply.lock.held")
+                        .record(heldNanos, TimeUnit.NANOSECONDS);
+                log.info("project 행 락 소유 시간 - projectId: {}, held: {}ms, committed: {}",
+                        projectId, heldNanos / 1_000_000.0, status == STATUS_COMMITTED);
+            }
+        });
     }
 
     private void validateNotSelfApplication(Project project, Long memberId) {
