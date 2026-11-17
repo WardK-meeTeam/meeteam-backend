@@ -71,6 +71,10 @@ public class Project extends BaseEntity {
     @Column(nullable = false)
     private Integer likeCount = 0;
 
+    /** 누적 지원 수 (취소/거절 포함). 지원 시 벌크 UPDATE(+1)로만 갱신된다. */
+    @Column(nullable = false)
+    private Integer applicationCount = 0;
+
     private String githubRepositoryUrl;
 
     private String communicationChannelUrl;

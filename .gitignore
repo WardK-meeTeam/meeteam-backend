@@ -54,3 +54,5 @@ src/main/resources/application.yml
 
 docs/ui
 docs/uechann
+### Load test ###
+loadtest/tokens.json

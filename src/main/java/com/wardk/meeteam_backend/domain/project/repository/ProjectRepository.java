@@ -74,6 +74,30 @@ public interface ProjectRepository extends JpaRepository<Project, Long> , Projec
     Optional<Project> findByIdForUpdate(@Param("id") Long id);
 
     /**
+     * 좋아요 수 원자적 증가 (Lost Update 방지)
+     */
+    @Modifying
+    @Query("update Project p set p.likeCount = p.likeCount + 1 where p.id = :projectId")
+    int increaseLikeCount(@Param("projectId") Long projectId);
+
+    /**
+     * 좋아요 수 원자적 감소 (0 미만 방지 가드 포함)
+     */
+    @Modifying
+    @Query("update Project p set p.likeCount = p.likeCount - 1 where p.id = :projectId and p.likeCount > 0")
+    int decreaseLikeCount(@Param("projectId") Long projectId);
+
+    @Query("select p.likeCount from Project p where p.id = :projectId and p.isDeleted = false")
+    Optional<Integer> findLikeCountById(@Param("projectId") Long projectId);
+
+    /**
+     * 누적 지원 수 원자적 증가 (Lost Update 방지)
+     */
+    @Modifying
+    @Query("update Project p set p.applicationCount = p.applicationCount + 1 where p.id = :projectId")
+    int increaseApplicationCount(@Param("projectId") Long projectId);
+
+    /**
      * 프로젝트 상세 조회용 (creator와 recruitments fetch join)
      */
     @Query("""

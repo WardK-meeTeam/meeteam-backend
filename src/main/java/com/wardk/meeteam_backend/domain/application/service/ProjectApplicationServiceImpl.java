@@ -1,5 +1,6 @@
 package com.wardk.meeteam_backend.domain.application.service;
 
+import com.wardk.meeteam_backend.domain.application.ApplicationAppliedEvent;
 import com.wardk.meeteam_backend.domain.application.entity.ApplicationAnswer;
 import com.wardk.meeteam_backend.domain.application.entity.ApplicationQuestion;
 import com.wardk.meeteam_backend.domain.application.entity.ApplicationStatus;
@@ -78,6 +79,11 @@ public class ProjectApplicationServiceImpl implements ProjectApplicationService 
         // 3단계: 비즈니스 규칙 검증
         validateApplyPrecondition(project, member, projectId, memberId);
         validateRecruitmentPosition(projectId, jobPosition);
+
+        // 누적 지원 수 +1은 커밋 후 비동기 별도 트랜잭션으로 분리한다 (ApplicationCountEventListener).
+        // apply 트랜잭션은 지원서 INSERT의 FK 검증이 잡는 project 행 S-lock만 쥐므로,
+        // 같은 행 X-lock을 커밋까지 소유해 동시 지원을 직렬화하던 구조가 사라진다.
+        eventPublisher.publishEvent(ApplicationAppliedEvent.of(projectId));
 
         // 4단계: 지원서 생성 및 저장
         ProjectApplication savedApplication = createAndSaveApplication(project, member, jobPosition, request.motivation());
