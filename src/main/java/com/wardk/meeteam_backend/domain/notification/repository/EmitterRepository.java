@@ -34,6 +34,6 @@ public interface EmitterRepository {
     void deleteAllEventCacheStartWithId(String memberIdPrefix);
 
 
-    Map<String, Object> findEventCacheAfterByMemberId(String memberId, long afterTs);
+    Map<String, Object> findEventCacheAfterByMemberId(String memberId, long afterSeq);
 }
 

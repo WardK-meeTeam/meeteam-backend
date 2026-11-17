@@ -11,6 +11,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 프로젝트 지원서 엔티티.
  */
@@ -43,6 +46,10 @@ public class ProjectApplication extends BaseEntity {
     @Enumerated(value = EnumType.STRING)
     @Column(nullable = false)
     private ApplicationStatus status;
+
+    /** 동적 지원서 답변 (EAV). 지원서 1건에 질문 수만큼의 답변 행이 연결됩니다. */
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ApplicationAnswer> answers = new ArrayList<>();
 
     @Builder
     private ProjectApplication(Project project, Member applicant, JobPosition jobPosition, String motivation) {

@@ -17,7 +17,7 @@ spring:
 
     jpa:
         hibernate:
-            ddl-auto: create  # 매 기동 시 엔티티 기준으로 스키마 새로 생성 (테스트 DB는 초기화돼도 무방)
+            ddl-auto: update  # 매 기동 시 엔티티 기준으로 스키마 새로 생성 (테스트 DB는 초기화돼도 무방)
         show-sql: true
         defer-datasource-initialization: true  # 테이블 생성 후 시드 데이터 주입
         properties:

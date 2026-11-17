@@ -62,8 +62,18 @@ public class ProjectCommandServiceImpl implements ProjectCommandService {
                 command.endDate()
         );
 
-        // 프로젝트 생성
-        Project project = Project.create(command, creator, deadline, imageUrl);
+        // 프로젝트 생성 (DTO 해체는 서비스 책임 — 도메인은 DTO를 모른다)
+        Project project = Project.create(
+                creator,
+                command.projectName(),
+                command.description(),
+                command.projectCategory(),
+                command.platformCategory(),
+                command.githubRepositoryUrl(),
+                command.communicationChannelUrl(),
+                deadline,
+                imageUrl
+        );
 
         // 모집 정보 생성 및 추가 (도메인 서비스 위임)
         List<RecruitmentState> recruitmentStates = recruitmentDomainService.createRecruitmentStates(command.recruitments());

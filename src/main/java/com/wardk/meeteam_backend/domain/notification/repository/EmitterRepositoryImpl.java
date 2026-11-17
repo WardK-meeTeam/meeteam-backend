@@ -35,13 +35,13 @@ import java.util.function.BiConsumer;
  * <pre>
  * ┌─────────────────────────────────────────────────────────────────┐
  * │ ZSET: eventCache:{memberId}                                    │
- * │ - 역할: 이벤트 ID 목록을 시간순으로 정렬하여 저장 (인덱스)         │
+ * │ - 역할: 이벤트 ID 목록을 seq 순으로 정렬하여 저장 (인덱스)        │
  * │ - TTL: 2시간 (이벤트 데이터와 동일)                              │
  * ├─────────────────────────────────────────────────────────────────┤
  * │ member (값)              │ score (점수 = 정렬 기준)              │
- * │ "5_1708934400000"        │ 1708934400000 (timestamp)            │
- * │ "5_1708934401000"        │ 1708934401000                        │
- * │ "5_1708934402000"        │ 1708934402000                        │
+ * │ "5_1"                    │ 1 (seq, Redis INCR 단조 증가)         │
+ * │ "5_2"                    │ 2                                    │
+ * │ "5_3"                    │ 3                                    │
  * └─────────────────────────────────────────────────────────────────┘
  *
  * ┌─────────────────────────────────────────────────────────────────┐
@@ -49,7 +49,7 @@ import java.util.function.BiConsumer;
  * │ - 역할: 실제 이벤트 데이터 저장                                  │
  * │ - TTL: 2시간                                                    │
  * ├─────────────────────────────────────────────────────────────────┤
- * │ 예: eventCache:evt:5_1708934400000                              │
+ * │ 예: eventCache:evt:5_1                                          │
  * │ 값: SseEnvelope 객체 (자동 직렬화됨)                             │
  * │     {"type":"PROJECT_APPLY", "data":{...}, "createdAt":...}    │
  * └─────────────────────────────────────────────────────────────────┘
@@ -58,10 +58,10 @@ import java.util.function.BiConsumer;
  * <h2>왜 ZSET과 String을 분리했나?</h2>
  * <pre>
  * - ZSET만 사용하면: 큰 객체를 저장하기 어렵고, 범위 검색 시 전체 데이터를 가져와야 함
- * - String만 사용하면: 시간순 정렬이 어렵고, "이 시간 이후의 이벤트"를 효율적으로 찾을 수 없음
+ * - String만 사용하면: seq 순 정렬이 어렵고, "이 seq 이후의 이벤트"를 효율적으로 찾을 수 없음
  *
  * 분리함으로써:
- * - ZSET: 가벼운 인덱스 역할 (eventId와 timestamp만 저장)
+ * - ZSET: 가벼운 인덱스 역할 (eventId와 seq만 저장)
  * - String: 실제 무거운 데이터 저장
  * - rangeByScore로 O(log N) 시간에 범위 검색 가능
  * </pre>
@@ -98,14 +98,14 @@ public class EmitterRepositoryImpl implements EmitterRepository {
     /**
      * SSE Emitter 저장소 (In-Memory).
      *
-     * Key: "{memberId}_{timestamp}" (예: "5_1708934400000")
+     * Key: "{memberId}_{UUID}" (예: "5_3f9a1c2e-...")
      * Value: SseEmitter 객체
      *
      * 같은 사용자가 여러 탭/기기에서 접속하면 여러 Emitter가 저장됨.
-     * 예: 사용자 5번이 3개의 탭을 열면:
-     *   - "5_1708934400000" → Emitter1
-     *   - "5_1708934401000" → Emitter2
-     *   - "5_1708934402000" → Emitter3
+     * 예: 사용자 5번이 3개의 탭을 열면 (UUID가 달라 충돌하지 않음):
+     *   - "5_3f9a1c2e-..." → Emitter1
+     *   - "5_7b2d4e8f-..." → Emitter2
+     *   - "5_a1c3e5d7-..." → Emitter3
      */
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
@@ -127,7 +127,7 @@ public class EmitterRepositoryImpl implements EmitterRepository {
     /**
      * 새로운 SSE Emitter 저장.
      *
-     * @param emitterId "{memberId}_{timestamp}" 형식
+     * @param emitterId "{memberId}_{UUID}" 형식
      * @param sseEmitter 저장할 Emitter 객체
      */
     @Override
@@ -196,16 +196,16 @@ public class EmitterRepositoryImpl implements EmitterRepository {
      *
      * <pre>
      * 저장 과정:
-     * 1. eventId 파싱: "5_1708934400000" → memberId=5, timestamp=1708934400000
-     * 2. String에 이벤트 데이터 저장 (key: eventCache:evt:5_1708934400000)
-     * 3. ZSET에 인덱스 추가 (key: eventCache:5, member: eventId, score: timestamp)
+     * 1. eventId 파싱: "5_1" → memberId=5, seq=1
+     * 2. String에 이벤트 데이터 저장 (key: eventCache:evt:5_1)
+     * 3. ZSET에 인덱스 추가 (key: eventCache:5, member: eventId, score: seq)
      *
      * 이렇게 저장하면 나중에:
-     * - "특정 시간 이후의 모든 이벤트"를 ZSET rangeByScore로 빠르게 조회 가능
+     * - "특정 seq 이후의 모든 이벤트"를 ZSET rangeByScore로 빠르게 조회 가능
      * - 조회된 eventId로 실제 데이터를 String에서 가져옴
      * </pre>
      *
-     * @param eventId "{memberId}_{timestamp}" 형식
+     * @param eventId "{memberId}_{seq}" 형식 (seq는 Redis INCR 단조 증가 값)
      * @param event 저장할 이벤트 객체 (SseEnvelope)
      */
     @Override
@@ -217,16 +217,16 @@ public class EmitterRepositoryImpl implements EmitterRepository {
         }
 
         String memberId = parts[0];
-        long timestamp;
+        long seq;
         try {
-            timestamp = Long.parseLong(parts[1]);
+            seq = Long.parseLong(parts[1]);
         } catch (NumberFormatException e) {
             throw new CustomException(ErrorCode.INVALID_EVENT_ID);
         }
 
         // 2. Redis 키 생성
         String zsetKey = EVENT_CACHE_PREFIX + memberId;      // "eventCache:5"
-        String dataKey = EVENT_DATA_PREFIX + eventId;        // "eventCache:evt:5_1708934400000"
+        String dataKey = EVENT_DATA_PREFIX + eventId;        // "eventCache:evt:5_1"
 
         // 3. 이벤트 데이터 저장 (String 타입)
         // redisObjectTemplate이 자동으로 SseEnvelope → JSON/바이너리 직렬화
@@ -235,8 +235,8 @@ public class EmitterRepositoryImpl implements EmitterRepository {
         // 4. ZSET에 인덱스 추가
         // add(key, member, score) → 정렬된 집합에 추가
         // member: eventId (문자열)
-        // score: timestamp (정렬 기준, 숫자가 작을수록 앞에 위치)
-        stringRedisTemplate.opsForZSet().add(zsetKey, eventId, timestamp);
+        // score: seq (정렬 기준, 숫자가 작을수록 앞에 위치)
+        stringRedisTemplate.opsForZSet().add(zsetKey, eventId, seq);
 
         // 5. ZSET TTL 설정 (이벤트 데이터와 동일한 TTL 적용)
         stringRedisTemplate.expire(zsetKey, EVENT_CACHE_TTL);
@@ -247,12 +247,12 @@ public class EmitterRepositoryImpl implements EmitterRepository {
      *
      * <pre>
      * 조회 과정:
-     * 1. ZSET에서 모든 eventId 조회 (시간순 정렬됨)
+     * 1. ZSET에서 모든 eventId 조회 (seq 순 정렬됨)
      * 2. 각 eventId로 String에서 실제 데이터 조회
      * </pre>
      *
      * @param memberIdPrefix 사용자 ID
-     * @return eventId → 이벤트 데이터 맵 (시간순 정렬)
+     * @return eventId → 이벤트 데이터 맵 (seq 순 정렬)
      */
     @Override
     public Map<String, Object> findAllEventCacheStartWithByMemberId(String memberIdPrefix) {
@@ -286,13 +286,13 @@ public class EmitterRepositoryImpl implements EmitterRepository {
     }
 
     /**
-     * 특정 시간 이후의 이벤트만 조회 (재연결 시 사용).
+     * 특정 seq 이후의 이벤트만 조회 (재연결 시 사용).
      *
      * <pre>
      * 사용 시나리오:
-     * 1. 클라이언트가 연결 끊김 (마지막으로 받은 이벤트 ID: "5_1708934400000")
-     * 2. 재연결 시 Last-Event-ID 헤더로 "5_1708934400000" 전송
-     * 3. 서버는 timestamp 1708934400000 이후의 이벤트만 재전송
+     * 1. 클라이언트가 연결 끊김 (마지막으로 받은 이벤트 ID: "5_3")
+     * 2. 재연결 시 Last-Event-ID 헤더로 "5_3" 전송
+     * 3. 서버는 seq 3 이후의 이벤트만 재전송 (4, 5, ...)
      *
      * ZSET rangeByScore 사용:
      * - 시간복잡도: O(log N + M) (N: 전체 개수, M: 결과 개수)
@@ -300,17 +300,17 @@ public class EmitterRepositoryImpl implements EmitterRepository {
      * </pre>
      *
      * @param memberId 사용자 ID
-     * @param afterTs 이 timestamp 이후의 이벤트만 조회
-     * @return eventId → 이벤트 데이터 맵 (시간순 정렬)
+     * @param afterSeq 이 seq 이후의 이벤트만 조회
+     * @return eventId → 이벤트 데이터 맵 (seq 순 정렬)
      */
     @Override
-    public Map<String, Object> findEventCacheAfterByMemberId(String memberId, long afterTs) {
+    public Map<String, Object> findEventCacheAfterByMemberId(String memberId, long afterSeq) {
         String zsetKey = EVENT_CACHE_PREFIX + memberId;
 
-        // ZSET에서 score가 (afterTs, +∞) 범위인 member 조회
-        // afterTs + 1: "이후"이므로 해당 시간은 제외 (strictly greater than)
+        // ZSET에서 score가 (afterSeq, +∞) 범위인 member 조회
+        // afterSeq + 1: "이후"이므로 해당 seq는 제외 (strictly greater than)
         Set<TypedTuple<String>> tuples = stringRedisTemplate.opsForZSet()
-                .rangeByScoreWithScores(zsetKey, afterTs + 1, Double.POSITIVE_INFINITY);
+                .rangeByScoreWithScores(zsetKey, afterSeq + 1, Double.POSITIVE_INFINITY);
 
         if (tuples == null || tuples.isEmpty()) {
             return Map.of();

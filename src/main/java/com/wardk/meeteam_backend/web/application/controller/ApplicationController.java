@@ -54,6 +54,19 @@ public class ApplicationController {
         return SuccessResponse.onSuccess(applicationList);
     }
 
+    @Operation(summary = "지원자 답변 필터 검색", description = "프로젝트 리더가 자신이 정의한 질문을 기준으로 지원자를 필터링합니다. (NUMBER: 이상/이하, SELECT: 일치, TEXT: 포함)")
+    @PostMapping("/api/v1/projects/{projectId}/applications/search")
+    public SuccessResponse<List<ApplicationSearchResponse>> searchApplications(
+            @PathVariable Long projectId,
+            @RequestBody @Validated ApplicationSearchRequest request,
+            @AuthenticationPrincipal CustomSecurityUserDetails userDetails) {
+
+        List<ApplicationSearchResponse> response =
+                applicationService.searchApplications(projectId, userDetails.getUsername(), request);
+
+        return SuccessResponse.onSuccess(response);
+    }
+
     @Operation(summary = "프로젝트 지원 상세 조회", description = "프로젝트 리더가 특정 지원서의 상세 정보를 조회합니다.")
     @GetMapping("/api/v1/projects/{projectId}/applications/{applicationId}")
     public SuccessResponse<ApplicationDetailResponse> getApplicationDetail(

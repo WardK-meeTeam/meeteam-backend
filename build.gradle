@@ -101,9 +101,13 @@ dependencies {
 	testImplementation 'io.rest-assured:rest-assured:5.4.0'
 
 	// Cucumber BDD
-	testImplementation 'io.cucumber:cucumber-java:7.31.0'
-	testImplementation 'io.cucumber:cucumber-spring:7.31.0'
-	testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.31.0'
+	// 7.20.1 is the latest line built against junit-platform 1.11.x, matching the
+	// version managed by Spring Boot 3.4.5 (jupiter 5.11 / platform 1.11.4).
+	// Newer cucumber (7.23+) requires junit-platform 1.13+ (DiscoveryIssueReporter)
+	// which Spring Boot's BOM force-downgrades, causing NoClassDefFoundError.
+	testImplementation 'io.cucumber:cucumber-java:7.20.1'
+	testImplementation 'io.cucumber:cucumber-spring:7.20.1'
+	testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.20.1'
 	testImplementation 'org.junit.platform:junit-platform-suite:1.11.4'
 	testImplementation 'net.java.dev.jna:jna:5.13.0'
 	testImplementation 'net.java.dev.jna:jna-platform:5.13.0'
@@ -133,6 +137,23 @@ tasks.register('integrationTest', Test) {
 		excludeEngines 'cucumber'
 	}
 	include '**/integration/**'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+}
+
+// 부하 테스트용 JWT 토큰 파일 생성 (loadtest/tokens.json)
+tasks.register('generateLoadTestTokens', JavaExec) {
+	group = 'loadtest'
+	description = '부하 테스트용 JWT 액세스 토큰 파일을 생성한다 (-Pcount=개수)'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'com.wardk.meeteam_backend.loadtest.LoadTestTokenGenerator'
+	systemProperty 'count', project.findProperty('count') ?: '10000'
+}
+
+// 인수 테스트 전용 태스크 (Cucumber 실행)
+tasks.register('acceptanceTest', Test) {
+	useJUnitPlatform()
+	include '**/CucumberTest*'
 	testClassesDirs = sourceSets.test.output.classesDirs
 	classpath = sourceSets.test.runtimeClasspath
 }

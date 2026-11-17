@@ -22,6 +22,12 @@ public interface ProjectApplicationService {
     List<ProjectApplicationListResponse> getApplicationList(Long projectId, String requesterEmail);
 
     /**
+     * 지원자 답변(EAV) 기반 필터 검색 (리더 전용).
+     * 리더가 정의한 질문을 기준으로 지원자를 필터링합니다.
+     */
+    List<ApplicationSearchResponse> searchApplications(Long projectId, String requesterEmail, ApplicationSearchRequest request);
+
+    /**
      * 프로젝트 지원 상세 조회 (리더 전용).
      */
     ApplicationDetailResponse getApplicationDetail(Long projectId, Long applicationId, String requesterEmail);
