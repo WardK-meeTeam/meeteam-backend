@@ -7,6 +7,7 @@ import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.file.service.S3FileService;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
+import com.wardk.meeteam_backend.domain.member.search.MemberStackSearchProjector;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.projectlike.repository.ProjectLikeRepository;
 import com.wardk.meeteam_backend.domain.recruitment.entity.RecruitmentState;
@@ -45,6 +46,7 @@ public class MemberProfileServiceImpl implements MemberProfileService {
     private final S3FileService s3FileService;
     private final RecruitmentStateRepository recruitmentStateRepository;
     private final ProjectLikeRepository projectLikeRepository;
+    private final MemberStackSearchProjector memberStackSearchProjector;
 
     /**
      * 나의 프로필 조회 (프로필 사진 분기처리 포함)
@@ -187,6 +189,9 @@ public class MemberProfileServiceImpl implements MemberProfileService {
         // 변경 사항 저장 (더티 체킹으로 자동 업데이트)
         Member savedMember = memberRepository.save(member);
 
+        // 스택 구성이 바뀌었으므로 검색 투영 테이블 재투영 (내부에서 flush 후 수행)
+        memberStackSearchProjector.rebuildFor(member.getId());
+
         return new MemberProfileUpdateResponse(savedMember);
     }
 
@@ -205,12 +210,26 @@ public class MemberProfileServiceImpl implements MemberProfileService {
 
     /**
      * 팀원 찾기 v1 검색.
+     * 기술스택 이름은 ID로 선변환하여 검색 쿼리에서 tech_stack 조인을 제거한다.
+     * 존재하지 않는 이름이 포함되면 결과가 있을 수 없으므로 조회 없이 빈 페이지를 반환한다.
      */
     @Override
     @Transactional(readOnly = true)
     public Page<MemberCardResponse> searchMembersV1(String name, Long jobFieldId,
                                                      List<String> techStackNames, Pageable pageable) {
-        Page<Member> memberPage = memberRepository.searchMembersV1(name, jobFieldId, techStackNames, pageable);
+        List<Long> techStackIds = null;
+        if (techStackNames != null && !techStackNames.isEmpty()) {
+            Set<String> distinctNames = Set.copyOf(techStackNames);
+            List<TechStack> techStacks = techStackRepository.findByNameIn(distinctNames);
+
+            if (techStacks.size() < distinctNames.size()) {
+                log.info("팀원 검색 v1 - 존재하지 않는 기술스택 포함, 빈 결과 반환. 요청: {}", techStackNames);
+                return Page.empty(pageable);
+            }
+            techStackIds = techStacks.stream().map(TechStack::getId).toList();
+        }
+
+        Page<Member> memberPage = memberRepository.searchMembersV1(name, jobFieldId, techStackIds, pageable);
 
         log.info("팀원 검색 v1 - name: {}, jobFieldId: {}, techStacks: {}, 총 {}명",
                 name, jobFieldId, techStackNames, memberPage.getTotalElements());
@@ -243,6 +262,10 @@ public class MemberProfileServiceImpl implements MemberProfileService {
      */
     private void updateMemberTechStacks(Member member, List<TechStackOrderRequest> techStackRequests) {
         member.getMemberTechStacks().clear();
+        // Hibernate는 flush 시 INSERT를 DELETE보다 먼저 실행하므로,
+        // 동일한 스택을 다시 추가하면 uk_member_tech_stack_pair 제약에 걸린다.
+        // 삭제를 먼저 DB에 반영한 뒤 재추가한다.
+        memberRepository.flush();
 
         if (techStackRequests == null || techStackRequests.isEmpty()) {
             return;

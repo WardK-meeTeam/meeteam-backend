@@ -4,7 +4,6 @@ import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
-import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
@@ -20,8 +19,6 @@ import java.util.List;
 import static com.wardk.meeteam_backend.domain.member.entity.QMember.member;
 import static com.wardk.meeteam_backend.domain.member.entity.QMemberJobPosition.memberJobPosition;
 import static com.wardk.meeteam_backend.domain.member.entity.QMemberTechStack.memberTechStack;
-import static com.wardk.meeteam_backend.domain.projectmember.entity.QProjectMember.projectMember;
-import static com.wardk.meeteam_backend.domain.job.entity.QTechStack.techStack;
 
 @Slf4j
 public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements MemberRepositoryCustom {
@@ -34,13 +31,13 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     }
 
     @Override
-    public Page<Member> searchMembersV1(String name, Long jobFieldId, List<String> techStackNames, Pageable pageable) {
+    public Page<Member> searchMembersV1(String name, Long jobFieldId, List<Long> techStackIds, Pageable pageable) {
         // projectCount 정렬이 있는지 확인
         boolean hasProjectCountSort = pageable.getSort().stream()
                 .anyMatch(order -> "projectCount".equals(order.getProperty()));
 
         if (hasProjectCountSort) {
-            return searchMembersV1WithProjectCountSort(name, jobFieldId, techStackNames, pageable);
+            return searchMembersV1WithProjectCountSort(name, jobFieldId, techStackIds, pageable);
         }
 
         return applyPagination(pageable, qf ->
@@ -50,7 +47,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                                 member.deletedAt.isNull(),
                                 nameContains(name),
                                 jobFieldIdEquals(jobFieldId),
-                                techStackNamesExist(techStackNames)
+                                techStackIdsExist(techStackIds)
                         )
         );
     }
@@ -59,7 +56,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
      * v1 검색 + projectCount 정렬 처리
      */
     private Page<Member> searchMembersV1WithProjectCountSort(String name, Long jobFieldId,
-                                                              List<String> techStackNames, Pageable pageable) {
+                                                              List<Long> techStackIds, Pageable pageable) {
         JPAQuery<Member> query = queryFactory
                 .select(member)
                 .from(member)
@@ -67,7 +64,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                         member.deletedAt.isNull(),
                         nameContains(name),
                         jobFieldIdEquals(jobFieldId),
-                        techStackNamesExist(techStackNames)
+                        techStackIdsExist(techStackIds)
                 );
 
         // 정렬 적용
@@ -75,11 +72,8 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
             Order direction = sortOrder.isAscending() ? Order.ASC : Order.DESC;
 
             if ("projectCount".equals(sortOrder.getProperty())) {
-                JPQLQuery<Long> projectCountExpr = JPAExpressions
-                        .select(projectMember.count())
-                        .from(projectMember)
-                        .where(projectMember.member.eq(member));
-                query.orderBy(new OrderSpecifier<>(direction, projectCountExpr));
+                // 비정규화 컬럼 정렬 — 상관 스칼라 서브쿼리 제거(P5)
+                query.orderBy(new OrderSpecifier<>(direction, member.projectCount));
             } else {
                 getQuerydsl().applySorting(Sort.by(sortOrder), query);
             }
@@ -97,7 +91,7 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
                         member.deletedAt.isNull(),
                         nameContains(name),
                         jobFieldIdEquals(jobFieldId),
-                        techStackNamesExist(techStackNames)
+                        techStackIdsExist(techStackIds)
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -133,30 +127,31 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
     }
 
     /**
-     * 기술스택 이름 조건 (AND 조건).
-     * 요청한 모든 기술스택을 가지고 있어야 매칭.
+     * 기술스택 ID 조건 (AND 조건) — 스택별 상관 EXISTS.
+     * 요청한 모든 기술스택을 보유한 회원만 매칭한다.
+     * 스택 하나라도 보유하지 않으면 즉시 탈락(short-circuit)하며,
+     * 커버링 인덱스 (tech_stack_id, member_id)로 각 EXISTS가 index-only seek으로 처리된다.
+     * EXISTS는 행의 존재 여부만 보므로 유니크 제약 적용 전의 레거시 중복 행에도 안전하다.
+     * 기술스택 이름은 서비스 레이어에서 ID로 선변환되어 들어온다.
      */
-    private BooleanExpression techStackNamesExist(List<String> techStackNames) {
-        if (techStackNames == null || techStackNames.isEmpty()) {
+    private BooleanExpression techStackIdsExist(List<Long> techStackIds) {
+        if (techStackIds == null || techStackIds.isEmpty()) {
             return null;
         }
 
-        return techStackNames.stream()
-                .map(this::hasTechStack)
-                .reduce(BooleanExpression::and)
-                .orElse(null);
-    }
-
-    private BooleanExpression hasTechStack(String techStackName) {
-        return JPAExpressions
-                .selectOne()
-                .from(memberTechStack)
-                .join(memberTechStack.techStack, techStack)
-                .where(
-                        memberTechStack.member.eq(member),
-                        techStack.name.eq(techStackName)
-                )
-                .exists();
+        BooleanExpression predicate = null;
+        for (Long techStackId : techStackIds) {
+            BooleanExpression exists = JPAExpressions
+                    .selectOne()
+                    .from(memberTechStack)
+                    .where(
+                            memberTechStack.member.eq(member),
+                            memberTechStack.techStack.id.eq(techStackId)
+                    )
+                    .exists();
+            predicate = (predicate == null) ? exists : predicate.and(exists);
+        }
+        return predicate;
     }
 
     @Override
@@ -184,11 +179,8 @@ public class MemberRepositoryImpl extends Querydsl4RepositorySupport implements 
             Order direction = sortOrder.isAscending() ? Order.ASC : Order.DESC;
 
             if ("projectCount".equals(sortOrder.getProperty())) {
-                JPQLQuery<Long> projectCountExpr = JPAExpressions
-                        .select(projectMember.count())
-                        .from(projectMember)
-                        .where(projectMember.member.eq(member));
-                query.orderBy(new OrderSpecifier<>(direction, projectCountExpr));
+                // 비정규화 컬럼 정렬 — 상관 스칼라 서브쿼리 제거(P5)
+                query.orderBy(new OrderSpecifier<>(direction, member.projectCount));
             } else {
                 getQuerydsl().applySorting(Sort.by(sortOrder), query);
             }
