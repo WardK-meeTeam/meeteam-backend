@@ -3,7 +3,6 @@ package com.wardk.meeteam_backend.domain.member.entity;
 import com.wardk.meeteam_backend.domain.job.entity.JobPosition;
 import com.wardk.meeteam_backend.domain.job.entity.TechStack;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
-import com.wardk.meeteam_backend.global.auth.service.dto.SejongRegisterCommand;
 import com.wardk.meeteam_backend.global.entity.BaseEntity;
 
 import jakarta.persistence.*;
@@ -22,7 +21,13 @@ import java.util.List;
 @Table(name = "member", uniqueConstraints = {
         @UniqueConstraint(name = "uk_member_email_deleted", columnNames = {"email", "deleted_at"}),
         @UniqueConstraint(name = "uk_member_student_id_deleted", columnNames = {"student_id", "deleted_at"})
-})
+},
+        // projectCount 정렬 조회(메인페이지, 팀원 검색)의 filesort를 인덱스 순서 스캔으로 대체.
+        // LIMIT 페이지가 차면 조기 종료할 수 있는 정렬 인덱스 — deleted_at IS NULL 필터가 선행 컬럼.
+        indexes = @Index(
+                name = "idx_member_deleted_project_count",
+                columnList = "deleted_at, project_count"
+        ))
 public class Member extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,6 +51,16 @@ public class Member extends BaseEntity {
     private LocalDate birth;
 
     private Boolean isParticipating;
+
+    /**
+     * 참여 프로젝트 수(비정규화 캐시 컬럼). 값의 의미 = 회원별 {@code project_member} 행 수(전부 카운트).
+     *
+     * <p>팀원 찾기 projectCount 정렬의 상관 스칼라 서브쿼리를 컬럼 정렬로 대체하기 위한 컬럼이다.
+     * 증감은 ProjectMember 생성/삭제 시점에 원자적 UPDATE로 관리된다
+     * ({@code MemberRepository.increaseProjectCount/decreaseProjectCount}) — {@code @Version} 충돌을 피한다.
+     */
+    @Column(name = "project_count", nullable = false)
+    private Integer projectCount = 0;
 
     @Version
     private Long version;
@@ -101,50 +116,28 @@ public class Member extends BaseEntity {
     }
 
     /**
-     * 세종대 포털 인증 회원가입용 정적 팩토리 메서드
+     * 세종대 포털 인증 회원가입용 정적 팩토리 메서드.
+     *
+     * <p>도메인 엔티티가 서비스 레이어 DTO(Command)에 의존하지 않도록 원시/도메인 값만 받는다.
+     * Command 언패킹은 호출하는 서비스의 책임이다.
      */
-    public static Member createSejongMember(String studentId, SejongRegisterCommand command,
+    public static Member createSejongMember(String studentId, String name, LocalDate birthDate,
+                                            Gender gender, String githubUrl, String blogUrl,
                                             String encodedPassword, String imageUrl) {
         String email = studentId + "@sju.ac.kr";
         return Member.builder()
                 .email(email)
                 .password(encodedPassword)
-                .realName(command.name())
-                .birth(command.birthDate())
-                .gender(command.gender())
+                .realName(name)
+                .birth(birthDate)
+                .gender(gender)
                 .storeFileName(imageUrl)
                 .isParticipating(true)
                 .role(UserRole.USER)
                 .provider("sejong")
                 .studentId(studentId)
-                .githubUrl(command.githubUrl())
-                .blogUrl(command.blogUrl())
-                .build();
-    }
-
-    /**
-     * 테스트/시드 데이터용 정적 팩토리 메서드
-     */
-    public static Member createForTest(String email, String realName) {
-        return Member.builder()
-                .email(email)
-                .realName(realName)
-                .role(UserRole.USER)
-                .build();
-    }
-
-    /**
-     * 테스트용 일반 회원 생성 (비밀번호 포함)
-     */
-    public static Member createForTest(String email, String realName, String encodedPassword) {
-        return Member.builder()
-                .email(email)
-                .realName(realName)
-                .password(encodedPassword)
-                .birth(java.time.LocalDate.of(1998, 3, 15))
-                .gender(Gender.MALE)
-                .isParticipating(true)
-                .role(UserRole.USER)
+                .githubUrl(githubUrl)
+                .blogUrl(blogUrl)
                 .build();
     }
 

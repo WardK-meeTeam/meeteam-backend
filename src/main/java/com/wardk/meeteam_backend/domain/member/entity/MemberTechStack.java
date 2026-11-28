@@ -8,7 +8,17 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "member_tech_stack")
+@Table(
+        name = "member_tech_stack",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_member_tech_stack_pair",
+                columnNames = {"member_id", "tech_stack_id"}
+        ),
+        indexes = @Index(
+                name = "idx_member_tech_stack_stack_member",
+                columnList = "tech_stack_id, member_id"
+        )
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberTechStack {
 

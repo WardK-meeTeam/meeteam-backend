@@ -5,6 +5,7 @@ import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMember;
 import com.wardk.meeteam_backend.domain.projectmember.entity.ProjectMemberRole;
 import com.wardk.meeteam_backend.domain.projectmember.repository.ProjectMemberRepository;
+import com.wardk.meeteam_backend.domain.member.repository.MemberRepository;
 import com.wardk.meeteam_backend.global.exception.CustomException;
 import com.wardk.meeteam_backend.global.response.ErrorCode;
 import com.wardk.meeteam_backend.web.project.dto.response.MemberExpelResponse;
@@ -28,6 +29,7 @@ public class ProjectManagementServiceImpl implements ProjectManagementService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final MemberRepository memberRepository;
 
     @Override
     public RecruitmentStatusResponse toggleRecruitmentStatus(Long projectId, String requesterEmail) {
@@ -112,6 +114,7 @@ public class ProjectManagementServiceImpl implements ProjectManagementService {
 
         // 4단계: 멤버 삭제
         projectMemberRepository.delete(projectMember);
+        memberRepository.decreaseProjectCount(memberId);
 
         // 5단계: 해당 포지션의 모집 인원 감소
         project.getRecruitments().stream()

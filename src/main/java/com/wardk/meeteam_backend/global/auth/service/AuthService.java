@@ -10,6 +10,7 @@ import com.wardk.meeteam_backend.domain.job.repository.JobPositionRepository;
 import com.wardk.meeteam_backend.domain.job.repository.TechStackRepository;
 import com.wardk.meeteam_backend.domain.member.entity.Member;
 import com.wardk.meeteam_backend.domain.member.repository.MemberJobPositionRepository;
+import com.wardk.meeteam_backend.domain.member.search.MemberStackSearchProjector;
 import com.wardk.meeteam_backend.domain.notification.repository.NotificationRepository;
 import com.wardk.meeteam_backend.domain.project.entity.Project;
 import com.wardk.meeteam_backend.domain.project.repository.ProjectRepository;
@@ -56,6 +57,7 @@ import java.util.UUID;
 public class AuthService {
 
     private final MemberRepository memberRepository;
+    private final MemberStackSearchProjector memberStackSearchProjector;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final S3FileService s3FileService;
     private final JobFieldRepository jobFieldRepository;
@@ -125,7 +127,11 @@ public class AuthService {
         // 회원 생성
         Member member = Member.createSejongMember(
                 registerInfo.getStudentId(),
-                command,
+                command.name(),
+                command.birthDate(),
+                command.gender(),
+                command.githubUrl(),
+                command.blogUrl(),
                 bCryptPasswordEncoder.encode(UUID.randomUUID().toString()),
                 imageUrl
         );
@@ -134,6 +140,9 @@ public class AuthService {
         processAndAddJobPositions(member, command.jobPositions());
 
         memberRepository.save(member);
+
+        // 신규 회원의 기술스택을 검색 투영 테이블에 반영 (내부에서 flush 후 수행)
+        memberStackSearchProjector.rebuildFor(member.getId());
 
         // 토큰 발급
         String accessToken = jwtUtil.createAccessToken(member);
@@ -269,6 +278,9 @@ public class AuthService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
         member.withdraw();
+
+        // 검색 투영 테이블에는 검색 가능한 회원만 존재한다 — 탈퇴 즉시 행 제거
+        memberStackSearchProjector.removeFor(memberId);
     }
 
     /**
@@ -321,7 +333,10 @@ public class AuthService {
         memberJobPositionRepository.deleteByMemberId(memberId);
         log.info("회원의 직무 포지션 삭제 완료 - memberId: {}", memberId);
 
-        // 10. 회원 삭제
+        // 10. 회원의 검색 투영 행 삭제 (FK 없는 파생 테이블이라 명시적으로 제거)
+        memberStackSearchProjector.removeFor(memberId);
+
+        // 11. 회원 삭제
         memberRepository.delete(member);
         log.info("회원 하드 삭제 완료 - memberId: {}", memberId);
     }

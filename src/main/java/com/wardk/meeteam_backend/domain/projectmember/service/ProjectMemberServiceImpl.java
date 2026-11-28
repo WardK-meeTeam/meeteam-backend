@@ -44,6 +44,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         ProjectMember projectMember = ProjectMember.createProjectMember(member, jobPosition, ProjectMemberRole.LEADER);
         project.joinMember(projectMember);
         projectMemberRepository.save(projectMember);
+        memberRepository.increaseProjectCount(memberId);
     }
 
     @Retry
@@ -71,6 +72,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         recruitmentState.increaseCurrentCount();
         project.updateRecruitmentsStatus();
         projectMemberRepository.save(projectMember);
+        memberRepository.increaseProjectCount(memberId);
     }
 
     @Override
@@ -114,6 +116,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         }
 
         projectMemberRepository.deleteByProjectIdAndMemberId(request.getProjectId(), request.getMemberId());
+        memberRepository.decreaseProjectCount(request.getMemberId());
 
         return DeleteResponse.responseDto(
                 project.getId(),
@@ -149,6 +152,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Long jobPositionId = projectMember.getJobPosition().getId();
 
         projectMemberRepository.delete(projectMember);
+        memberRepository.decreaseProjectCount(member.getId());
 
         // 해당 포지션의 모집 인원 감소
         project.getRecruitments().stream()

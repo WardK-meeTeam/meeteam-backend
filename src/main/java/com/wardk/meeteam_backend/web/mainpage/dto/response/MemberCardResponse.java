@@ -67,7 +67,7 @@ public record MemberCardResponse(
                 member.getStoreFileName(),
                 jobFieldName,
                 member.getRealName(),
-                member.getProjectMembers().size(),
+                member.getProjectCount(),
                 techStacks
         );
     }
